@@ -14,9 +14,10 @@ export const Route = createFileRoute("/auth")({
 
 function AuthPage() {
   const navigate = useNavigate();
-  const [mode, setMode] = useState<"login" | "forgot">("login");
+  const [mode, setMode] = useState<"login" | "signup" | "forgot">("login");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [fullName, setFullName] = useState("");
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
@@ -37,6 +38,31 @@ function AuthPage() {
     navigate({ to: "/app", replace: true });
   }
 
+  async function handleSignup(e: React.FormEvent) {
+    e.preventDefault();
+    setLoading(true);
+    const { data, error } = await supabase.auth.signUp({
+      email,
+      password,
+      options: {
+        emailRedirectTo: `${window.location.origin}/app`,
+        data: { full_name: fullName },
+      },
+    });
+    setLoading(false);
+    if (error) {
+      toast.error("Falha no cadastro: " + error.message);
+      return;
+    }
+    if (data.session) {
+      toast.success("Conta criada com sucesso!");
+      navigate({ to: "/app", replace: true });
+    } else {
+      toast.success("Conta criada! Verifique seu e-mail para confirmar.");
+      setMode("login");
+    }
+  }
+
   async function handleForgot(e: React.FormEvent) {
     e.preventDefault();
     setLoading(true);
@@ -48,7 +74,7 @@ function AuthPage() {
       toast.error("Erro: " + error.message);
       return;
     }
-    toast.success("Enviamos um e-mail com instruções.");
+    toast.success("Se este e-mail estiver cadastrado, enviaremos instruções. Verifique a caixa de spam.");
     setMode("login");
   }
 
@@ -69,9 +95,31 @@ function AuthPage() {
         </div>
 
         <form
-          onSubmit={mode === "login" ? handleLogin : handleForgot}
+          onSubmit={
+            mode === "login"
+              ? handleLogin
+              : mode === "signup"
+                ? handleSignup
+                : handleForgot
+          }
           className="space-y-4"
         >
+          {mode === "signup" && (
+            <div>
+              <Label htmlFor="fullName" className="tactical-heading text-xs">
+                NOME COMPLETO
+              </Label>
+              <Input
+                id="fullName"
+                type="text"
+                required
+                autoComplete="name"
+                value={fullName}
+                onChange={(e) => setFullName(e.target.value)}
+                className="mt-1 bg-input border-border"
+              />
+            </div>
+          )}
           <div>
             <Label htmlFor="email" className="tactical-heading text-xs">
               E-MAIL
@@ -86,7 +134,7 @@ function AuthPage() {
               className="mt-1 bg-input border-border"
             />
           </div>
-          {mode === "login" && (
+          {mode !== "forgot" && (
             <div>
               <Label htmlFor="password" className="tactical-heading text-xs">
                 SENHA
@@ -95,7 +143,8 @@ function AuthPage() {
                 id="password"
                 type="password"
                 required
-                autoComplete="current-password"
+                minLength={6}
+                autoComplete={mode === "signup" ? "new-password" : "current-password"}
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 className="mt-1 bg-input border-border"
@@ -111,24 +160,36 @@ function AuthPage() {
               ? "AGUARDE..."
               : mode === "login"
                 ? "ENTRAR NO SQUAD"
-                : "ENVIAR INSTRUÇÕES"}
+                : mode === "signup"
+                  ? "CRIAR CONTA"
+                  : "ENVIAR INSTRUÇÕES"}
           </Button>
         </form>
 
-        <div className="mt-6 text-center">
-          {mode === "login" ? (
-            <button
-              type="button"
-              onClick={() => setMode("forgot")}
-              className="text-sm text-muted-foreground hover:text-primary"
-            >
-              Esqueci minha senha
-            </button>
-          ) : (
+        <div className="mt-6 flex flex-col items-center gap-3 text-sm">
+          {mode === "login" && (
+            <>
+              <button
+                type="button"
+                onClick={() => setMode("signup")}
+                className="tactical-heading text-primary hover:text-primary/80"
+              >
+                CRIAR NOVA CONTA
+              </button>
+              <button
+                type="button"
+                onClick={() => setMode("forgot")}
+                className="text-muted-foreground hover:text-primary"
+              >
+                Esqueci minha senha
+              </button>
+            </>
+          )}
+          {mode !== "login" && (
             <button
               type="button"
               onClick={() => setMode("login")}
-              className="text-sm text-muted-foreground hover:text-primary"
+              className="text-muted-foreground hover:text-primary"
             >
               ← Voltar para o login
             </button>
