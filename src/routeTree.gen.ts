@@ -18,6 +18,7 @@ import { Route as AuthenticatedAppIndexRouteImport } from './routes/_authenticat
 import { Route as AuthenticatedAppTreinoRouteImport } from './routes/_authenticated/app.treino'
 import { Route as AuthenticatedAppNutricionalRouteImport } from './routes/_authenticated/app.nutricional'
 import { Route as AuthenticatedAppGaleriaRouteImport } from './routes/_authenticated/app.galeria'
+import { Route as AuthenticatedAppAdminAlunosRouteImport } from './routes/_authenticated/app.admin.alunos'
 
 const ResetPasswordRoute = ResetPasswordRouteImport.update({
   id: '/reset-password',
@@ -64,6 +65,12 @@ const AuthenticatedAppGaleriaRoute = AuthenticatedAppGaleriaRouteImport.update({
   path: '/galeria',
   getParentRoute: () => AuthenticatedAppRoute,
 } as any)
+const AuthenticatedAppAdminAlunosRoute =
+  AuthenticatedAppAdminAlunosRouteImport.update({
+    id: '/admin/alunos',
+    path: '/admin/alunos',
+    getParentRoute: () => AuthenticatedAppRoute,
+  } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -74,6 +81,7 @@ export interface FileRoutesByFullPath {
   '/app/nutricional': typeof AuthenticatedAppNutricionalRoute
   '/app/treino': typeof AuthenticatedAppTreinoRoute
   '/app/': typeof AuthenticatedAppIndexRoute
+  '/app/admin/alunos': typeof AuthenticatedAppAdminAlunosRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -83,6 +91,7 @@ export interface FileRoutesByTo {
   '/app/nutricional': typeof AuthenticatedAppNutricionalRoute
   '/app/treino': typeof AuthenticatedAppTreinoRoute
   '/app': typeof AuthenticatedAppIndexRoute
+  '/app/admin/alunos': typeof AuthenticatedAppAdminAlunosRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -95,6 +104,7 @@ export interface FileRoutesById {
   '/_authenticated/app/nutricional': typeof AuthenticatedAppNutricionalRoute
   '/_authenticated/app/treino': typeof AuthenticatedAppTreinoRoute
   '/_authenticated/app/': typeof AuthenticatedAppIndexRoute
+  '/_authenticated/app/admin/alunos': typeof AuthenticatedAppAdminAlunosRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -107,6 +117,7 @@ export interface FileRouteTypes {
     | '/app/nutricional'
     | '/app/treino'
     | '/app/'
+    | '/app/admin/alunos'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -116,6 +127,7 @@ export interface FileRouteTypes {
     | '/app/nutricional'
     | '/app/treino'
     | '/app'
+    | '/app/admin/alunos'
   id:
     | '__root__'
     | '/'
@@ -127,6 +139,7 @@ export interface FileRouteTypes {
     | '/_authenticated/app/nutricional'
     | '/_authenticated/app/treino'
     | '/_authenticated/app/'
+    | '/_authenticated/app/admin/alunos'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -201,6 +214,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedAppGaleriaRouteImport
       parentRoute: typeof AuthenticatedAppRoute
     }
+    '/_authenticated/app/admin/alunos': {
+      id: '/_authenticated/app/admin/alunos'
+      path: '/admin/alunos'
+      fullPath: '/app/admin/alunos'
+      preLoaderRoute: typeof AuthenticatedAppAdminAlunosRouteImport
+      parentRoute: typeof AuthenticatedAppRoute
+    }
   }
 }
 
@@ -209,6 +229,7 @@ interface AuthenticatedAppRouteChildren {
   AuthenticatedAppNutricionalRoute: typeof AuthenticatedAppNutricionalRoute
   AuthenticatedAppTreinoRoute: typeof AuthenticatedAppTreinoRoute
   AuthenticatedAppIndexRoute: typeof AuthenticatedAppIndexRoute
+  AuthenticatedAppAdminAlunosRoute: typeof AuthenticatedAppAdminAlunosRoute
 }
 
 const AuthenticatedAppRouteChildren: AuthenticatedAppRouteChildren = {
@@ -216,6 +237,7 @@ const AuthenticatedAppRouteChildren: AuthenticatedAppRouteChildren = {
   AuthenticatedAppNutricionalRoute: AuthenticatedAppNutricionalRoute,
   AuthenticatedAppTreinoRoute: AuthenticatedAppTreinoRoute,
   AuthenticatedAppIndexRoute: AuthenticatedAppIndexRoute,
+  AuthenticatedAppAdminAlunosRoute: AuthenticatedAppAdminAlunosRoute,
 }
 
 const AuthenticatedAppRouteWithChildren =
