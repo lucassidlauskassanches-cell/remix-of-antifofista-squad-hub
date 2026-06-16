@@ -1,5 +1,5 @@
 import { createFileRoute, Outlet, Link, useNavigate, useLocation } from "@tanstack/react-router";
-import { useSuspenseQuery } from "@tanstack/react-query";
+import { useQueryClient, useSuspenseQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { Dumbbell, Apple, Video, LogOut, ShieldCheck } from "lucide-react";
 import { getMyContext } from "@/lib/squad.functions";
@@ -18,8 +18,11 @@ function AppShell() {
   });
   const navigate = useNavigate();
   const loc = useLocation();
+  const queryClient = useQueryClient();
 
   async function signOut() {
+    await queryClient.cancelQueries();
+    queryClient.clear();
     await supabase.auth.signOut();
     navigate({ to: "/auth", replace: true });
   }
