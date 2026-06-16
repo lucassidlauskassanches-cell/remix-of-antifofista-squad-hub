@@ -61,7 +61,8 @@ function NovoAluno() {
           <Label className="tactical-heading text-xs">SENHA INICIAL</Label>
           <Input
             required
-            type="text"
+            type="password"
+            autoComplete="new-password"
             minLength={6}
             value={form.password}
             onChange={(e) => setForm({ ...form, password: e.target.value })}
