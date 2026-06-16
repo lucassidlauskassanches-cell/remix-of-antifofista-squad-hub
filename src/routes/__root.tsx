@@ -126,7 +126,7 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
 
 function RootShell({ children }: { children: ReactNode }) {
   return (
-    <html lang="en">
+    <html lang="pt-BR" className="dark">
       <head>
         <HeadContent />
       </head>
@@ -140,10 +140,32 @@ function RootShell({ children }: { children: ReactNode }) {
 
 function RootComponent() {
   const { queryClient } = Route.useRouteContext();
+  const router = useRouter();
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    let cancelled = false;
+    import("@/integrations/supabase/client").then(({ supabase }) => {
+      if (cancelled) return;
+      const { data } = supabase.auth.onAuthStateChange((event) => {
+        if (
+          event !== "SIGNED_IN" &&
+          event !== "SIGNED_OUT" &&
+          event !== "USER_UPDATED"
+        )
+          return;
+        router.invalidate();
+        if (event !== "SIGNED_OUT") queryClient.invalidateQueries();
+      });
+      return () => data.subscription.unsubscribe();
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [queryClient, router]);
 
   return (
     <QueryClientProvider client={queryClient}>
-      {/* Required: nested routes render here. Removing <Outlet /> breaks all child routes. */}
       <Outlet />
     </QueryClientProvider>
   );
