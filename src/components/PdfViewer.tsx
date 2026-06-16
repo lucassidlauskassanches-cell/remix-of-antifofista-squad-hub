@@ -79,31 +79,33 @@ export function PdfViewer({ url }: PdfViewerProps) {
 
       <div
         ref={containerRef}
-        className="w-full max-h-[75vh] overflow-auto rounded-md border border-border bg-card flex justify-center"
+        className="w-full max-w-full min-w-0 max-h-[75vh] overflow-auto rounded-md border border-border bg-card"
       >
-        <Document
-          file={url}
-          onLoadSuccess={({ numPages }) => setNumPages(numPages)}
-          loading={
-            <p className="text-center py-16 text-muted-foreground text-sm">
-              Carregando PDF...
-            </p>
-          }
-          error={
-            <p className="text-center py-16 text-destructive text-sm">
-              Falha ao carregar o PDF.
-            </p>
-          }
-        >
-          {width > 0 && (
-            <Page
-              pageNumber={pageNumber}
-              width={width * scale}
-              renderTextLayer={false}
-              renderAnnotationLayer={false}
-            />
-          )}
-        </Document>
+        <div className="flex justify-center min-w-min">
+          <Document
+            file={url}
+            onLoadSuccess={({ numPages }) => setNumPages(numPages)}
+            loading={
+              <p className="text-center py-16 text-muted-foreground text-sm">
+                Carregando PDF...
+              </p>
+            }
+            error={
+              <p className="text-center py-16 text-destructive text-sm">
+                Falha ao carregar o PDF.
+              </p>
+            }
+          >
+            {width > 0 && (
+              <Page
+                pageNumber={pageNumber}
+                width={width * scale}
+                renderTextLayer={false}
+                renderAnnotationLayer={false}
+              />
+            )}
+          </Document>
+        </div>
       </div>
     </div>
   );
