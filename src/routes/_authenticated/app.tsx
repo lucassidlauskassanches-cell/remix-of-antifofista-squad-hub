@@ -40,15 +40,16 @@ function AppShell() {
           </div>
           <div className="flex items-center gap-2">
             {ctx.isTreinador && (
-              <Link to="/app/admin/alunos">
-                <Button
-                  variant={isAdminArea ? "default" : "outline"}
-                  size="sm"
-                  className="tactical-heading text-xs"
-                >
+              <Button
+                asChild
+                variant={isAdminArea ? "default" : "outline"}
+                size="sm"
+                className="tactical-heading text-xs"
+              >
+                <Link to="/app/admin/alunos">
                   <ShieldCheck className="w-4 h-4 mr-1" /> PAINEL
-                </Button>
-              </Link>
+                </Link>
+              </Button>
             )}
             <Button onClick={signOut} variant="ghost" size="icon" aria-label="Sair">
               <LogOut className="w-5 h-5" />
