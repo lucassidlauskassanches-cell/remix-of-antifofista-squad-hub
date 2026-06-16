@@ -5,6 +5,7 @@ import { getMyPlanPdfUrl } from "@/lib/squad.functions";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { FileText, ExternalLink } from "lucide-react";
+import { PdfViewer } from "@/components/PdfViewer";
 
 export const Route = createFileRoute("/_authenticated/app/treino")({
   component: TreinoPage,
@@ -49,13 +50,7 @@ function TreinoPage() {
         </Button>
       </Card>
 
-      <div className="w-full h-[70vh] rounded-md overflow-hidden border border-border bg-card">
-        <iframe
-          src={data.url}
-          title="PDF do treino"
-          className="w-full h-full"
-        />
-      </div>
+      <PdfViewer url={data.url} />
     </div>
   );
 }
