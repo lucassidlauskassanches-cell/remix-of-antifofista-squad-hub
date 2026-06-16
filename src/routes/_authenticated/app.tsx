@@ -5,6 +5,7 @@ import { Dumbbell, Apple, Video, LogOut, ShieldCheck } from "lucide-react";
 import { getMyContext } from "@/lib/squad.functions";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
+import logoAsset from "@/assets/logo-antifofista.png.asset.json";
 
 export const Route = createFileRoute("/_authenticated/app")({
   component: AppShell,
@@ -33,10 +34,12 @@ function AppShell() {
     <div className="min-h-screen flex flex-col bg-background pb-20">
       <header className="sticky top-0 z-10 bg-background/95 backdrop-blur border-b border-border">
         <div className="max-w-3xl mx-auto px-4 py-3 flex items-center justify-between">
-          <div>
-            <p className="tactical-heading text-[10px] text-primary tracking-[0.3em]">
-              ANTIFOFISTA SQUAD
-            </p>
+          <div className="flex items-center gap-3">
+            <img
+              src={logoAsset.url}
+              alt="Antifofista Squad"
+              className="h-8 w-auto object-contain"
+            />
             <p className="text-sm text-foreground font-medium truncate max-w-[60vw]">
               Olá, {ctx.profile?.full_name?.split(" ")[0] || "Soldado"}
             </p>
