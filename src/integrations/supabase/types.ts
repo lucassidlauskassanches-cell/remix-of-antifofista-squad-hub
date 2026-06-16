@@ -14,16 +14,299 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      exercise_gallery: {
+        Row: {
+          created_at: string
+          description: string | null
+          id: string
+          muscle_group: string
+          title: string
+          youtube_url: string
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          muscle_group?: string
+          title: string
+          youtube_url: string
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          muscle_group?: string
+          title?: string
+          youtube_url?: string
+        }
+        Relationships: []
+      }
+      meal_items: {
+        Row: {
+          calories: number | null
+          carbs: number | null
+          fat: number | null
+          food_name: string
+          id: string
+          meal_id: string
+          notes: string | null
+          order_index: number
+          protein: number | null
+          quantity: string | null
+        }
+        Insert: {
+          calories?: number | null
+          carbs?: number | null
+          fat?: number | null
+          food_name?: string
+          id?: string
+          meal_id: string
+          notes?: string | null
+          order_index?: number
+          protein?: number | null
+          quantity?: string | null
+        }
+        Update: {
+          calories?: number | null
+          carbs?: number | null
+          fat?: number | null
+          food_name?: string
+          id?: string
+          meal_id?: string
+          notes?: string | null
+          order_index?: number
+          protein?: number | null
+          quantity?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "meal_items_meal_id_fkey"
+            columns: ["meal_id"]
+            isOneToOne: false
+            referencedRelation: "meals"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      meals: {
+        Row: {
+          id: string
+          meal_name: string
+          meal_time: string | null
+          order_index: number
+          plan_id: string
+        }
+        Insert: {
+          id?: string
+          meal_name?: string
+          meal_time?: string | null
+          order_index?: number
+          plan_id: string
+        }
+        Update: {
+          id?: string
+          meal_name?: string
+          meal_time?: string | null
+          order_index?: number
+          plan_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "meals_plan_id_fkey"
+            columns: ["plan_id"]
+            isOneToOne: false
+            referencedRelation: "nutrition_plans"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      nutrition_plans: {
+        Row: {
+          active: boolean
+          general_notes: string | null
+          id: string
+          student_id: string
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          active?: boolean
+          general_notes?: string | null
+          id?: string
+          student_id: string
+          title?: string
+          updated_at?: string
+        }
+        Update: {
+          active?: boolean
+          general_notes?: string | null
+          id?: string
+          student_id?: string
+          title?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "nutrition_plans_student_id_fkey"
+            columns: ["student_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      profiles: {
+        Row: {
+          active: boolean
+          avatar_url: string | null
+          created_at: string
+          email: string
+          full_name: string
+          id: string
+          phone: string | null
+        }
+        Insert: {
+          active?: boolean
+          avatar_url?: string | null
+          created_at?: string
+          email: string
+          full_name?: string
+          id: string
+          phone?: string | null
+        }
+        Update: {
+          active?: boolean
+          avatar_url?: string | null
+          created_at?: string
+          email?: string
+          full_name?: string
+          id?: string
+          phone?: string | null
+        }
+        Relationships: []
+      }
+      training_exercises: {
+        Row: {
+          day_label: string
+          exercise_name: string
+          gallery_video_id: string | null
+          id: string
+          load: string | null
+          notes: string | null
+          order_index: number
+          plan_id: string
+          reps: string | null
+          rest: string | null
+          sets: string | null
+        }
+        Insert: {
+          day_label?: string
+          exercise_name?: string
+          gallery_video_id?: string | null
+          id?: string
+          load?: string | null
+          notes?: string | null
+          order_index?: number
+          plan_id: string
+          reps?: string | null
+          rest?: string | null
+          sets?: string | null
+        }
+        Update: {
+          day_label?: string
+          exercise_name?: string
+          gallery_video_id?: string | null
+          id?: string
+          load?: string | null
+          notes?: string | null
+          order_index?: number
+          plan_id?: string
+          reps?: string | null
+          rest?: string | null
+          sets?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "training_exercises_gallery_video_id_fkey"
+            columns: ["gallery_video_id"]
+            isOneToOne: false
+            referencedRelation: "exercise_gallery"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "training_exercises_plan_id_fkey"
+            columns: ["plan_id"]
+            isOneToOne: false
+            referencedRelation: "training_plans"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      training_plans: {
+        Row: {
+          active: boolean
+          id: string
+          student_id: string
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          active?: boolean
+          id?: string
+          student_id: string
+          title?: string
+          updated_at?: string
+        }
+        Update: {
+          active?: boolean
+          id?: string
+          student_id?: string
+          title?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "training_plans_student_id_fkey"
+            columns: ["student_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      user_roles: {
+        Row: {
+          id: string
+          role: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Insert: {
+          id?: string
+          role: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Update: {
+          id?: string
+          role?: Database["public"]["Enums"]["app_role"]
+          user_id?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      has_role: {
+        Args: {
+          _role: Database["public"]["Enums"]["app_role"]
+          _user_id: string
+        }
+        Returns: boolean
+      }
     }
     Enums: {
-      [_ in never]: never
+      app_role: "aluno" | "treinador"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -150,6 +433,8 @@ export type CompositeTypes<
 
 export const Constants = {
   public: {
-    Enums: {},
+    Enums: {
+      app_role: ["aluno", "treinador"],
+    },
   },
 } as const
