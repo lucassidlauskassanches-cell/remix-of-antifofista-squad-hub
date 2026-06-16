@@ -8,7 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
-import { Shield } from "lucide-react";
+import logoAsset from "@/assets/logo-antifofista.png.asset.json";
 
 export const Route = createFileRoute("/auth")({
   ssr: false,
