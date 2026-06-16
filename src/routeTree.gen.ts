@@ -16,6 +16,7 @@ import { Route as IndexRouteImport } from './routes/index'
 import { Route as AuthenticatedAppRouteImport } from './routes/_authenticated/app'
 import { Route as AuthenticatedAppIndexRouteImport } from './routes/_authenticated/app.index'
 import { Route as AuthenticatedAppTreinoRouteImport } from './routes/_authenticated/app.treino'
+import { Route as AuthenticatedAppNutricionalRouteImport } from './routes/_authenticated/app.nutricional'
 
 const ResetPasswordRoute = ResetPasswordRouteImport.update({
   id: '/reset-password',
@@ -51,12 +52,19 @@ const AuthenticatedAppTreinoRoute = AuthenticatedAppTreinoRouteImport.update({
   path: '/treino',
   getParentRoute: () => AuthenticatedAppRoute,
 } as any)
+const AuthenticatedAppNutricionalRoute =
+  AuthenticatedAppNutricionalRouteImport.update({
+    id: '/nutricional',
+    path: '/nutricional',
+    getParentRoute: () => AuthenticatedAppRoute,
+  } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/auth': typeof AuthRoute
   '/reset-password': typeof ResetPasswordRoute
   '/app': typeof AuthenticatedAppRouteWithChildren
+  '/app/nutricional': typeof AuthenticatedAppNutricionalRoute
   '/app/treino': typeof AuthenticatedAppTreinoRoute
   '/app/': typeof AuthenticatedAppIndexRoute
 }
@@ -64,6 +72,7 @@ export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/auth': typeof AuthRoute
   '/reset-password': typeof ResetPasswordRoute
+  '/app/nutricional': typeof AuthenticatedAppNutricionalRoute
   '/app/treino': typeof AuthenticatedAppTreinoRoute
   '/app': typeof AuthenticatedAppIndexRoute
 }
@@ -74,6 +83,7 @@ export interface FileRoutesById {
   '/auth': typeof AuthRoute
   '/reset-password': typeof ResetPasswordRoute
   '/_authenticated/app': typeof AuthenticatedAppRouteWithChildren
+  '/_authenticated/app/nutricional': typeof AuthenticatedAppNutricionalRoute
   '/_authenticated/app/treino': typeof AuthenticatedAppTreinoRoute
   '/_authenticated/app/': typeof AuthenticatedAppIndexRoute
 }
@@ -84,10 +94,17 @@ export interface FileRouteTypes {
     | '/auth'
     | '/reset-password'
     | '/app'
+    | '/app/nutricional'
     | '/app/treino'
     | '/app/'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/auth' | '/reset-password' | '/app/treino' | '/app'
+  to:
+    | '/'
+    | '/auth'
+    | '/reset-password'
+    | '/app/nutricional'
+    | '/app/treino'
+    | '/app'
   id:
     | '__root__'
     | '/'
@@ -95,6 +112,7 @@ export interface FileRouteTypes {
     | '/auth'
     | '/reset-password'
     | '/_authenticated/app'
+    | '/_authenticated/app/nutricional'
     | '/_authenticated/app/treino'
     | '/_authenticated/app/'
   fileRoutesById: FileRoutesById
@@ -157,15 +175,24 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedAppTreinoRouteImport
       parentRoute: typeof AuthenticatedAppRoute
     }
+    '/_authenticated/app/nutricional': {
+      id: '/_authenticated/app/nutricional'
+      path: '/nutricional'
+      fullPath: '/app/nutricional'
+      preLoaderRoute: typeof AuthenticatedAppNutricionalRouteImport
+      parentRoute: typeof AuthenticatedAppRoute
+    }
   }
 }
 
 interface AuthenticatedAppRouteChildren {
+  AuthenticatedAppNutricionalRoute: typeof AuthenticatedAppNutricionalRoute
   AuthenticatedAppTreinoRoute: typeof AuthenticatedAppTreinoRoute
   AuthenticatedAppIndexRoute: typeof AuthenticatedAppIndexRoute
 }
 
 const AuthenticatedAppRouteChildren: AuthenticatedAppRouteChildren = {
+  AuthenticatedAppNutricionalRoute: AuthenticatedAppNutricionalRoute,
   AuthenticatedAppTreinoRoute: AuthenticatedAppTreinoRoute,
   AuthenticatedAppIndexRoute: AuthenticatedAppIndexRoute,
 }
