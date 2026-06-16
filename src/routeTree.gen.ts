@@ -19,6 +19,7 @@ import { Route as AuthenticatedAppTreinoRouteImport } from './routes/_authentica
 import { Route as AuthenticatedAppNutricionalRouteImport } from './routes/_authenticated/app.nutricional'
 import { Route as AuthenticatedAppGaleriaRouteImport } from './routes/_authenticated/app.galeria'
 import { Route as AuthenticatedAppAdminAlunosRouteImport } from './routes/_authenticated/app.admin.alunos'
+import { Route as AuthenticatedAppAdminAlunosNovoRouteImport } from './routes/_authenticated/app.admin.alunos.novo'
 
 const ResetPasswordRoute = ResetPasswordRouteImport.update({
   id: '/reset-password',
@@ -71,6 +72,12 @@ const AuthenticatedAppAdminAlunosRoute =
     path: '/admin/alunos',
     getParentRoute: () => AuthenticatedAppRoute,
   } as any)
+const AuthenticatedAppAdminAlunosNovoRoute =
+  AuthenticatedAppAdminAlunosNovoRouteImport.update({
+    id: '/novo',
+    path: '/novo',
+    getParentRoute: () => AuthenticatedAppAdminAlunosRoute,
+  } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -81,7 +88,8 @@ export interface FileRoutesByFullPath {
   '/app/nutricional': typeof AuthenticatedAppNutricionalRoute
   '/app/treino': typeof AuthenticatedAppTreinoRoute
   '/app/': typeof AuthenticatedAppIndexRoute
-  '/app/admin/alunos': typeof AuthenticatedAppAdminAlunosRoute
+  '/app/admin/alunos': typeof AuthenticatedAppAdminAlunosRouteWithChildren
+  '/app/admin/alunos/novo': typeof AuthenticatedAppAdminAlunosNovoRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -91,7 +99,8 @@ export interface FileRoutesByTo {
   '/app/nutricional': typeof AuthenticatedAppNutricionalRoute
   '/app/treino': typeof AuthenticatedAppTreinoRoute
   '/app': typeof AuthenticatedAppIndexRoute
-  '/app/admin/alunos': typeof AuthenticatedAppAdminAlunosRoute
+  '/app/admin/alunos': typeof AuthenticatedAppAdminAlunosRouteWithChildren
+  '/app/admin/alunos/novo': typeof AuthenticatedAppAdminAlunosNovoRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -104,7 +113,8 @@ export interface FileRoutesById {
   '/_authenticated/app/nutricional': typeof AuthenticatedAppNutricionalRoute
   '/_authenticated/app/treino': typeof AuthenticatedAppTreinoRoute
   '/_authenticated/app/': typeof AuthenticatedAppIndexRoute
-  '/_authenticated/app/admin/alunos': typeof AuthenticatedAppAdminAlunosRoute
+  '/_authenticated/app/admin/alunos': typeof AuthenticatedAppAdminAlunosRouteWithChildren
+  '/_authenticated/app/admin/alunos/novo': typeof AuthenticatedAppAdminAlunosNovoRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -118,6 +128,7 @@ export interface FileRouteTypes {
     | '/app/treino'
     | '/app/'
     | '/app/admin/alunos'
+    | '/app/admin/alunos/novo'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -128,6 +139,7 @@ export interface FileRouteTypes {
     | '/app/treino'
     | '/app'
     | '/app/admin/alunos'
+    | '/app/admin/alunos/novo'
   id:
     | '__root__'
     | '/'
@@ -140,6 +152,7 @@ export interface FileRouteTypes {
     | '/_authenticated/app/treino'
     | '/_authenticated/app/'
     | '/_authenticated/app/admin/alunos'
+    | '/_authenticated/app/admin/alunos/novo'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -221,15 +234,36 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedAppAdminAlunosRouteImport
       parentRoute: typeof AuthenticatedAppRoute
     }
+    '/_authenticated/app/admin/alunos/novo': {
+      id: '/_authenticated/app/admin/alunos/novo'
+      path: '/novo'
+      fullPath: '/app/admin/alunos/novo'
+      preLoaderRoute: typeof AuthenticatedAppAdminAlunosNovoRouteImport
+      parentRoute: typeof AuthenticatedAppAdminAlunosRoute
+    }
   }
 }
+
+interface AuthenticatedAppAdminAlunosRouteChildren {
+  AuthenticatedAppAdminAlunosNovoRoute: typeof AuthenticatedAppAdminAlunosNovoRoute
+}
+
+const AuthenticatedAppAdminAlunosRouteChildren: AuthenticatedAppAdminAlunosRouteChildren =
+  {
+    AuthenticatedAppAdminAlunosNovoRoute: AuthenticatedAppAdminAlunosNovoRoute,
+  }
+
+const AuthenticatedAppAdminAlunosRouteWithChildren =
+  AuthenticatedAppAdminAlunosRoute._addFileChildren(
+    AuthenticatedAppAdminAlunosRouteChildren,
+  )
 
 interface AuthenticatedAppRouteChildren {
   AuthenticatedAppGaleriaRoute: typeof AuthenticatedAppGaleriaRoute
   AuthenticatedAppNutricionalRoute: typeof AuthenticatedAppNutricionalRoute
   AuthenticatedAppTreinoRoute: typeof AuthenticatedAppTreinoRoute
   AuthenticatedAppIndexRoute: typeof AuthenticatedAppIndexRoute
-  AuthenticatedAppAdminAlunosRoute: typeof AuthenticatedAppAdminAlunosRoute
+  AuthenticatedAppAdminAlunosRoute: typeof AuthenticatedAppAdminAlunosRouteWithChildren
 }
 
 const AuthenticatedAppRouteChildren: AuthenticatedAppRouteChildren = {
@@ -237,7 +271,8 @@ const AuthenticatedAppRouteChildren: AuthenticatedAppRouteChildren = {
   AuthenticatedAppNutricionalRoute: AuthenticatedAppNutricionalRoute,
   AuthenticatedAppTreinoRoute: AuthenticatedAppTreinoRoute,
   AuthenticatedAppIndexRoute: AuthenticatedAppIndexRoute,
-  AuthenticatedAppAdminAlunosRoute: AuthenticatedAppAdminAlunosRoute,
+  AuthenticatedAppAdminAlunosRoute:
+    AuthenticatedAppAdminAlunosRouteWithChildren,
 }
 
 const AuthenticatedAppRouteWithChildren =
