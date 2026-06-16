@@ -103,7 +103,7 @@ function AuthPage() {
           <img
             src={logoAsset.url}
             alt="Antifofista Squad"
-            className="h-24 w-auto object-contain"
+            className="h-48 w-auto object-contain"
           />
           <div className="tactical-divider w-full mt-4" />
         </div>
