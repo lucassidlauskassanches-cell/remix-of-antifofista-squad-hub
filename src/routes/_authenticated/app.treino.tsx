@@ -50,13 +50,7 @@ function TreinoPage() {
         </Button>
       </Card>
 
-      <div className="w-full h-[70vh] rounded-md overflow-hidden border border-border bg-card">
-        <iframe
-          src={data.url}
-          title="PDF do treino"
-          className="w-full h-full"
-        />
-      </div>
+      <PdfViewer url={data.url} />
     </div>
   );
 }
