@@ -5,7 +5,7 @@ import { Dumbbell, Apple, Video, LogOut, ShieldCheck } from "lucide-react";
 import { getMyContext } from "@/lib/squad.functions";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
-import logoAsset from "@/assets/logo-antifofista.jpg.asset.json";
+import logoAsset from "@/assets/logo-antifofista.png.asset.json";
 
 export const Route = createFileRoute("/_authenticated/app")({
   component: AppShell,
