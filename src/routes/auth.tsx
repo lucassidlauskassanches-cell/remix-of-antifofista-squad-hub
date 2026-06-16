@@ -1,6 +1,9 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
+import { useQueryClient } from "@tanstack/react-query";
+import { useServerFn } from "@tanstack/react-start";
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
+import { getMyContext } from "@/lib/squad.functions";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -14,6 +17,8 @@ export const Route = createFileRoute("/auth")({
 
 function AuthPage() {
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
+  const fetchMyContext = useServerFn(getMyContext);
   const [mode, setMode] = useState<"login" | "signup" | "forgot">("login");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -22,9 +27,22 @@ function AuthPage() {
 
   useEffect(() => {
     supabase.auth.getUser().then(({ data }) => {
-      if (data.user) navigate({ to: "/app", replace: true });
+      if (data.user) goToUserHome();
     });
-  }, [navigate]);
+  }, []);
+
+  async function goToUserHome() {
+    queryClient.clear();
+    try {
+      const ctx = await fetchMyContext();
+      navigate({
+        to: ctx.isTreinador ? "/app/admin/alunos" : "/app/treino",
+        replace: true,
+      });
+    } catch {
+      navigate({ to: "/app", replace: true });
+    }
+  }
 
   async function handleLogin(e: React.FormEvent) {
     e.preventDefault();
@@ -35,7 +53,7 @@ function AuthPage() {
       toast.error("Falha no login: " + error.message);
       return;
     }
-    navigate({ to: "/app", replace: true });
+    await goToUserHome();
   }
 
   async function handleSignup(e: React.FormEvent) {
