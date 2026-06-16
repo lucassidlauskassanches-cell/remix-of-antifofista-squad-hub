@@ -14,9 +14,10 @@ export const Route = createFileRoute("/auth")({
 
 function AuthPage() {
   const navigate = useNavigate();
-  const [mode, setMode] = useState<"login" | "forgot">("login");
+  const [mode, setMode] = useState<"login" | "signup" | "forgot">("login");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [fullName, setFullName] = useState("");
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
@@ -37,6 +38,31 @@ function AuthPage() {
     navigate({ to: "/app", replace: true });
   }
 
+  async function handleSignup(e: React.FormEvent) {
+    e.preventDefault();
+    setLoading(true);
+    const { data, error } = await supabase.auth.signUp({
+      email,
+      password,
+      options: {
+        emailRedirectTo: `${window.location.origin}/app`,
+        data: { full_name: fullName },
+      },
+    });
+    setLoading(false);
+    if (error) {
+      toast.error("Falha no cadastro: " + error.message);
+      return;
+    }
+    if (data.session) {
+      toast.success("Conta criada com sucesso!");
+      navigate({ to: "/app", replace: true });
+    } else {
+      toast.success("Conta criada! Verifique seu e-mail para confirmar.");
+      setMode("login");
+    }
+  }
+
   async function handleForgot(e: React.FormEvent) {
     e.preventDefault();
     setLoading(true);
@@ -48,7 +74,7 @@ function AuthPage() {
       toast.error("Erro: " + error.message);
       return;
     }
-    toast.success("Enviamos um e-mail com instruções.");
+    toast.success("Se este e-mail estiver cadastrado, enviaremos instruções. Verifique a caixa de spam.");
     setMode("login");
   }
 
