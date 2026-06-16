@@ -35,16 +35,16 @@ function AlunosList() {
           <h1 className="tactical-heading text-2xl">ALUNOS</h1>
         </div>
         <div className="flex gap-2">
-          <Link to="/app/admin/galeria">
-            <Button variant="outline" className="tactical-heading text-xs">
+          <Button asChild variant="outline" className="tactical-heading text-xs">
+            <Link to="/app/admin/galeria">
               <Video className="w-4 h-4 mr-1" /> GALERIA
-            </Button>
-          </Link>
-          <Link to="/app/admin/alunos/novo">
-            <Button className="tactical-heading text-xs bg-primary text-primary-foreground">
+            </Link>
+          </Button>
+          <Button asChild className="tactical-heading text-xs bg-primary text-primary-foreground">
+            <Link to="/app/admin/alunos/novo">
               <Plus className="w-4 h-4 mr-1" /> NOVO
-            </Button>
-          </Link>
+            </Link>
+          </Button>
         </div>
       </div>
 
