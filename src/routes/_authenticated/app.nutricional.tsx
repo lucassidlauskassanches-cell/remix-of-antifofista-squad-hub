@@ -5,6 +5,7 @@ import { getMyPlanPdfUrl } from "@/lib/squad.functions";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { FileText, ExternalLink } from "lucide-react";
+import { PdfViewer } from "@/components/PdfViewer";
 
 export const Route = createFileRoute("/_authenticated/app/nutricional")({
   component: NutriPage,
