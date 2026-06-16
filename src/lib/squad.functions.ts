@@ -439,3 +439,130 @@ export const deleteGalleryItem = createServerFn({ method: "POST" })
     if (error) throw new Error(error.message);
     return { ok: true };
   });
+
+// ===== Plan PDFs =====
+
+const planKind = z.enum(["training", "nutrition"]);
+
+export const savePlanPdf = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: unknown) =>
+    z
+      .object({
+        studentId: z.string().uuid(),
+        kind: planKind,
+        pdf_path: z.string().min(1).max(500),
+        pdf_name: z.string().min(1).max(255),
+        title: z.string().max(200).optional(),
+      })
+      .parse(d),
+  )
+  .handler(async ({ data, context }) => {
+    await assertTrainer(context);
+    const { supabase } = context;
+    const table = data.kind === "training" ? "training_plans" : "nutrition_plans";
+    const { data: existing } = await supabase
+      .from(table)
+      .select("id,pdf_path")
+      .eq("student_id", data.studentId)
+      .order("updated_at", { ascending: false })
+      .limit(1)
+      .maybeSingle();
+
+    const payload = {
+      student_id: data.studentId,
+      title: data.title ?? (data.kind === "training" ? "Treino" : "Plano nutricional"),
+      active: true,
+      pdf_path: data.pdf_path,
+      pdf_name: data.pdf_name,
+      updated_at: new Date().toISOString(),
+    };
+
+    let oldPath: string | null = null;
+    if (existing) {
+      oldPath = existing.pdf_path ?? null;
+      const { error } = await supabase.from(table).update(payload).eq("id", existing.id);
+      if (error) throw new Error(error.message);
+    } else {
+      const { error } = await supabase.from(table).insert(payload);
+      if (error) throw new Error(error.message);
+    }
+
+    if (oldPath && oldPath !== data.pdf_path) {
+      const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+      await supabaseAdmin.storage.from("plans").remove([oldPath]);
+    }
+    return { ok: true };
+  });
+
+export const getStudentPlanPdfUrl = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: unknown) =>
+    z.object({ studentId: z.string().uuid(), kind: planKind }).parse(d),
+  )
+  .handler(async ({ data, context }) => {
+    await assertTrainer(context);
+    const table = data.kind === "training" ? "training_plans" : "nutrition_plans";
+    const { data: plan } = await context.supabase
+      .from(table)
+      .select("pdf_path,pdf_name")
+      .eq("student_id", data.studentId)
+      .order("updated_at", { ascending: false })
+      .limit(1)
+      .maybeSingle();
+    if (!plan?.pdf_path) return { url: null, name: null };
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { data: signed } = await supabaseAdmin.storage
+      .from("plans")
+      .createSignedUrl(plan.pdf_path, 3600);
+    return { url: signed?.signedUrl ?? null, name: plan.pdf_name };
+  });
+
+export const getMyPlanPdfUrl = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: unknown) => z.object({ kind: planKind }).parse(d))
+  .handler(async ({ data, context }) => {
+    const { supabase, userId } = context;
+    const table = data.kind === "training" ? "training_plans" : "nutrition_plans";
+    const { data: plan } = await supabase
+      .from(table)
+      .select("pdf_path,pdf_name,title")
+      .eq("student_id", userId)
+      .eq("active", true)
+      .order("updated_at", { ascending: false })
+      .limit(1)
+      .maybeSingle();
+    if (!plan?.pdf_path) return { url: null, name: null, title: null };
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { data: signed } = await supabaseAdmin.storage
+      .from("plans")
+      .createSignedUrl(plan.pdf_path, 3600);
+    return { url: signed?.signedUrl ?? null, name: plan.pdf_name, title: plan.title };
+  });
+
+export const deletePlanPdf = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: unknown) =>
+    z.object({ studentId: z.string().uuid(), kind: planKind }).parse(d),
+  )
+  .handler(async ({ data, context }) => {
+    await assertTrainer(context);
+    const table = data.kind === "training" ? "training_plans" : "nutrition_plans";
+    const { data: plan } = await context.supabase
+      .from(table)
+      .select("id,pdf_path")
+      .eq("student_id", data.studentId)
+      .order("updated_at", { ascending: false })
+      .limit(1)
+      .maybeSingle();
+    if (!plan) return { ok: true };
+    if (plan.pdf_path) {
+      const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+      await supabaseAdmin.storage.from("plans").remove([plan.pdf_path]);
+    }
+    await context.supabase
+      .from(table)
+      .update({ pdf_path: null, pdf_name: null })
+      .eq("id", plan.id);
+    return { ok: true };
+  });

@@ -125,6 +125,8 @@ export type Database = {
           active: boolean
           general_notes: string | null
           id: string
+          pdf_name: string | null
+          pdf_path: string | null
           student_id: string
           title: string
           updated_at: string
@@ -133,6 +135,8 @@ export type Database = {
           active?: boolean
           general_notes?: string | null
           id?: string
+          pdf_name?: string | null
+          pdf_path?: string | null
           student_id: string
           title?: string
           updated_at?: string
@@ -141,6 +145,8 @@ export type Database = {
           active?: boolean
           general_notes?: string | null
           id?: string
+          pdf_name?: string | null
+          pdf_path?: string | null
           student_id?: string
           title?: string
           updated_at?: string
@@ -246,6 +252,8 @@ export type Database = {
         Row: {
           active: boolean
           id: string
+          pdf_name: string | null
+          pdf_path: string | null
           student_id: string
           title: string
           updated_at: string
@@ -253,6 +261,8 @@ export type Database = {
         Insert: {
           active?: boolean
           id?: string
+          pdf_name?: string | null
+          pdf_path?: string | null
           student_id: string
           title?: string
           updated_at?: string
@@ -260,6 +270,8 @@ export type Database = {
         Update: {
           active?: boolean
           id?: string
+          pdf_name?: string | null
+          pdf_path?: string | null
           student_id?: string
           title?: string
           updated_at?: string

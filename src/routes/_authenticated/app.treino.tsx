@@ -1,46 +1,32 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useSuspenseQuery } from "@tanstack/react-query";
+import { useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
-import { useState } from "react";
-import { getMyTraining } from "@/lib/squad.functions";
-import {
-  Accordion,
-  AccordionContent,
-  AccordionItem,
-  AccordionTrigger,
-} from "@/components/ui/accordion";
+import { getMyPlanPdfUrl } from "@/lib/squad.functions";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
-import { Play } from "lucide-react";
+import { FileText, ExternalLink } from "lucide-react";
 
 export const Route = createFileRoute("/_authenticated/app/treino")({
   component: TreinoPage,
 });
 
 function TreinoPage() {
-  const fetchTraining = useServerFn(getMyTraining);
-  const { data } = useSuspenseQuery({
-    queryKey: ["my-training"],
-    queryFn: () => fetchTraining(),
+  const fetchUrl = useServerFn(getMyPlanPdfUrl);
+  const { data, isLoading } = useQuery({
+    queryKey: ["my-training-pdf"],
+    queryFn: () => fetchUrl({ data: { kind: "training" } }),
   });
-  const [videoUrl, setVideoUrl] = useState<string | null>(null);
 
-  if (!data.plan) {
-    return (
-      <EmptyState text="Nenhum treino ativo ainda. Aguarde seu treinador liberar." />
-    );
+  if (isLoading) {
+    return <p className="text-center py-16 text-muted-foreground">Carregando...</p>;
   }
-  const groups: Record<string, typeof data.exercises> = {};
-  for (const ex of data.exercises) {
-    const key = ex.day_label || "TREINO";
-    groups[key] = groups[key] || [];
-    groups[key].push(ex);
+
+  if (!data?.url) {
+    return (
+      <div className="text-center py-16 text-muted-foreground">
+        Nenhum treino disponível ainda. Aguarde seu treinador enviar o PDF.
+      </div>
+    );
   }
 
   return (
@@ -49,81 +35,27 @@ function TreinoPage() {
         <p className="tactical-heading text-xs text-primary tracking-widest">
           PLANO ATIVO
         </p>
-        <h1 className="tactical-heading text-2xl">{data.plan.title || "Treino"}</h1>
+        <h1 className="tactical-heading text-2xl">{data.title || "Treino"}</h1>
         <div className="tactical-divider mt-2" />
       </div>
 
-      <Accordion type="multiple" defaultValue={Object.keys(groups)}>
-        {Object.entries(groups).map(([day, items]) => (
-          <AccordionItem key={day} value={day} className="border-border">
-            <AccordionTrigger className="tactical-heading text-left">
-              {day}
-            </AccordionTrigger>
-            <AccordionContent>
-              <div className="space-y-3">
-                {items.map((ex) => (
-                  <Card key={ex.id} className="p-3 bg-card border-border">
-                    <div className="flex items-start justify-between gap-2">
-                      <div className="flex-1">
-                        <h3 className="font-semibold text-foreground">
-                          {ex.exercise_name}
-                        </h3>
-                        <div className="text-xs text-muted-foreground mt-1 flex flex-wrap gap-x-3 gap-y-1">
-                          {ex.sets && <span>{ex.sets} séries</span>}
-                          {ex.reps && <span>{ex.reps} reps</span>}
-                          {ex.load && <span>Carga: {ex.load}</span>}
-                          {ex.rest && <span>Descanso: {ex.rest}</span>}
-                        </div>
-                        {ex.notes && (
-                          <p className="text-sm text-foreground/80 mt-2 whitespace-pre-wrap">
-                            {ex.notes}
-                          </p>
-                        )}
-                      </div>
-                      {ex.gallery?.youtube_url && (
-                        <Button
-                          size="sm"
-                          variant="outline"
-                          onClick={() => setVideoUrl(ex.gallery!.youtube_url)}
-                          className="tactical-heading text-xs"
-                        >
-                          <Play className="w-3 h-3 mr-1" />
-                          VÍDEO
-                        </Button>
-                      )}
-                    </div>
-                  </Card>
-                ))}
-              </div>
-            </AccordionContent>
-          </AccordionItem>
-        ))}
-      </Accordion>
+      <Card className="p-4 flex items-center gap-3">
+        <FileText className="w-6 h-6 text-primary shrink-0" />
+        <span className="flex-1 truncate text-sm">{data.name ?? "treino.pdf"}</span>
+        <Button asChild size="sm" variant="outline">
+          <a href={data.url} target="_blank" rel="noopener noreferrer">
+            <ExternalLink className="w-4 h-4 mr-1" /> ABRIR
+          </a>
+        </Button>
+      </Card>
 
-      <Dialog open={!!videoUrl} onOpenChange={(o) => !o && setVideoUrl(null)}>
-        <DialogContent className="max-w-2xl">
-          <DialogHeader>
-            <DialogTitle className="tactical-heading">EXECUÇÃO</DialogTitle>
-          </DialogHeader>
-          {videoUrl && <YouTubePlayer url={videoUrl} />}
-        </DialogContent>
-      </Dialog>
-    </div>
-  );
-}
-
-export function YouTubePlayer({ url }: { url: string }) {
-  const id = extractYouTubeId(url);
-  if (!id) return <p>Vídeo inválido</p>;
-  return (
-    <div className="aspect-video w-full">
-      <iframe
-        className="w-full h-full rounded-md"
-        src={`https://www.youtube-nocookie.com/embed/${id}`}
-        title="Vídeo do exercício"
-        allow="accelerometer; encrypted-media; gyroscope; picture-in-picture"
-        allowFullScreen
-      />
+      <div className="w-full h-[70vh] rounded-md overflow-hidden border border-border bg-card">
+        <iframe
+          src={data.url}
+          title="PDF do treino"
+          className="w-full h-full"
+        />
+      </div>
     </div>
   );
 }
@@ -143,10 +75,18 @@ export function extractYouTubeId(url: string): string | null {
   }
 }
 
-function EmptyState({ text }: { text: string }) {
+export function YouTubePlayer({ url }: { url: string }) {
+  const id = extractYouTubeId(url);
+  if (!id) return <p>Vídeo inválido</p>;
   return (
-    <div className="text-center py-16 text-muted-foreground">
-      <p>{text}</p>
+    <div className="aspect-video w-full">
+      <iframe
+        className="w-full h-full rounded-md"
+        src={`https://www.youtube-nocookie.com/embed/${id}`}
+        title="Vídeo do exercício"
+        allow="accelerometer; encrypted-media; gyroscope; picture-in-picture"
+        allowFullScreen
+      />
     </div>
   );
 }
