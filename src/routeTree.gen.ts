@@ -17,6 +17,7 @@ import { Route as AuthenticatedAppRouteImport } from './routes/_authenticated/ap
 import { Route as AuthenticatedAppIndexRouteImport } from './routes/_authenticated/app.index'
 import { Route as AuthenticatedAppTreinoRouteImport } from './routes/_authenticated/app.treino'
 import { Route as AuthenticatedAppNutricionalRouteImport } from './routes/_authenticated/app.nutricional'
+import { Route as AuthenticatedAppGaleriaRouteImport } from './routes/_authenticated/app.galeria'
 
 const ResetPasswordRoute = ResetPasswordRouteImport.update({
   id: '/reset-password',
@@ -58,12 +59,18 @@ const AuthenticatedAppNutricionalRoute =
     path: '/nutricional',
     getParentRoute: () => AuthenticatedAppRoute,
   } as any)
+const AuthenticatedAppGaleriaRoute = AuthenticatedAppGaleriaRouteImport.update({
+  id: '/galeria',
+  path: '/galeria',
+  getParentRoute: () => AuthenticatedAppRoute,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/auth': typeof AuthRoute
   '/reset-password': typeof ResetPasswordRoute
   '/app': typeof AuthenticatedAppRouteWithChildren
+  '/app/galeria': typeof AuthenticatedAppGaleriaRoute
   '/app/nutricional': typeof AuthenticatedAppNutricionalRoute
   '/app/treino': typeof AuthenticatedAppTreinoRoute
   '/app/': typeof AuthenticatedAppIndexRoute
@@ -72,6 +79,7 @@ export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/auth': typeof AuthRoute
   '/reset-password': typeof ResetPasswordRoute
+  '/app/galeria': typeof AuthenticatedAppGaleriaRoute
   '/app/nutricional': typeof AuthenticatedAppNutricionalRoute
   '/app/treino': typeof AuthenticatedAppTreinoRoute
   '/app': typeof AuthenticatedAppIndexRoute
@@ -83,6 +91,7 @@ export interface FileRoutesById {
   '/auth': typeof AuthRoute
   '/reset-password': typeof ResetPasswordRoute
   '/_authenticated/app': typeof AuthenticatedAppRouteWithChildren
+  '/_authenticated/app/galeria': typeof AuthenticatedAppGaleriaRoute
   '/_authenticated/app/nutricional': typeof AuthenticatedAppNutricionalRoute
   '/_authenticated/app/treino': typeof AuthenticatedAppTreinoRoute
   '/_authenticated/app/': typeof AuthenticatedAppIndexRoute
@@ -94,6 +103,7 @@ export interface FileRouteTypes {
     | '/auth'
     | '/reset-password'
     | '/app'
+    | '/app/galeria'
     | '/app/nutricional'
     | '/app/treino'
     | '/app/'
@@ -102,6 +112,7 @@ export interface FileRouteTypes {
     | '/'
     | '/auth'
     | '/reset-password'
+    | '/app/galeria'
     | '/app/nutricional'
     | '/app/treino'
     | '/app'
@@ -112,6 +123,7 @@ export interface FileRouteTypes {
     | '/auth'
     | '/reset-password'
     | '/_authenticated/app'
+    | '/_authenticated/app/galeria'
     | '/_authenticated/app/nutricional'
     | '/_authenticated/app/treino'
     | '/_authenticated/app/'
@@ -182,16 +194,25 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedAppNutricionalRouteImport
       parentRoute: typeof AuthenticatedAppRoute
     }
+    '/_authenticated/app/galeria': {
+      id: '/_authenticated/app/galeria'
+      path: '/galeria'
+      fullPath: '/app/galeria'
+      preLoaderRoute: typeof AuthenticatedAppGaleriaRouteImport
+      parentRoute: typeof AuthenticatedAppRoute
+    }
   }
 }
 
 interface AuthenticatedAppRouteChildren {
+  AuthenticatedAppGaleriaRoute: typeof AuthenticatedAppGaleriaRoute
   AuthenticatedAppNutricionalRoute: typeof AuthenticatedAppNutricionalRoute
   AuthenticatedAppTreinoRoute: typeof AuthenticatedAppTreinoRoute
   AuthenticatedAppIndexRoute: typeof AuthenticatedAppIndexRoute
 }
 
 const AuthenticatedAppRouteChildren: AuthenticatedAppRouteChildren = {
+  AuthenticatedAppGaleriaRoute: AuthenticatedAppGaleriaRoute,
   AuthenticatedAppNutricionalRoute: AuthenticatedAppNutricionalRoute,
   AuthenticatedAppTreinoRoute: AuthenticatedAppTreinoRoute,
   AuthenticatedAppIndexRoute: AuthenticatedAppIndexRoute,
