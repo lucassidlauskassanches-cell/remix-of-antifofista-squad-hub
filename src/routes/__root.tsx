@@ -81,7 +81,7 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
         name: "viewport",
         content: "width=device-width, initial-scale=1, viewport-fit=cover",
       },
-      { title: "Antifofista Squad — Treino & Nutrição" },
+      { title: "Antifofista Squad" },
       {
         name: "description",
         content:
@@ -98,6 +98,12 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary" },
+      { name: "twitter:title", content: "Antifofista Squad" },
+      { name: "description", content: "Antifofista Squad Hub is a PWA for a training and nutrition consultancy." },
+      { property: "og:description", content: "Antifofista Squad Hub is a PWA for a training and nutrition consultancy." },
+      { name: "twitter:description", content: "Antifofista Squad Hub is a PWA for a training and nutrition consultancy." },
+      { property: "og:image", content: "https://storage.googleapis.com/gpt-engineer-file-uploads/H8w5s4SXQ4VdqAnu0uIuVXOQFyu2/social-images/social-1781577807543-PHOTO-2026-04-25-01-01-05.webp" },
+      { name: "twitter:image", content: "https://storage.googleapis.com/gpt-engineer-file-uploads/H8w5s4SXQ4VdqAnu0uIuVXOQFyu2/social-images/social-1781577807543-PHOTO-2026-04-25-01-01-05.webp" },
     ],
     links: [
       { rel: "stylesheet", href: appCss },
