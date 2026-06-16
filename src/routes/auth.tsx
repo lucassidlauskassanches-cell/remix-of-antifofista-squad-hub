@@ -8,7 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
-import { Shield } from "lucide-react";
+import logoAsset from "@/assets/logo-antifofista.png.asset.json";
 
 export const Route = createFileRoute("/auth")({
   ssr: false,
@@ -100,15 +100,11 @@ function AuthPage() {
     <div className="min-h-screen flex flex-col items-center justify-center bg-background px-6 py-10">
       <div className="w-full max-w-sm">
         <div className="flex flex-col items-center mb-8">
-          <div className="w-20 h-20 rounded-md bg-primary/10 flex items-center justify-center border border-primary/30">
-            <Shield className="w-10 h-10 text-primary" />
-          </div>
-          <h1 className="tactical-heading text-3xl mt-4 text-foreground">
-            ANTIFOFISTA
-          </h1>
-          <p className="tactical-heading text-sm text-primary tracking-[0.3em]">
-            S Q U A D
-          </p>
+          <img
+            src={logoAsset.url}
+            alt="Antifofista Squad"
+            className="h-24 w-auto object-contain"
+          />
           <div className="tactical-divider w-full mt-4" />
         </div>
 
