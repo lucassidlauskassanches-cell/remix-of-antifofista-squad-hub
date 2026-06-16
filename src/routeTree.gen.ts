@@ -18,6 +18,7 @@ import { Route as AuthenticatedAppIndexRouteImport } from './routes/_authenticat
 import { Route as AuthenticatedAppTreinoRouteImport } from './routes/_authenticated/app.treino'
 import { Route as AuthenticatedAppNutricionalRouteImport } from './routes/_authenticated/app.nutricional'
 import { Route as AuthenticatedAppGaleriaRouteImport } from './routes/_authenticated/app.galeria'
+import { Route as AuthenticatedAppAdminGaleriaRouteImport } from './routes/_authenticated/app.admin.galeria'
 import { Route as AuthenticatedAppAdminAlunosRouteImport } from './routes/_authenticated/app.admin.alunos'
 import { Route as AuthenticatedAppAdminAlunosNovoRouteImport } from './routes/_authenticated/app.admin.alunos.novo'
 import { Route as AuthenticatedAppAdminAlunosIdRouteImport } from './routes/_authenticated/app.admin.alunos.$id'
@@ -67,6 +68,12 @@ const AuthenticatedAppGaleriaRoute = AuthenticatedAppGaleriaRouteImport.update({
   path: '/galeria',
   getParentRoute: () => AuthenticatedAppRoute,
 } as any)
+const AuthenticatedAppAdminGaleriaRoute =
+  AuthenticatedAppAdminGaleriaRouteImport.update({
+    id: '/admin/galeria',
+    path: '/admin/galeria',
+    getParentRoute: () => AuthenticatedAppRoute,
+  } as any)
 const AuthenticatedAppAdminAlunosRoute =
   AuthenticatedAppAdminAlunosRouteImport.update({
     id: '/admin/alunos',
@@ -96,6 +103,7 @@ export interface FileRoutesByFullPath {
   '/app/treino': typeof AuthenticatedAppTreinoRoute
   '/app/': typeof AuthenticatedAppIndexRoute
   '/app/admin/alunos': typeof AuthenticatedAppAdminAlunosRouteWithChildren
+  '/app/admin/galeria': typeof AuthenticatedAppAdminGaleriaRoute
   '/app/admin/alunos/$id': typeof AuthenticatedAppAdminAlunosIdRoute
   '/app/admin/alunos/novo': typeof AuthenticatedAppAdminAlunosNovoRoute
 }
@@ -108,6 +116,7 @@ export interface FileRoutesByTo {
   '/app/treino': typeof AuthenticatedAppTreinoRoute
   '/app': typeof AuthenticatedAppIndexRoute
   '/app/admin/alunos': typeof AuthenticatedAppAdminAlunosRouteWithChildren
+  '/app/admin/galeria': typeof AuthenticatedAppAdminGaleriaRoute
   '/app/admin/alunos/$id': typeof AuthenticatedAppAdminAlunosIdRoute
   '/app/admin/alunos/novo': typeof AuthenticatedAppAdminAlunosNovoRoute
 }
@@ -123,6 +132,7 @@ export interface FileRoutesById {
   '/_authenticated/app/treino': typeof AuthenticatedAppTreinoRoute
   '/_authenticated/app/': typeof AuthenticatedAppIndexRoute
   '/_authenticated/app/admin/alunos': typeof AuthenticatedAppAdminAlunosRouteWithChildren
+  '/_authenticated/app/admin/galeria': typeof AuthenticatedAppAdminGaleriaRoute
   '/_authenticated/app/admin/alunos/$id': typeof AuthenticatedAppAdminAlunosIdRoute
   '/_authenticated/app/admin/alunos/novo': typeof AuthenticatedAppAdminAlunosNovoRoute
 }
@@ -138,6 +148,7 @@ export interface FileRouteTypes {
     | '/app/treino'
     | '/app/'
     | '/app/admin/alunos'
+    | '/app/admin/galeria'
     | '/app/admin/alunos/$id'
     | '/app/admin/alunos/novo'
   fileRoutesByTo: FileRoutesByTo
@@ -150,6 +161,7 @@ export interface FileRouteTypes {
     | '/app/treino'
     | '/app'
     | '/app/admin/alunos'
+    | '/app/admin/galeria'
     | '/app/admin/alunos/$id'
     | '/app/admin/alunos/novo'
   id:
@@ -164,6 +176,7 @@ export interface FileRouteTypes {
     | '/_authenticated/app/treino'
     | '/_authenticated/app/'
     | '/_authenticated/app/admin/alunos'
+    | '/_authenticated/app/admin/galeria'
     | '/_authenticated/app/admin/alunos/$id'
     | '/_authenticated/app/admin/alunos/novo'
   fileRoutesById: FileRoutesById
@@ -240,6 +253,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedAppGaleriaRouteImport
       parentRoute: typeof AuthenticatedAppRoute
     }
+    '/_authenticated/app/admin/galeria': {
+      id: '/_authenticated/app/admin/galeria'
+      path: '/admin/galeria'
+      fullPath: '/app/admin/galeria'
+      preLoaderRoute: typeof AuthenticatedAppAdminGaleriaRouteImport
+      parentRoute: typeof AuthenticatedAppRoute
+    }
     '/_authenticated/app/admin/alunos': {
       id: '/_authenticated/app/admin/alunos'
       path: '/admin/alunos'
@@ -286,6 +306,7 @@ interface AuthenticatedAppRouteChildren {
   AuthenticatedAppTreinoRoute: typeof AuthenticatedAppTreinoRoute
   AuthenticatedAppIndexRoute: typeof AuthenticatedAppIndexRoute
   AuthenticatedAppAdminAlunosRoute: typeof AuthenticatedAppAdminAlunosRouteWithChildren
+  AuthenticatedAppAdminGaleriaRoute: typeof AuthenticatedAppAdminGaleriaRoute
 }
 
 const AuthenticatedAppRouteChildren: AuthenticatedAppRouteChildren = {
@@ -295,6 +316,7 @@ const AuthenticatedAppRouteChildren: AuthenticatedAppRouteChildren = {
   AuthenticatedAppIndexRoute: AuthenticatedAppIndexRoute,
   AuthenticatedAppAdminAlunosRoute:
     AuthenticatedAppAdminAlunosRouteWithChildren,
+  AuthenticatedAppAdminGaleriaRoute: AuthenticatedAppAdminGaleriaRoute,
 }
 
 const AuthenticatedAppRouteWithChildren =
