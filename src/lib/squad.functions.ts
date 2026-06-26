@@ -369,24 +369,41 @@ export const getStudentDetail = createServerFn({ method: "POST" })
   .handler(async ({ data, context }) => {
     await assertTrainer(context);
     const { studentId } = data;
-    const [{ data: profile }, { data: trainingPlan }, { data: nutritionPlan }] =
-      await Promise.all([
-        context.supabase.from("profiles").select("*").eq("id", studentId).maybeSingle(),
-        context.supabase
-          .from("training_plans")
-          .select("*")
-          .eq("student_id", studentId)
-          .order("updated_at", { ascending: false })
-          .limit(1)
-          .maybeSingle(),
-        context.supabase
-          .from("nutrition_plans")
-          .select("*")
-          .eq("student_id", studentId)
-          .order("updated_at", { ascending: false })
-          .limit(1)
-          .maybeSingle(),
-      ]);
+    const [
+      { data: profile },
+      { data: trainingPlan },
+      { data: nutritionPlan },
+      { data: actionPlan },
+      { data: logbook },
+    ] = await Promise.all([
+      context.supabase.from("profiles").select("*").eq("id", studentId).maybeSingle(),
+      context.supabase
+        .from("training_plans")
+        .select("*")
+        .eq("student_id", studentId)
+        .order("updated_at", { ascending: false })
+        .limit(1)
+        .maybeSingle(),
+      context.supabase
+        .from("nutrition_plans")
+        .select("*")
+        .eq("student_id", studentId)
+        .order("updated_at", { ascending: false })
+        .limit(1)
+        .maybeSingle(),
+      context.supabase
+        .from("action_plans")
+        .select("*")
+        .eq("student_id", studentId)
+        .order("updated_at", { ascending: false })
+        .limit(1)
+        .maybeSingle(),
+      context.supabase
+        .from("logbook_entries")
+        .select("*")
+        .eq("student_id", studentId)
+        .order("order_index"),
+    ]);
 
     const exercises = trainingPlan
       ? (
