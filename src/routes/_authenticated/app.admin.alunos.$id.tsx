@@ -48,13 +48,11 @@ function AlunoEditor() {
       </div>
 
       <Tabs defaultValue="treino">
-        <TabsList className="grid grid-cols-2 w-full">
-          <TabsTrigger value="treino" className="tactical-heading">
-            TREINO
-          </TabsTrigger>
-          <TabsTrigger value="nutricao" className="tactical-heading">
-            NUTRIÇÃO
-          </TabsTrigger>
+        <TabsList className="grid grid-cols-4 w-full">
+          <TabsTrigger value="treino" className="tactical-heading">TREINO</TabsTrigger>
+          <TabsTrigger value="nutricao" className="tactical-heading">NUTRIÇÃO</TabsTrigger>
+          <TabsTrigger value="acao" className="tactical-heading">AÇÃO</TabsTrigger>
+          <TabsTrigger value="logbook" className="tactical-heading">LOGBOOK</TabsTrigger>
         </TabsList>
         <TabsContent value="treino" className="mt-4">
           <PdfUploader
@@ -73,6 +71,18 @@ function AlunoEditor() {
             hasFile={!!data.nutritionPlan?.pdf_path}
             onChanged={() => refetch()}
           />
+        </TabsContent>
+        <TabsContent value="acao" className="mt-4">
+          <PdfUploader
+            studentId={id}
+            kind="action"
+            currentName={(data as any).actionPlan?.pdf_name ?? null}
+            hasFile={!!(data as any).actionPlan?.pdf_path}
+            onChanged={() => refetch()}
+          />
+        </TabsContent>
+        <TabsContent value="logbook" className="mt-4">
+          <LogbookReadOnly rows={(data as any).logbook ?? []} />
         </TabsContent>
       </Tabs>
     </div>
