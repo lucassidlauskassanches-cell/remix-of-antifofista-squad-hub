@@ -23,6 +23,21 @@ function createSupabaseClient() {
       storage: typeof window !== 'undefined' ? localStorage : undefined,
       persistSession: true,
       autoRefreshToken: true,
+      detectSessionInUrl: typeof window !== 'undefined'
+        ? (url, params) => {
+            if (url.pathname === '/reset-password') {
+              try {
+                sessionStorage.setItem(
+                  'antifofista_password_recovery_href',
+                  url.toString(),
+                );
+              } catch {
+                // ignore storage restrictions
+              }
+            }
+            return url.pathname !== '/reset-password' && Boolean(params.access_token);
+          }
+        : true,
     }
   });
 }
