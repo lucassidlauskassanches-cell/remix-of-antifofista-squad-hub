@@ -99,11 +99,28 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary" },
       { name: "twitter:title", content: "Antifofista Squad" },
-      { name: "description", content: "Antifofista Squad Hub is a PWA for a training and nutrition consultancy." },
-      { property: "og:description", content: "Antifofista Squad Hub is a PWA for a training and nutrition consultancy." },
-      { name: "twitter:description", content: "Antifofista Squad Hub is a PWA for a training and nutrition consultancy." },
-      { property: "og:image", content: "https://storage.googleapis.com/gpt-engineer-file-uploads/H8w5s4SXQ4VdqAnu0uIuVXOQFyu2/social-images/social-1781577807543-PHOTO-2026-04-25-01-01-05.webp" },
-      { name: "twitter:image", content: "https://storage.googleapis.com/gpt-engineer-file-uploads/H8w5s4SXQ4VdqAnu0uIuVXOQFyu2/social-images/social-1781577807543-PHOTO-2026-04-25-01-01-05.webp" },
+      {
+        name: "description",
+        content: "Antifofista Squad Hub is a PWA for a training and nutrition consultancy.",
+      },
+      {
+        property: "og:description",
+        content: "Antifofista Squad Hub is a PWA for a training and nutrition consultancy.",
+      },
+      {
+        name: "twitter:description",
+        content: "Antifofista Squad Hub is a PWA for a training and nutrition consultancy.",
+      },
+      {
+        property: "og:image",
+        content:
+          "https://storage.googleapis.com/gpt-engineer-file-uploads/H8w5s4SXQ4VdqAnu0uIuVXOQFyu2/social-images/social-1781577807543-PHOTO-2026-04-25-01-01-05.webp",
+      },
+      {
+        name: "twitter:image",
+        content:
+          "https://storage.googleapis.com/gpt-engineer-file-uploads/H8w5s4SXQ4VdqAnu0uIuVXOQFyu2/social-images/social-1781577807543-PHOTO-2026-04-25-01-01-05.webp",
+      },
     ],
     links: [
       { rel: "stylesheet", href: appCss },
@@ -160,12 +177,7 @@ function RootComponent() {
     import("@/integrations/supabase/client").then(({ supabase }) => {
       if (cancelled) return;
       const { data } = supabase.auth.onAuthStateChange((event) => {
-        if (
-          event !== "SIGNED_IN" &&
-          event !== "SIGNED_OUT" &&
-          event !== "USER_UPDATED"
-        )
-          return;
+        if (event !== "SIGNED_IN" && event !== "SIGNED_OUT" && event !== "USER_UPDATED") return;
         if (event === "SIGNED_IN" || event === "SIGNED_OUT") {
           queryClient.clear();
         }

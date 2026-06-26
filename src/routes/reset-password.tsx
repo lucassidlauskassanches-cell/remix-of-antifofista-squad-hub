@@ -33,8 +33,7 @@ function getResetParams(href = window.location.href) {
 
   return {
     accessToken: searchParams.get("access_token") ?? hashParams.get("access_token"),
-    refreshToken:
-      searchParams.get("refresh_token") ?? hashParams.get("refresh_token"),
+    refreshToken: searchParams.get("refresh_token") ?? hashParams.get("refresh_token"),
     code: searchParams.get("code") ?? hashParams.get("code"),
     tokenHash:
       searchParams.get("token_hash") ??
@@ -51,10 +50,12 @@ function getResetParams(href = window.location.href) {
   };
 }
 
-async function persistReturnedSession(session?: {
-  access_token: string;
-  refresh_token: string;
-} | null) {
+async function persistReturnedSession(
+  session?: {
+    access_token: string;
+    refresh_token: string;
+  } | null,
+) {
   if (!session?.access_token || !session.refresh_token) return false;
 
   const { error } = await supabase.auth.setSession({
@@ -84,9 +85,7 @@ async function updatePasswordWithAccessToken(accessToken: string, password: stri
 
   if (!response.ok) {
     const body = await response.json().catch(() => null);
-    throw new Error(
-      body?.msg ?? body?.message ?? "Não foi possível atualizar a senha.",
-    );
+    throw new Error(body?.msg ?? body?.message ?? "Não foi possível atualizar a senha.");
   }
 }
 
@@ -118,9 +117,7 @@ function ResetPage() {
   const [ready, setReady] = useState(false);
   const [hasSession, setHasSession] = useState(false);
   const [recoveryProof, setRecoveryProof] = useState<RecoveryProof | null>(null);
-  const [recoveryAccessToken, setRecoveryAccessToken] = useState<string | null>(
-    null,
-  );
+  const [recoveryAccessToken, setRecoveryAccessToken] = useState<string | null>(null);
 
   useEffect(() => {
     let cancelled = false;
@@ -151,11 +148,7 @@ function ResetPage() {
           access_token: accessToken,
           refresh_token: refreshToken,
         });
-        if (
-          sessionError &&
-          !resolvedAccessToken &&
-          !(await waitForRecoverySession(8))
-        ) {
+        if (sessionError && !resolvedAccessToken && !(await waitForRecoverySession(8))) {
           if (!cancelled) {
             toast.error("Link inválido ou expirado. Solicite novo e-mail.");
             setReady(true);
@@ -235,7 +228,7 @@ function ResetPage() {
     if (!accessToken && !recoveryProof) {
       setLoading(false);
       toast.error(
-        "Sessão de recuperação ausente. Abra novamente o link do e-mail neste mesmo navegador."
+        "Sessão de recuperação ausente. Abra novamente o link do e-mail neste mesmo navegador.",
       );
       return;
     }
@@ -253,9 +246,7 @@ function ResetPage() {
       await supabase.auth.signOut();
       navigate({ to: "/auth", replace: true });
     } catch (error) {
-      toast.error(
-        "Erro: " + (error instanceof Error ? error.message : "falha ao salvar"),
-      );
+      toast.error("Erro: " + (error instanceof Error ? error.message : "falha ao salvar"));
     } finally {
       setLoading(false);
     }
@@ -267,16 +258,14 @@ function ResetPage() {
         <h1 className="tactical-heading text-2xl">DEFINIR NOVA SENHA</h1>
 
         {!ready && (
-          <p className="text-sm text-muted-foreground">
-            Validando link de recuperação...
-          </p>
+          <p className="text-sm text-muted-foreground">Validando link de recuperação...</p>
         )}
 
         {ready && !hasSession && (
           <div className="text-sm text-destructive space-y-2">
             <p>
-              Não encontramos uma sessão de recuperação ativa. Isso acontece se
-              o link expirou ou foi aberto em outro navegador.
+              Não encontramos uma sessão de recuperação ativa. Isso acontece se o link expirou ou
+              foi aberto em outro navegador.
             </p>
             <Button
               type="button"

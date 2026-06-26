@@ -46,13 +46,10 @@ export const resetPasswordWithRecoveryProof = createServerFn({ method: "POST" })
       throw new Error("Link inválido ou expirado. Solicite novo e-mail.");
     }
 
-    const { supabaseAdmin } = await import(
-      "@/integrations/supabase/client.server"
-    );
-    const { error: updateError } = await supabaseAdmin.auth.admin.updateUserById(
-      verified.user.id,
-      { password: data.password },
-    );
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { error: updateError } = await supabaseAdmin.auth.admin.updateUserById(verified.user.id, {
+      password: data.password,
+    });
 
     if (updateError) throw new Error(updateError.message);
     return { ok: true };
