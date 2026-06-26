@@ -36,7 +36,11 @@ function AuthPage() {
     try {
       const ctx = await fetchMyContext();
       navigate({
-        to: ctx.isTreinador ? "/app/admin/alunos" : "/app/treino",
+        to: ctx.isAdmin
+          ? "/app/admin/treinadores"
+          : ctx.isTreinador
+            ? "/app/admin/alunos"
+            : "/app/treino",
         replace: true,
       });
     } catch {
