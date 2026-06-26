@@ -666,7 +666,7 @@ export const savePlanPdf = createServerFn({ method: "POST" })
 
     const payload = {
       student_id: data.studentId,
-      title: data.title ?? (data.kind === "training" ? "Treino" : "Plano nutricional"),
+      title: data.title ?? defaultTitleForKind(data.kind),
       active: true,
       pdf_path: data.pdf_path,
       pdf_name: data.pdf_name,
