@@ -1,7 +1,8 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
+import { createClient } from "@supabase/supabase-js";
 import { useEffect, useState } from "react";
-import { supabase } from "@/integrations/supabase/client";
+import type { Database } from "@/integrations/supabase/types";
 import { resetPasswordWithRecoveryProof } from "@/lib/password-reset.functions";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -14,9 +15,28 @@ type RecoveryProof = {
   email?: string;
 };
 
+function getRecoveryClient() {
+  const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+  const supabaseKey = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY;
+  if (!supabaseUrl || !supabaseKey) {
+    throw new Error("Configuração de autenticação indisponível.");
+  }
+
+  return createClient<Database>(supabaseUrl, supabaseKey, {
+    auth: {
+      storage: window.localStorage,
+      persistSession: true,
+      autoRefreshToken: true,
+      detectSessionInUrl: false,
+      flowType: "implicit",
+    },
+  });
+}
+
 async function waitForRecoverySession(attempts = 20) {
+  const recoveryClient = getRecoveryClient();
   for (let i = 0; i < attempts; i++) {
-    const { data } = await supabase.auth.getSession();
+    const { data } = await recoveryClient.auth.getSession();
     if (data.session) return data.session;
     await new Promise((resolve) => setTimeout(resolve, 150));
   }
@@ -50,6 +70,31 @@ function getResetParams(href = window.location.href) {
   };
 }
 
+function mergeResetParams(hrefs: string[]) {
+  return hrefs.map((href) => getResetParams(href)).reduce(
+    (merged, params) => ({
+      accessToken: merged.accessToken ?? params.accessToken,
+      refreshToken: merged.refreshToken ?? params.refreshToken,
+      code: merged.code ?? params.code,
+      tokenHash: merged.tokenHash ?? params.tokenHash,
+      token: merged.token ?? params.token,
+      email: merged.email ?? params.email,
+      type: merged.type ?? params.type,
+      error: merged.error ?? params.error,
+    }),
+    {
+      accessToken: null,
+      refreshToken: null,
+      code: null,
+      tokenHash: null,
+      token: null,
+      email: null,
+      type: null,
+      error: null,
+    } as ReturnType<typeof getResetParams>,
+  );
+}
+
 async function persistReturnedSession(
   session?: {
     access_token: string;
@@ -58,7 +103,8 @@ async function persistReturnedSession(
 ) {
   if (!session?.access_token || !session.refresh_token) return false;
 
-  const { error } = await supabase.auth.setSession({
+  const recoveryClient = getRecoveryClient();
+  const { error } = await recoveryClient.auth.setSession({
     access_token: session.access_token,
     refresh_token: session.refresh_token,
   });
@@ -95,23 +141,32 @@ export const Route = createFileRoute("/reset-password")({
 });
 
 function getInitialRecoveryHref() {
+  return getInitialRecoveryHrefs()[0];
+}
+
+function getInitialRecoveryHrefs() {
   const href = window.location.href;
-  if (/(access_token|refresh_token|code=|token_hash|type=recovery|token=)/.test(href)) {
-    return href;
+  const hrefs = [href];
+  try {
+    const sessionHref = sessionStorage.getItem("antifofista_password_recovery_href");
+    const localHref = localStorage.getItem("antifofista_password_recovery_href");
+    if (sessionHref && !hrefs.includes(sessionHref)) hrefs.push(sessionHref);
+    if (localHref && !hrefs.includes(localHref)) hrefs.push(localHref);
+  } catch {
+    // ignore storage restrictions
   }
 
-  try {
-    const stored = sessionStorage.getItem("antifofista_password_recovery_href");
-    return stored || href;
-  } catch {
-    return href;
+  if (/(access_token|refresh_token|code=|token_hash|type=recovery|token=)/.test(href)) {
+    return hrefs;
   }
+  return hrefs;
 }
 
 function ResetPage() {
   const navigate = useNavigate();
   const resetWithProof = useServerFn(resetPasswordWithRecoveryProof);
   const [initialHref] = useState(getInitialRecoveryHref);
+  const [initialHrefs] = useState(getInitialRecoveryHrefs);
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
   const [ready, setReady] = useState(false);
@@ -123,9 +178,12 @@ function ResetPage() {
     let cancelled = false;
 
     async function init() {
-      const { accessToken, refreshToken, code, tokenHash, token, email, error } =
-        getResetParams(initialHref);
+      const { accessToken, refreshToken, code, tokenHash, token, email, error } = mergeResetParams([
+        initialHref,
+        ...initialHrefs,
+      ]);
       let resolvedAccessToken: string | null = null;
+      const recoveryClient = getRecoveryClient();
 
       if (error) {
         if (!cancelled) {
@@ -137,29 +195,28 @@ function ResetPage() {
 
       try {
         sessionStorage.removeItem("antifofista_password_recovery_href");
+        localStorage.removeItem("antifofista_password_recovery_href");
       } catch {
         // ignore storage restrictions (ex.: navegação privada)
       }
 
-      if (accessToken && refreshToken) {
+      if (accessToken) {
         resolvedAccessToken = accessToken;
         if (!cancelled) setRecoveryAccessToken(accessToken);
-        const { error: sessionError } = await supabase.auth.setSession({
-          access_token: accessToken,
-          refresh_token: refreshToken,
-        });
-        if (sessionError && !resolvedAccessToken && !(await waitForRecoverySession(8))) {
-          if (!cancelled) {
-            toast.error("Link inválido ou expirado. Solicite novo e-mail.");
-            setReady(true);
+        if (refreshToken) {
+          const { error: sessionError } = await recoveryClient.auth.setSession({
+            access_token: accessToken,
+            refresh_token: refreshToken,
+          });
+          if (sessionError && !(await waitForRecoverySession(8))) {
+            resolvedAccessToken = accessToken;
           }
-          return;
         }
         window.history.replaceState({}, "", "/reset-password");
       }
 
       if (code) {
-        const { data, error } = await supabase.auth.exchangeCodeForSession(code);
+        const { data, error } = await recoveryClient.auth.exchangeCodeForSession(code);
         if (data.session?.access_token && !cancelled) {
           resolvedAccessToken = data.session.access_token;
           setRecoveryAccessToken(data.session.access_token);
@@ -206,7 +263,8 @@ function ResetPage() {
 
     init();
 
-    const { data: sub } = supabase.auth.onAuthStateChange((event, session) => {
+    const recoveryClient = getRecoveryClient();
+    const { data: sub } = recoveryClient.auth.onAuthStateChange((event, session) => {
       if (event === "PASSWORD_RECOVERY" || (session && event === "SIGNED_IN")) {
         if (session?.access_token) setRecoveryAccessToken(session.access_token);
         setHasSession(true);
@@ -223,7 +281,8 @@ function ResetPage() {
   async function submit(e: React.FormEvent) {
     e.preventDefault();
     setLoading(true);
-    const { data: sessionData } = await supabase.auth.getSession();
+    const recoveryClient = getRecoveryClient();
+    const { data: sessionData } = await recoveryClient.auth.getSession();
     const accessToken = sessionData.session?.access_token ?? recoveryAccessToken;
     if (!accessToken && !recoveryProof) {
       setLoading(false);
@@ -234,16 +293,16 @@ function ResetPage() {
     }
 
     try {
-      if (accessToken && sessionData.session) {
-        const { error } = await supabase.auth.updateUser({ password });
-        if (error) await updatePasswordWithAccessToken(accessToken, password);
-      } else if (accessToken) {
+      if (accessToken) {
         await updatePasswordWithAccessToken(accessToken, password);
       } else if (recoveryProof) {
         await resetWithProof({ data: { ...recoveryProof, password } });
+      } else if (sessionData.session) {
+        const { error } = await recoveryClient.auth.updateUser({ password });
+        if (error) throw error;
       }
       toast.success("Senha atualizada. Entre com a nova senha.");
-      await supabase.auth.signOut();
+      await recoveryClient.auth.signOut();
       navigate({ to: "/auth", replace: true });
     } catch (error) {
       toast.error("Erro: " + (error instanceof Error ? error.message : "falha ao salvar"));
