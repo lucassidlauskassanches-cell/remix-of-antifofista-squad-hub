@@ -135,6 +135,11 @@ function RootShell({ children }: { children: ReactNode }) {
   return (
     <html lang="pt-BR" className="dark">
       <head>
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `try{var p=location.pathname;var s=location.search||"";var h=location.hash||"";if(p==="/reset-password"&&/(access_token|refresh_token|code=|token_hash|type=recovery|token=)/.test(s+h)){sessionStorage.setItem("antifofista_password_recovery_href",location.href)}}catch(e){}`,
+          }}
+        />
         <HeadContent />
       </head>
       <body>
