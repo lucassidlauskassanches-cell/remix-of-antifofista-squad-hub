@@ -433,7 +433,7 @@ export const getStudentDetail = createServerFn({ method: "POST" })
             .order("order_index")
         ).data ?? []
       : [];
-    return { profile, trainingPlan, exercises, nutritionPlan, meals, items };
+    return { profile, trainingPlan, exercises, nutritionPlan, meals, items, actionPlan, logbook: logbook ?? [] };
   });
 
 // ===== Trainer: save training =====
