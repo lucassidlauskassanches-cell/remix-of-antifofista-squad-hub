@@ -95,10 +95,20 @@ export const Route = createFileRoute("/reset-password")({
   component: ResetPage,
 });
 
+function getInitialRecoveryHref() {
+  const href = window.location.href;
+  if (/(access_token|refresh_token|code=|token_hash|type=recovery|token=)/.test(href)) {
+    return href;
+  }
+
+  const stored = sessionStorage.getItem("antifofista_password_recovery_href");
+  return stored || href;
+}
+
 function ResetPage() {
   const navigate = useNavigate();
   const resetWithProof = useServerFn(resetPasswordWithRecoveryProof);
-  const [initialHref] = useState(() => window.location.href);
+  const [initialHref] = useState(getInitialRecoveryHref);
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
   const [ready, setReady] = useState(false);
@@ -123,6 +133,8 @@ function ResetPage() {
         }
         return;
       }
+
+      sessionStorage.removeItem("antifofista_password_recovery_href");
 
       if (accessToken && refreshToken) {
         resolvedAccessToken = accessToken;
