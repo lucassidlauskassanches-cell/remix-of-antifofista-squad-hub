@@ -369,24 +369,41 @@ export const getStudentDetail = createServerFn({ method: "POST" })
   .handler(async ({ data, context }) => {
     await assertTrainer(context);
     const { studentId } = data;
-    const [{ data: profile }, { data: trainingPlan }, { data: nutritionPlan }] =
-      await Promise.all([
-        context.supabase.from("profiles").select("*").eq("id", studentId).maybeSingle(),
-        context.supabase
-          .from("training_plans")
-          .select("*")
-          .eq("student_id", studentId)
-          .order("updated_at", { ascending: false })
-          .limit(1)
-          .maybeSingle(),
-        context.supabase
-          .from("nutrition_plans")
-          .select("*")
-          .eq("student_id", studentId)
-          .order("updated_at", { ascending: false })
-          .limit(1)
-          .maybeSingle(),
-      ]);
+    const [
+      { data: profile },
+      { data: trainingPlan },
+      { data: nutritionPlan },
+      { data: actionPlan },
+      { data: logbook },
+    ] = await Promise.all([
+      context.supabase.from("profiles").select("*").eq("id", studentId).maybeSingle(),
+      context.supabase
+        .from("training_plans")
+        .select("*")
+        .eq("student_id", studentId)
+        .order("updated_at", { ascending: false })
+        .limit(1)
+        .maybeSingle(),
+      context.supabase
+        .from("nutrition_plans")
+        .select("*")
+        .eq("student_id", studentId)
+        .order("updated_at", { ascending: false })
+        .limit(1)
+        .maybeSingle(),
+      context.supabase
+        .from("action_plans")
+        .select("*")
+        .eq("student_id", studentId)
+        .order("updated_at", { ascending: false })
+        .limit(1)
+        .maybeSingle(),
+      context.supabase
+        .from("logbook_entries")
+        .select("*")
+        .eq("student_id", studentId)
+        .order("order_index"),
+    ]);
 
     const exercises = trainingPlan
       ? (
@@ -416,7 +433,7 @@ export const getStudentDetail = createServerFn({ method: "POST" })
             .order("order_index")
         ).data ?? []
       : [];
-    return { profile, trainingPlan, exercises, nutritionPlan, meals, items };
+    return { profile, trainingPlan, exercises, nutritionPlan, meals, items, actionPlan, logbook: logbook ?? [] };
   });
 
 // ===== Trainer: save training =====
@@ -633,7 +650,11 @@ export const deleteGalleryItem = createServerFn({ method: "POST" })
 
 // ===== Plan PDFs =====
 
-const planKind = z.enum(["training", "nutrition"]);
+const planKind = z.enum(["training", "nutrition", "action"]);
+const tableForKind = (k: "training" | "nutrition" | "action") =>
+  k === "training" ? "training_plans" : k === "nutrition" ? "nutrition_plans" : "action_plans";
+const defaultTitleForKind = (k: "training" | "nutrition" | "action") =>
+  k === "training" ? "Treino" : k === "nutrition" ? "Plano nutricional" : "Plano de ação";
 
 export const savePlanPdf = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
@@ -651,7 +672,7 @@ export const savePlanPdf = createServerFn({ method: "POST" })
   .handler(async ({ data, context }) => {
     await assertTrainer(context);
     const { supabase } = context;
-    const table = data.kind === "training" ? "training_plans" : "nutrition_plans";
+    const table = tableForKind(data.kind);
     const { data: existing } = await supabase
       .from(table)
       .select("id,pdf_path")
@@ -662,7 +683,7 @@ export const savePlanPdf = createServerFn({ method: "POST" })
 
     const payload = {
       student_id: data.studentId,
-      title: data.title ?? (data.kind === "training" ? "Treino" : "Plano nutricional"),
+      title: data.title ?? defaultTitleForKind(data.kind),
       active: true,
       pdf_path: data.pdf_path,
       pdf_name: data.pdf_name,
@@ -693,7 +714,7 @@ export const getStudentPlanPdfUrl = createServerFn({ method: "POST" })
   )
   .handler(async ({ data, context }) => {
     await assertTrainer(context);
-    const table = data.kind === "training" ? "training_plans" : "nutrition_plans";
+    const table = tableForKind(data.kind);
     const { data: plan } = await context.supabase
       .from(table)
       .select("pdf_path,pdf_name")
@@ -714,7 +735,7 @@ export const getMyPlanPdfUrl = createServerFn({ method: "POST" })
   .inputValidator((d: unknown) => z.object({ kind: planKind }).parse(d))
   .handler(async ({ data, context }) => {
     const { supabase, userId } = context;
-    const table = data.kind === "training" ? "training_plans" : "nutrition_plans";
+    const table = tableForKind(data.kind);
     const { data: plan } = await supabase
       .from(table)
       .select("pdf_path,pdf_name,title")
@@ -738,7 +759,7 @@ export const deletePlanPdf = createServerFn({ method: "POST" })
   )
   .handler(async ({ data, context }) => {
     await assertTrainer(context);
-    const table = data.kind === "training" ? "training_plans" : "nutrition_plans";
+    const table = tableForKind(data.kind);
     const { data: plan } = await context.supabase
       .from(table)
       .select("id,pdf_path")
@@ -755,5 +776,73 @@ export const deletePlanPdf = createServerFn({ method: "POST" })
       .from(table)
       .update({ pdf_path: null, pdf_name: null })
       .eq("id", plan.id);
+    return { ok: true };
+  });
+
+// ===== Logbook =====
+
+export const getMyLogbook = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }) => {
+    const { data } = await context.supabase
+      .from("logbook_entries")
+      .select("*")
+      .eq("student_id", context.userId)
+      .order("order_index");
+    return { rows: data ?? [] };
+  });
+
+const logbookEntryInput = z.object({
+  id: z.string().uuid().optional(),
+  exercise: z.string().trim().max(200).default(""),
+  load: z.string().trim().max(80).default(""),
+  reps: z.string().trim().max(80).default(""),
+  order_index: z.number().int().default(0),
+});
+
+export const saveLogbookEntry = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: unknown) => logbookEntryInput.parse(d))
+  .handler(async ({ data, context }) => {
+    const { supabase, userId } = context;
+    if (data.id) {
+      const { error } = await supabase
+        .from("logbook_entries")
+        .update({
+          exercise: data.exercise,
+          load: data.load,
+          reps: data.reps,
+          order_index: data.order_index,
+        })
+        .eq("id", data.id)
+        .eq("student_id", userId);
+      if (error) throw new Error(error.message);
+      return { id: data.id };
+    }
+    const { data: created, error } = await supabase
+      .from("logbook_entries")
+      .insert({
+        student_id: userId,
+        exercise: data.exercise,
+        load: data.load,
+        reps: data.reps,
+        order_index: data.order_index,
+      })
+      .select("id")
+      .single();
+    if (error) throw new Error(error.message);
+    return { id: created.id };
+  });
+
+export const deleteLogbookEntry = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: unknown) => z.object({ id: z.string().uuid() }).parse(d))
+  .handler(async ({ data, context }) => {
+    const { error } = await context.supabase
+      .from("logbook_entries")
+      .delete()
+      .eq("id", data.id)
+      .eq("student_id", context.userId);
+    if (error) throw new Error(error.message);
     return { ok: true };
   });

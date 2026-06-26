@@ -14,6 +14,39 @@ export type Database = {
   }
   public: {
     Tables: {
+      action_plans: {
+        Row: {
+          active: boolean
+          created_at: string
+          id: string
+          pdf_name: string | null
+          pdf_path: string | null
+          student_id: string
+          title: string | null
+          updated_at: string
+        }
+        Insert: {
+          active?: boolean
+          created_at?: string
+          id?: string
+          pdf_name?: string | null
+          pdf_path?: string | null
+          student_id: string
+          title?: string | null
+          updated_at?: string
+        }
+        Update: {
+          active?: boolean
+          created_at?: string
+          id?: string
+          pdf_name?: string | null
+          pdf_path?: string | null
+          student_id?: string
+          title?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
       exercise_gallery: {
         Row: {
           created_at: string
@@ -38,6 +71,39 @@ export type Database = {
           muscle_group?: string
           title?: string
           youtube_url?: string
+        }
+        Relationships: []
+      }
+      logbook_entries: {
+        Row: {
+          created_at: string
+          exercise: string
+          id: string
+          load: string
+          order_index: number
+          reps: string
+          student_id: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          exercise?: string
+          id?: string
+          load?: string
+          order_index?: number
+          reps?: string
+          student_id: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          exercise?: string
+          id?: string
+          load?: string
+          order_index?: number
+          reps?: string
+          student_id?: string
+          updated_at?: string
         }
         Relationships: []
       }
