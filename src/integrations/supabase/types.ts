@@ -77,6 +77,7 @@ export type Database = {
       logbook_entries: {
         Row: {
           created_at: string
+          entry_date: string
           exercise: string
           id: string
           load: string
@@ -87,6 +88,7 @@ export type Database = {
         }
         Insert: {
           created_at?: string
+          entry_date?: string
           exercise?: string
           id?: string
           load?: string
@@ -97,6 +99,7 @@ export type Database = {
         }
         Update: {
           created_at?: string
+          entry_date?: string
           exercise?: string
           id?: string
           load?: string

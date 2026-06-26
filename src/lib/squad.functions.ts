@@ -402,7 +402,8 @@ export const getStudentDetail = createServerFn({ method: "POST" })
         .from("logbook_entries")
         .select("*")
         .eq("student_id", studentId)
-        .order("order_index"),
+        .order("exercise", { ascending: true })
+        .order("entry_date", { ascending: true }),
     ]);
 
     const exercises = trainingPlan
@@ -788,7 +789,8 @@ export const getMyLogbook = createServerFn({ method: "GET" })
       .from("logbook_entries")
       .select("*")
       .eq("student_id", context.userId)
-      .order("order_index");
+      .order("exercise", { ascending: true })
+      .order("entry_date", { ascending: true });
     return { rows: data ?? [] };
   });
 
@@ -797,6 +799,7 @@ const logbookEntryInput = z.object({
   exercise: z.string().trim().max(200).default(""),
   load: z.string().trim().max(80).default(""),
   reps: z.string().trim().max(80).default(""),
+  entry_date: z.string().trim().max(10).default(""),
   order_index: z.number().int().default(0),
 });
 
@@ -805,6 +808,7 @@ export const saveLogbookEntry = createServerFn({ method: "POST" })
   .inputValidator((d: unknown) => logbookEntryInput.parse(d))
   .handler(async ({ data, context }) => {
     const { supabase, userId } = context;
+    const entryDate = data.entry_date || new Date().toISOString().split("T")[0];
     if (data.id) {
       const { error } = await supabase
         .from("logbook_entries")
@@ -812,6 +816,7 @@ export const saveLogbookEntry = createServerFn({ method: "POST" })
           exercise: data.exercise,
           load: data.load,
           reps: data.reps,
+          entry_date: entryDate,
           order_index: data.order_index,
         })
         .eq("id", data.id)
@@ -826,6 +831,7 @@ export const saveLogbookEntry = createServerFn({ method: "POST" })
         exercise: data.exercise,
         load: data.load,
         reps: data.reps,
+        entry_date: entryDate,
         order_index: data.order_index,
       })
       .select("id")

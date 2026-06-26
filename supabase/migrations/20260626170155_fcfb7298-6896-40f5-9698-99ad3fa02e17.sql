@@ -1,0 +1,1 @@
+ALTER TABLE public.logbook_entries ADD COLUMN entry_date date NOT NULL DEFAULT CURRENT_DATE;
