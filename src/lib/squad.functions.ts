@@ -633,7 +633,11 @@ export const deleteGalleryItem = createServerFn({ method: "POST" })
 
 // ===== Plan PDFs =====
 
-const planKind = z.enum(["training", "nutrition"]);
+const planKind = z.enum(["training", "nutrition", "action"]);
+const tableForKind = (k: "training" | "nutrition" | "action") =>
+  k === "training" ? "training_plans" : k === "nutrition" ? "nutrition_plans" : "action_plans";
+const defaultTitleForKind = (k: "training" | "nutrition" | "action") =>
+  k === "training" ? "Treino" : k === "nutrition" ? "Plano nutricional" : "Plano de ação";
 
 export const savePlanPdf = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
