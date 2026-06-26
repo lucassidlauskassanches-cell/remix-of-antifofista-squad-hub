@@ -402,7 +402,8 @@ export const getStudentDetail = createServerFn({ method: "POST" })
         .from("logbook_entries")
         .select("*")
         .eq("student_id", studentId)
-        .order("order_index"),
+        .order("exercise", { ascending: true })
+        .order("entry_date", { ascending: true }),
     ]);
 
     const exercises = trainingPlan
