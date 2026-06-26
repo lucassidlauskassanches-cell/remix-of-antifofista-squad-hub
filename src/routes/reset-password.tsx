@@ -26,15 +26,29 @@ function getResetParams() {
     code: searchParams.get("code") ?? hashParams.get("code"),
     tokenHash:
       searchParams.get("token_hash") ??
-      hashParams.get("token_hash") ??
-      searchParams.get("token") ??
-      hashParams.get("token"),
+      hashParams.get("token_hash"),
+    token: searchParams.get("token") ?? hashParams.get("token"),
+    email: searchParams.get("email") ?? hashParams.get("email"),
     error:
       searchParams.get("error_description") ??
       hashParams.get("error_description") ??
       searchParams.get("error") ??
       hashParams.get("error"),
   };
+}
+
+async function persistReturnedSession(session?: {
+  access_token: string;
+  refresh_token: string;
+} | null) {
+  if (!session?.access_token || !session.refresh_token) return false;
+
+  const { error } = await supabase.auth.setSession({
+    access_token: session.access_token,
+    refresh_token: session.refresh_token,
+  });
+
+  return !error || (await waitForRecoverySession(8));
 }
 
 export const Route = createFileRoute("/reset-password")({
@@ -53,7 +67,8 @@ function ResetPage() {
     let cancelled = false;
 
     async function init() {
-      const { accessToken, refreshToken, code, tokenHash, error } = getResetParams();
+      const { accessToken, refreshToken, code, tokenHash, token, email, error } =
+        getResetParams();
 
       if (error) {
         if (!cancelled) {
@@ -79,8 +94,9 @@ function ResetPage() {
       }
 
       if (code) {
-        const { error } = await supabase.auth.exchangeCodeForSession(code);
-        if (error && !(await waitForRecoverySession(8))) {
+        const { data, error } = await supabase.auth.exchangeCodeForSession(code);
+        const sessionPersisted = await persistReturnedSession(data.session);
+        if (error && !sessionPersisted && !(await waitForRecoverySession(8))) {
           if (!cancelled) {
             toast.error("Link inválido ou expirado. Solicite novo e-mail.");
             setReady(true);
@@ -91,11 +107,29 @@ function ResetPage() {
       }
 
       if (tokenHash) {
-        const { error } = await supabase.auth.verifyOtp({
+        const { data, error } = await supabase.auth.verifyOtp({
           token_hash: tokenHash,
           type: "recovery",
         });
-        if (error && !(await waitForRecoverySession(8))) {
+        const sessionPersisted = await persistReturnedSession(data.session);
+        if (error && !sessionPersisted && !(await waitForRecoverySession(8))) {
+          if (!cancelled) {
+            toast.error("Link inválido ou expirado. Solicite novo e-mail.");
+            setReady(true);
+          }
+          return;
+        }
+        window.history.replaceState({}, "", "/reset-password");
+      }
+
+      if (token && email) {
+        const { data, error } = await supabase.auth.verifyOtp({
+          email,
+          token,
+          type: "recovery",
+        });
+        const sessionPersisted = await persistReturnedSession(data.session);
+        if (error && !sessionPersisted && !(await waitForRecoverySession(8))) {
           if (!cancelled) {
             toast.error("Link inválido ou expirado. Solicite novo e-mail.");
             setReady(true);
