@@ -189,8 +189,8 @@ export const listGallery = createServerFn({ method: "GET" })
     return { items: data ?? [] };
   });
 
-// ===== Trainer guard helper =====
-async function assertTrainer(ctx: {
+// ===== Trainer/Admin guard helper =====
+async function assertTrainerOrAdmin(ctx: {
   supabase: any;
   userId: string;
 }) {
@@ -198,10 +198,16 @@ async function assertTrainer(ctx: {
     .from("user_roles")
     .select("role")
     .eq("user_id", ctx.userId)
-    .eq("role", "treinador")
-    .maybeSingle();
-  if (!data) throw new Error("Forbidden: treinador required");
+    .in("role", ["treinador", "admin"]);
+  const roles = (data ?? []).map((r: any) => r.role);
+  if (!roles.length) throw new Error("Forbidden: treinador required");
+  return {
+    isAdmin: roles.includes("admin"),
+    isTrainer: roles.includes("treinador"),
+  };
 }
+// Backwards compatible alias
+const assertTrainer = assertTrainerOrAdmin;
 
 // ===== Trainer: students =====
 
@@ -209,34 +215,91 @@ const listStudentsInput = z.object({
   search: z.string().max(120).optional(),
   page: z.number().int().min(1).max(1000).default(1),
   pageSize: z.number().int().min(1).max(100).default(50),
+  trainerId: z.string().uuid().optional(),
 });
 
 export const listStudents = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((d: unknown) => listStudentsInput.parse(d))
   .handler(async ({ data, context }) => {
-    await assertTrainer(context);
+    const { isAdmin } = await assertTrainerOrAdmin(context);
     const from = (data.page - 1) * data.pageSize;
     const to = from + data.pageSize - 1;
     let q = context.supabase
       .from("profiles")
-      .select("id,full_name,email,phone,active,created_at", { count: "exact" })
+      .select("id,full_name,email,phone,active,created_at,trainer_id", {
+        count: "exact",
+      })
       .order("full_name");
     if (data.search) {
       const s = `%${data.search}%`;
       q = q.or(`full_name.ilike.${s},email.ilike.${s}`);
     }
-    // Exclude trainers from the list — we want students only
+    if (isAdmin && data.trainerId) {
+      q = q.eq("trainer_id", data.trainerId);
+    } else if (!isAdmin) {
+      q = q.eq("trainer_id", context.userId);
+    } else {
+      const { data: staffRoles } = await context.supabase
+        .from("user_roles")
+        .select("user_id")
+        .in("role", ["treinador", "admin"]);
+      const staffIds = Array.from(
+        new Set((staffRoles ?? []).map((r: any) => r.user_id)),
+      );
+      if (staffIds.length) {
+        q = q.not("id", "in", `(${staffIds.join(",")})`);
+      }
+    }
+    const { data: rows, count } = await q.range(from, to);
+    return { rows: rows ?? [], total: count ?? 0 };
+  });
+
+// ===== Admin: overview of trainers and their students =====
+export const getAdminOverview = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }) => {
+    await assertAdmin(context);
     const { data: trainerRoles } = await context.supabase
       .from("user_roles")
       .select("user_id")
       .eq("role", "treinador");
     const trainerIds = (trainerRoles ?? []).map((r: any) => r.user_id);
-    if (trainerIds.length) {
-      q = q.not("id", "in", `(${trainerIds.join(",")})`);
+    const { data: trainers } = trainerIds.length
+      ? await context.supabase
+          .from("profiles")
+          .select("id,full_name,email")
+          .in("id", trainerIds)
+          .order("full_name")
+      : { data: [] as any[] };
+
+    const { data: staffRoles } = await context.supabase
+      .from("user_roles")
+      .select("user_id")
+      .in("role", ["treinador", "admin"]);
+    const staffIds = Array.from(
+      new Set((staffRoles ?? []).map((r: any) => r.user_id)),
+    );
+
+    let studentsQ = context.supabase
+      .from("profiles")
+      .select("id,full_name,email,trainer_id,active")
+      .order("full_name");
+    if (staffIds.length) {
+      studentsQ = studentsQ.not("id", "in", `(${staffIds.join(",")})`);
     }
-    const { data: rows, count } = await q.range(from, to);
-    return { rows: rows ?? [], total: count ?? 0 };
+    const { data: students } = await studentsQ;
+
+    const grouped = (trainers ?? []).map((t: any) => ({
+      trainer: t,
+      students: (students ?? []).filter((s: any) => s.trainer_id === t.id),
+    }));
+    const unassigned = (students ?? []).filter((s: any) => !s.trainer_id);
+    return {
+      trainers: grouped,
+      unassigned,
+      totalStudents: students?.length ?? 0,
+    };
   });
 
 const createStudentInput = z.object({
