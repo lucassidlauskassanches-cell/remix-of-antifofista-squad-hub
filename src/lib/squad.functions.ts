@@ -655,7 +655,7 @@ export const savePlanPdf = createServerFn({ method: "POST" })
   .handler(async ({ data, context }) => {
     await assertTrainer(context);
     const { supabase } = context;
-    const table = data.kind === "training" ? "training_plans" : "nutrition_plans";
+    const table = tableForKind(data.kind);
     const { data: existing } = await supabase
       .from(table)
       .select("id,pdf_path")
