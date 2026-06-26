@@ -1,34 +1,47 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
+import { useServerFn } from "@tanstack/react-start";
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
+import { resetPasswordWithRecoveryProof } from "@/lib/password-reset.functions";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
 
+type RecoveryProof = {
+  tokenHash?: string;
+  token?: string;
+  email?: string;
+};
+
 async function waitForRecoverySession(attempts = 20) {
   for (let i = 0; i < attempts; i++) {
     const { data } = await supabase.auth.getSession();
-    if (data.session) return true;
+    if (data.session) return data.session;
     await new Promise((resolve) => setTimeout(resolve, 150));
   }
-  return false;
+  return null;
 }
 
-function getResetParams() {
-  const url = new URL(window.location.href);
+function getResetParams(href = window.location.href) {
+  const url = new URL(href);
   const searchParams = url.searchParams;
   const hashParams = new URLSearchParams(url.hash.replace(/^#/, ""));
+  const type = searchParams.get("type") ?? hashParams.get("type");
+  const token = searchParams.get("token") ?? hashParams.get("token");
+  const email = searchParams.get("email") ?? hashParams.get("email");
 
   return {
-    accessToken: hashParams.get("access_token"),
-    refreshToken: hashParams.get("refresh_token"),
+    accessToken: searchParams.get("access_token") ?? hashParams.get("access_token"),
+    refreshToken: searchParams.get("refresh_token") ?? hashParams.get("refresh_token"),
     code: searchParams.get("code") ?? hashParams.get("code"),
     tokenHash:
       searchParams.get("token_hash") ??
-      hashParams.get("token_hash"),
-    token: searchParams.get("token") ?? hashParams.get("token"),
-    email: searchParams.get("email") ?? hashParams.get("email"),
+      hashParams.get("token_hash") ??
+      (type === "recovery" && token && !email ? token : null),
+    token,
+    email,
+    type,
     error:
       searchParams.get("error_description") ??
       hashParams.get("error_description") ??
@@ -37,10 +50,12 @@ function getResetParams() {
   };
 }
 
-async function persistReturnedSession(session?: {
-  access_token: string;
-  refresh_token: string;
-} | null) {
+async function persistReturnedSession(
+  session?: {
+    access_token: string;
+    refresh_token: string;
+  } | null,
+) {
   if (!session?.access_token || !session.refresh_token) return false;
 
   const { error } = await supabase.auth.setSession({
@@ -48,7 +63,30 @@ async function persistReturnedSession(session?: {
     refresh_token: session.refresh_token,
   });
 
-  return !error || (await waitForRecoverySession(8));
+  return !error || Boolean(await waitForRecoverySession(8));
+}
+
+async function updatePasswordWithAccessToken(accessToken: string, password: string) {
+  const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+  const supabaseKey = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY;
+  if (!supabaseUrl || !supabaseKey) {
+    throw new Error("Configuração de autenticação indisponível.");
+  }
+
+  const response = await fetch(`${supabaseUrl}/auth/v1/user`, {
+    method: "PUT",
+    headers: {
+      apikey: supabaseKey,
+      Authorization: `Bearer ${accessToken}`,
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({ password }),
+  });
+
+  if (!response.ok) {
+    const body = await response.json().catch(() => null);
+    throw new Error(body?.msg ?? body?.message ?? "Não foi possível atualizar a senha.");
+  }
 }
 
 export const Route = createFileRoute("/reset-password")({
@@ -56,19 +94,38 @@ export const Route = createFileRoute("/reset-password")({
   component: ResetPage,
 });
 
+function getInitialRecoveryHref() {
+  const href = window.location.href;
+  if (/(access_token|refresh_token|code=|token_hash|type=recovery|token=)/.test(href)) {
+    return href;
+  }
+
+  try {
+    const stored = sessionStorage.getItem("antifofista_password_recovery_href");
+    return stored || href;
+  } catch {
+    return href;
+  }
+}
+
 function ResetPage() {
   const navigate = useNavigate();
+  const resetWithProof = useServerFn(resetPasswordWithRecoveryProof);
+  const [initialHref] = useState(getInitialRecoveryHref);
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
   const [ready, setReady] = useState(false);
   const [hasSession, setHasSession] = useState(false);
+  const [recoveryProof, setRecoveryProof] = useState<RecoveryProof | null>(null);
+  const [recoveryAccessToken, setRecoveryAccessToken] = useState<string | null>(null);
 
   useEffect(() => {
     let cancelled = false;
 
     async function init() {
       const { accessToken, refreshToken, code, tokenHash, token, email, error } =
-        getResetParams();
+        getResetParams(initialHref);
+      let resolvedAccessToken: string | null = null;
 
       if (error) {
         if (!cancelled) {
@@ -78,12 +135,20 @@ function ResetPage() {
         return;
       }
 
+      try {
+        sessionStorage.removeItem("antifofista_password_recovery_href");
+      } catch {
+        // ignore storage restrictions (ex.: navegação privada)
+      }
+
       if (accessToken && refreshToken) {
+        resolvedAccessToken = accessToken;
+        if (!cancelled) setRecoveryAccessToken(accessToken);
         const { error: sessionError } = await supabase.auth.setSession({
           access_token: accessToken,
           refresh_token: refreshToken,
         });
-        if (sessionError && !(await waitForRecoverySession(8))) {
+        if (sessionError && !resolvedAccessToken && !(await waitForRecoverySession(8))) {
           if (!cancelled) {
             toast.error("Link inválido ou expirado. Solicite novo e-mail.");
             setReady(true);
@@ -95,6 +160,10 @@ function ResetPage() {
 
       if (code) {
         const { data, error } = await supabase.auth.exchangeCodeForSession(code);
+        if (data.session?.access_token && !cancelled) {
+          resolvedAccessToken = data.session.access_token;
+          setRecoveryAccessToken(data.session.access_token);
+        }
         const sessionPersisted = await persistReturnedSession(data.session);
         if (error && !sessionPersisted && !(await waitForRecoverySession(8))) {
           if (!cancelled) {
@@ -107,41 +176,26 @@ function ResetPage() {
       }
 
       if (tokenHash) {
-        const { data, error } = await supabase.auth.verifyOtp({
-          token_hash: tokenHash,
-          type: "recovery",
-        });
-        const sessionPersisted = await persistReturnedSession(data.session);
-        if (error && !sessionPersisted && !(await waitForRecoverySession(8))) {
-          if (!cancelled) {
-            toast.error("Link inválido ou expirado. Solicite novo e-mail.");
-            setReady(true);
-          }
-          return;
-        }
+        if (!cancelled) setRecoveryProof({ tokenHash });
         window.history.replaceState({}, "", "/reset-password");
       }
 
-      if (token && email) {
-        const { data, error } = await supabase.auth.verifyOtp({
-          email,
-          token,
-          type: "recovery",
-        });
-        const sessionPersisted = await persistReturnedSession(data.session);
-        if (error && !sessionPersisted && !(await waitForRecoverySession(8))) {
-          if (!cancelled) {
-            toast.error("Link inválido ou expirado. Solicite novo e-mail.");
-            setReady(true);
-          }
-          return;
-        }
+      if (token && email && !tokenHash) {
+        if (!cancelled) setRecoveryProof({ token, email });
         window.history.replaceState({}, "", "/reset-password");
       }
 
-      const hasRecoverySession = await waitForRecoverySession();
+      const recoverySession = await waitForRecoverySession();
       if (cancelled) return;
-      if (hasRecoverySession) {
+      const usableAccessToken = recoverySession?.access_token ?? resolvedAccessToken;
+      if (usableAccessToken) {
+        setRecoveryAccessToken(usableAccessToken);
+        setHasSession(true);
+        setReady(true);
+        return;
+      }
+
+      if (tokenHash || (token && email)) {
         setHasSession(true);
         setReady(true);
         return;
@@ -154,6 +208,7 @@ function ResetPage() {
 
     const { data: sub } = supabase.auth.onAuthStateChange((event, session) => {
       if (event === "PASSWORD_RECOVERY" || (session && event === "SIGNED_IN")) {
+        if (session?.access_token) setRecoveryAccessToken(session.access_token);
         setHasSession(true);
         setReady(true);
       }
@@ -163,24 +218,38 @@ function ResetPage() {
       cancelled = true;
       sub.subscription.unsubscribe();
     };
-  }, []);
+  }, [initialHref]);
 
   async function submit(e: React.FormEvent) {
     e.preventDefault();
     setLoading(true);
     const { data: sessionData } = await supabase.auth.getSession();
-    if (!sessionData.session) {
+    const accessToken = sessionData.session?.access_token ?? recoveryAccessToken;
+    if (!accessToken && !recoveryProof) {
       setLoading(false);
       toast.error(
-        "Sessão de recuperação ausente. Abra novamente o link do e-mail neste mesmo navegador."
+        "Sessão de recuperação ausente. Abra novamente o link do e-mail neste mesmo navegador.",
       );
       return;
     }
-    const { error } = await supabase.auth.updateUser({ password });
-    setLoading(false);
-    if (error) return toast.error("Erro: " + error.message);
-    toast.success("Senha atualizada.");
-    navigate({ to: "/app", replace: true });
+
+    try {
+      if (accessToken && sessionData.session) {
+        const { error } = await supabase.auth.updateUser({ password });
+        if (error) await updatePasswordWithAccessToken(accessToken, password);
+      } else if (accessToken) {
+        await updatePasswordWithAccessToken(accessToken, password);
+      } else if (recoveryProof) {
+        await resetWithProof({ data: { ...recoveryProof, password } });
+      }
+      toast.success("Senha atualizada. Entre com a nova senha.");
+      await supabase.auth.signOut();
+      navigate({ to: "/auth", replace: true });
+    } catch (error) {
+      toast.error("Erro: " + (error instanceof Error ? error.message : "falha ao salvar"));
+    } finally {
+      setLoading(false);
+    }
   }
 
   return (
@@ -189,16 +258,14 @@ function ResetPage() {
         <h1 className="tactical-heading text-2xl">DEFINIR NOVA SENHA</h1>
 
         {!ready && (
-          <p className="text-sm text-muted-foreground">
-            Validando link de recuperação...
-          </p>
+          <p className="text-sm text-muted-foreground">Validando link de recuperação...</p>
         )}
 
         {ready && !hasSession && (
           <div className="text-sm text-destructive space-y-2">
             <p>
-              Não encontramos uma sessão de recuperação ativa. Isso acontece se
-              o link expirou ou foi aberto em outro navegador.
+              Não encontramos uma sessão de recuperação ativa. Isso acontece se o link expirou ou
+              foi aberto em outro navegador.
             </p>
             <Button
               type="button"
