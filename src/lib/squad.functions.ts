@@ -697,7 +697,7 @@ export const getStudentPlanPdfUrl = createServerFn({ method: "POST" })
   )
   .handler(async ({ data, context }) => {
     await assertTrainer(context);
-    const table = data.kind === "training" ? "training_plans" : "nutrition_plans";
+    const table = tableForKind(data.kind);
     const { data: plan } = await context.supabase
       .from(table)
       .select("pdf_path,pdf_name")
