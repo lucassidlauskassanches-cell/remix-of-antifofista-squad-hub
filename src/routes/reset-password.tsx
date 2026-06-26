@@ -24,7 +24,11 @@ function getResetParams() {
     accessToken: hashParams.get("access_token"),
     refreshToken: hashParams.get("refresh_token"),
     code: searchParams.get("code") ?? hashParams.get("code"),
-    tokenHash: searchParams.get("token_hash") ?? hashParams.get("token_hash"),
+    tokenHash:
+      searchParams.get("token_hash") ??
+      hashParams.get("token_hash") ??
+      searchParams.get("token") ??
+      hashParams.get("token"),
     error:
       searchParams.get("error_description") ??
       hashParams.get("error_description") ??

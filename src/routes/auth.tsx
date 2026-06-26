@@ -1,6 +1,7 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
+import { createClient } from "@supabase/supabase-js";
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { getMyContext } from "@/lib/squad.functions";
@@ -9,6 +10,22 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
 import logoAsset from "@/assets/logo-antifofista.png.asset.json";
+
+function getPasswordResetClient() {
+  const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+  const supabaseKey = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY;
+  if (!supabaseUrl || !supabaseKey) return supabase;
+
+  return createClient(supabaseUrl, supabaseKey, {
+    auth: {
+      storage: window.localStorage,
+      persistSession: true,
+      autoRefreshToken: true,
+      detectSessionInUrl: true,
+      flowType: "implicit",
+    },
+  });
+}
 
 export const Route = createFileRoute("/auth")({
   ssr: false,
@@ -88,7 +105,8 @@ function AuthPage() {
   async function handleForgot(e: React.FormEvent) {
     e.preventDefault();
     setLoading(true);
-    const { error } = await supabase.auth.resetPasswordForEmail(email, {
+    const resetClient = getPasswordResetClient();
+    const { error } = await resetClient.auth.resetPasswordForEmail(email, {
       redirectTo: `${window.location.origin}/reset-password`,
     });
     setLoading(false);
