@@ -108,7 +108,7 @@ function PdfUploader({
   const inputRef = useRef<HTMLInputElement>(null);
   const [uploading, setUploading] = useState(false);
 
-  const label = kind === "training" ? "TREINO" : "DIETA";
+  const label = kind === "training" ? "TREINO" : kind === "nutrition" ? "DIETA" : "PLANO DE AÇÃO";
 
   async function handleFile(file: File) {
     if (file.type !== "application/pdf") {
