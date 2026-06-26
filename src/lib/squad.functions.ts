@@ -307,13 +307,14 @@ const createStudentInput = z.object({
   email: z.string().trim().email().max(255),
   password: z.string().min(6).max(200),
   phone: z.string().trim().max(40).optional(),
+  trainer_id: z.string().uuid().optional(),
 });
 
 export const createStudent = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((d: unknown) => createStudentInput.parse(d))
   .handler(async ({ data, context }) => {
-    await assertTrainer(context);
+    const { isAdmin } = await assertTrainerOrAdmin(context);
     const { supabaseAdmin } = await import(
       "@/integrations/supabase/client.server"
     );
@@ -324,18 +325,40 @@ export const createStudent = createServerFn({ method: "POST" })
       user_metadata: { full_name: data.full_name },
     });
     if (error || !created.user) throw new Error(error?.message ?? "Falha ao criar aluno");
-    if (data.phone) {
-      await supabaseAdmin
-        .from("profiles")
-        .update({ phone: data.phone, full_name: data.full_name })
-        .eq("id", created.user.id);
-    } else {
-      await supabaseAdmin
-        .from("profiles")
-        .update({ full_name: data.full_name })
-        .eq("id", created.user.id);
-    }
+    // Admin may assign to any trainer; trainer always owns own students
+    const trainerId = isAdmin
+      ? (data.trainer_id ?? null)
+      : context.userId;
+    await supabaseAdmin
+      .from("profiles")
+      .update({
+        full_name: data.full_name,
+        phone: data.phone ?? null,
+        trainer_id: trainerId,
+      })
+      .eq("id", created.user.id);
     return { id: created.user.id };
+  });
+
+// ===== Admin: reassign a student to a trainer =====
+export const assignStudentTrainer = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: unknown) =>
+    z
+      .object({
+        studentId: z.string().uuid(),
+        trainerId: z.string().uuid().nullable(),
+      })
+      .parse(d),
+  )
+  .handler(async ({ data, context }) => {
+    await assertAdmin(context);
+    const { error } = await context.supabase
+      .from("profiles")
+      .update({ trainer_id: data.trainerId })
+      .eq("id", data.studentId);
+    if (error) throw new Error(error.message);
+    return { ok: true };
   });
 
 export const getStudentDetail = createServerFn({ method: "POST" })
