@@ -154,7 +154,7 @@ function RootShell({ children }: { children: ReactNode }) {
       <head>
         <script
           dangerouslySetInnerHTML={{
-            __html: `try{var p=location.pathname;var s=location.search||"";var h=location.hash||"";if(p==="/reset-password"&&/(access_token|refresh_token|code=|token_hash|type=recovery|token=)/.test(s+h)){sessionStorage.setItem("antifofista_password_recovery_href",location.href)}}catch(e){}`,
+            __html: `try{var p=location.pathname;var s=location.search||"";var h=location.hash||"";if(p==="/reset-password"&&/(access_token|refresh_token|code=|token_hash|type=recovery|token=)/.test(s+h)){sessionStorage.setItem("antifofista_password_recovery_href",location.href);localStorage.setItem("antifofista_password_recovery_href",location.href)}}catch(e){}`,
           }}
         />
         <HeadContent />
@@ -173,6 +173,7 @@ function RootComponent() {
 
   useEffect(() => {
     if (typeof window === "undefined") return;
+    if (window.location.pathname === "/reset-password") return;
     let cancelled = false;
     import("@/integrations/supabase/client").then(({ supabase }) => {
       if (cancelled) return;
