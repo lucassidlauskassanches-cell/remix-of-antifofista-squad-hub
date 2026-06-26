@@ -170,6 +170,7 @@ export type Database = {
           full_name: string
           id: string
           phone: string | null
+          trainer_id: string | null
         }
         Insert: {
           active?: boolean
@@ -179,6 +180,7 @@ export type Database = {
           full_name?: string
           id: string
           phone?: string | null
+          trainer_id?: string | null
         }
         Update: {
           active?: boolean
@@ -188,8 +190,17 @@ export type Database = {
           full_name?: string
           id?: string
           phone?: string | null
+          trainer_id?: string | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "profiles_trainer_id_fkey"
+            columns: ["trainer_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       training_exercises: {
         Row: {

@@ -189,8 +189,8 @@ export const listGallery = createServerFn({ method: "GET" })
     return { items: data ?? [] };
   });
 
-// ===== Trainer guard helper =====
-async function assertTrainer(ctx: {
+// ===== Trainer/Admin guard helper =====
+async function assertTrainerOrAdmin(ctx: {
   supabase: any;
   userId: string;
 }) {
@@ -198,10 +198,16 @@ async function assertTrainer(ctx: {
     .from("user_roles")
     .select("role")
     .eq("user_id", ctx.userId)
-    .eq("role", "treinador")
-    .maybeSingle();
-  if (!data) throw new Error("Forbidden: treinador required");
+    .in("role", ["treinador", "admin"]);
+  const roles = (data ?? []).map((r: any) => r.role);
+  if (!roles.length) throw new Error("Forbidden: treinador required");
+  return {
+    isAdmin: roles.includes("admin"),
+    isTrainer: roles.includes("treinador"),
+  };
 }
+// Backwards compatible alias
+const assertTrainer = assertTrainerOrAdmin;
 
 // ===== Trainer: students =====
 
@@ -209,34 +215,91 @@ const listStudentsInput = z.object({
   search: z.string().max(120).optional(),
   page: z.number().int().min(1).max(1000).default(1),
   pageSize: z.number().int().min(1).max(100).default(50),
+  trainerId: z.string().uuid().optional(),
 });
 
 export const listStudents = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((d: unknown) => listStudentsInput.parse(d))
   .handler(async ({ data, context }) => {
-    await assertTrainer(context);
+    const { isAdmin } = await assertTrainerOrAdmin(context);
     const from = (data.page - 1) * data.pageSize;
     const to = from + data.pageSize - 1;
     let q = context.supabase
       .from("profiles")
-      .select("id,full_name,email,phone,active,created_at", { count: "exact" })
+      .select("id,full_name,email,phone,active,created_at,trainer_id", {
+        count: "exact",
+      })
       .order("full_name");
     if (data.search) {
       const s = `%${data.search}%`;
       q = q.or(`full_name.ilike.${s},email.ilike.${s}`);
     }
-    // Exclude trainers from the list — we want students only
+    if (isAdmin && data.trainerId) {
+      q = q.eq("trainer_id", data.trainerId);
+    } else if (!isAdmin) {
+      q = q.eq("trainer_id", context.userId);
+    } else {
+      const { data: staffRoles } = await context.supabase
+        .from("user_roles")
+        .select("user_id")
+        .in("role", ["treinador", "admin"]);
+      const staffIds = Array.from(
+        new Set((staffRoles ?? []).map((r: any) => r.user_id)),
+      );
+      if (staffIds.length) {
+        q = q.not("id", "in", `(${staffIds.join(",")})`);
+      }
+    }
+    const { data: rows, count } = await q.range(from, to);
+    return { rows: rows ?? [], total: count ?? 0 };
+  });
+
+// ===== Admin: overview of trainers and their students =====
+export const getAdminOverview = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }) => {
+    await assertAdmin(context);
     const { data: trainerRoles } = await context.supabase
       .from("user_roles")
       .select("user_id")
       .eq("role", "treinador");
     const trainerIds = (trainerRoles ?? []).map((r: any) => r.user_id);
-    if (trainerIds.length) {
-      q = q.not("id", "in", `(${trainerIds.join(",")})`);
+    const { data: trainers } = trainerIds.length
+      ? await context.supabase
+          .from("profiles")
+          .select("id,full_name,email")
+          .in("id", trainerIds)
+          .order("full_name")
+      : { data: [] as any[] };
+
+    const { data: staffRoles } = await context.supabase
+      .from("user_roles")
+      .select("user_id")
+      .in("role", ["treinador", "admin"]);
+    const staffIds = Array.from(
+      new Set((staffRoles ?? []).map((r: any) => r.user_id)),
+    );
+
+    let studentsQ = context.supabase
+      .from("profiles")
+      .select("id,full_name,email,trainer_id,active")
+      .order("full_name");
+    if (staffIds.length) {
+      studentsQ = studentsQ.not("id", "in", `(${staffIds.join(",")})`);
     }
-    const { data: rows, count } = await q.range(from, to);
-    return { rows: rows ?? [], total: count ?? 0 };
+    const { data: students } = await studentsQ;
+
+    const grouped = (trainers ?? []).map((t: any) => ({
+      trainer: t,
+      students: (students ?? []).filter((s: any) => s.trainer_id === t.id),
+    }));
+    const unassigned = (students ?? []).filter((s: any) => !s.trainer_id);
+    return {
+      trainers: grouped,
+      unassigned,
+      totalStudents: students?.length ?? 0,
+    };
   });
 
 const createStudentInput = z.object({
@@ -244,13 +307,14 @@ const createStudentInput = z.object({
   email: z.string().trim().email().max(255),
   password: z.string().min(6).max(200),
   phone: z.string().trim().max(40).optional(),
+  trainer_id: z.string().uuid().optional(),
 });
 
 export const createStudent = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((d: unknown) => createStudentInput.parse(d))
   .handler(async ({ data, context }) => {
-    await assertTrainer(context);
+    const { isAdmin } = await assertTrainerOrAdmin(context);
     const { supabaseAdmin } = await import(
       "@/integrations/supabase/client.server"
     );
@@ -261,18 +325,40 @@ export const createStudent = createServerFn({ method: "POST" })
       user_metadata: { full_name: data.full_name },
     });
     if (error || !created.user) throw new Error(error?.message ?? "Falha ao criar aluno");
-    if (data.phone) {
-      await supabaseAdmin
-        .from("profiles")
-        .update({ phone: data.phone, full_name: data.full_name })
-        .eq("id", created.user.id);
-    } else {
-      await supabaseAdmin
-        .from("profiles")
-        .update({ full_name: data.full_name })
-        .eq("id", created.user.id);
-    }
+    // Admin may assign to any trainer; trainer always owns own students
+    const trainerId = isAdmin
+      ? (data.trainer_id ?? null)
+      : context.userId;
+    await supabaseAdmin
+      .from("profiles")
+      .update({
+        full_name: data.full_name,
+        phone: data.phone ?? null,
+        trainer_id: trainerId,
+      })
+      .eq("id", created.user.id);
     return { id: created.user.id };
+  });
+
+// ===== Admin: reassign a student to a trainer =====
+export const assignStudentTrainer = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: unknown) =>
+    z
+      .object({
+        studentId: z.string().uuid(),
+        trainerId: z.string().uuid().nullable(),
+      })
+      .parse(d),
+  )
+  .handler(async ({ data, context }) => {
+    await assertAdmin(context);
+    const { error } = await context.supabase
+      .from("profiles")
+      .update({ trainer_id: data.trainerId })
+      .eq("id", data.studentId);
+    if (error) throw new Error(error.message);
+    return { ok: true };
   });
 
 export const getStudentDetail = createServerFn({ method: "POST" })

@@ -18,6 +18,7 @@ import { Route as AuthenticatedAppIndexRouteImport } from './routes/_authenticat
 import { Route as AuthenticatedAppTreinoRouteImport } from './routes/_authenticated/app.treino'
 import { Route as AuthenticatedAppNutricionalRouteImport } from './routes/_authenticated/app.nutricional'
 import { Route as AuthenticatedAppGaleriaRouteImport } from './routes/_authenticated/app.galeria'
+import { Route as AuthenticatedAppAdminVisaoRouteImport } from './routes/_authenticated/app.admin.visao'
 import { Route as AuthenticatedAppAdminTreinadoresRouteImport } from './routes/_authenticated/app.admin.treinadores'
 import { Route as AuthenticatedAppAdminGaleriaRouteImport } from './routes/_authenticated/app.admin.galeria'
 import { Route as AuthenticatedAppAdminAlunosRouteImport } from './routes/_authenticated/app.admin.alunos'
@@ -70,6 +71,12 @@ const AuthenticatedAppGaleriaRoute = AuthenticatedAppGaleriaRouteImport.update({
   path: '/galeria',
   getParentRoute: () => AuthenticatedAppRoute,
 } as any)
+const AuthenticatedAppAdminVisaoRoute =
+  AuthenticatedAppAdminVisaoRouteImport.update({
+    id: '/admin/visao',
+    path: '/admin/visao',
+    getParentRoute: () => AuthenticatedAppRoute,
+  } as any)
 const AuthenticatedAppAdminTreinadoresRoute =
   AuthenticatedAppAdminTreinadoresRouteImport.update({
     id: '/admin/treinadores',
@@ -119,6 +126,7 @@ export interface FileRoutesByFullPath {
   '/app/admin/alunos': typeof AuthenticatedAppAdminAlunosRouteWithChildren
   '/app/admin/galeria': typeof AuthenticatedAppAdminGaleriaRoute
   '/app/admin/treinadores': typeof AuthenticatedAppAdminTreinadoresRoute
+  '/app/admin/visao': typeof AuthenticatedAppAdminVisaoRoute
   '/app/admin/alunos/$id': typeof AuthenticatedAppAdminAlunosIdRoute
   '/app/admin/alunos/novo': typeof AuthenticatedAppAdminAlunosNovoRoute
   '/app/admin/alunos/': typeof AuthenticatedAppAdminAlunosIndexRoute
@@ -133,6 +141,7 @@ export interface FileRoutesByTo {
   '/app': typeof AuthenticatedAppIndexRoute
   '/app/admin/galeria': typeof AuthenticatedAppAdminGaleriaRoute
   '/app/admin/treinadores': typeof AuthenticatedAppAdminTreinadoresRoute
+  '/app/admin/visao': typeof AuthenticatedAppAdminVisaoRoute
   '/app/admin/alunos/$id': typeof AuthenticatedAppAdminAlunosIdRoute
   '/app/admin/alunos/novo': typeof AuthenticatedAppAdminAlunosNovoRoute
   '/app/admin/alunos': typeof AuthenticatedAppAdminAlunosIndexRoute
@@ -151,6 +160,7 @@ export interface FileRoutesById {
   '/_authenticated/app/admin/alunos': typeof AuthenticatedAppAdminAlunosRouteWithChildren
   '/_authenticated/app/admin/galeria': typeof AuthenticatedAppAdminGaleriaRoute
   '/_authenticated/app/admin/treinadores': typeof AuthenticatedAppAdminTreinadoresRoute
+  '/_authenticated/app/admin/visao': typeof AuthenticatedAppAdminVisaoRoute
   '/_authenticated/app/admin/alunos/$id': typeof AuthenticatedAppAdminAlunosIdRoute
   '/_authenticated/app/admin/alunos/novo': typeof AuthenticatedAppAdminAlunosNovoRoute
   '/_authenticated/app/admin/alunos/': typeof AuthenticatedAppAdminAlunosIndexRoute
@@ -169,6 +179,7 @@ export interface FileRouteTypes {
     | '/app/admin/alunos'
     | '/app/admin/galeria'
     | '/app/admin/treinadores'
+    | '/app/admin/visao'
     | '/app/admin/alunos/$id'
     | '/app/admin/alunos/novo'
     | '/app/admin/alunos/'
@@ -183,6 +194,7 @@ export interface FileRouteTypes {
     | '/app'
     | '/app/admin/galeria'
     | '/app/admin/treinadores'
+    | '/app/admin/visao'
     | '/app/admin/alunos/$id'
     | '/app/admin/alunos/novo'
     | '/app/admin/alunos'
@@ -200,6 +212,7 @@ export interface FileRouteTypes {
     | '/_authenticated/app/admin/alunos'
     | '/_authenticated/app/admin/galeria'
     | '/_authenticated/app/admin/treinadores'
+    | '/_authenticated/app/admin/visao'
     | '/_authenticated/app/admin/alunos/$id'
     | '/_authenticated/app/admin/alunos/novo'
     | '/_authenticated/app/admin/alunos/'
@@ -277,6 +290,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedAppGaleriaRouteImport
       parentRoute: typeof AuthenticatedAppRoute
     }
+    '/_authenticated/app/admin/visao': {
+      id: '/_authenticated/app/admin/visao'
+      path: '/admin/visao'
+      fullPath: '/app/admin/visao'
+      preLoaderRoute: typeof AuthenticatedAppAdminVisaoRouteImport
+      parentRoute: typeof AuthenticatedAppRoute
+    }
     '/_authenticated/app/admin/treinadores': {
       id: '/_authenticated/app/admin/treinadores'
       path: '/admin/treinadores'
@@ -349,6 +369,7 @@ interface AuthenticatedAppRouteChildren {
   AuthenticatedAppAdminAlunosRoute: typeof AuthenticatedAppAdminAlunosRouteWithChildren
   AuthenticatedAppAdminGaleriaRoute: typeof AuthenticatedAppAdminGaleriaRoute
   AuthenticatedAppAdminTreinadoresRoute: typeof AuthenticatedAppAdminTreinadoresRoute
+  AuthenticatedAppAdminVisaoRoute: typeof AuthenticatedAppAdminVisaoRoute
 }
 
 const AuthenticatedAppRouteChildren: AuthenticatedAppRouteChildren = {
@@ -360,6 +381,7 @@ const AuthenticatedAppRouteChildren: AuthenticatedAppRouteChildren = {
     AuthenticatedAppAdminAlunosRouteWithChildren,
   AuthenticatedAppAdminGaleriaRoute: AuthenticatedAppAdminGaleriaRoute,
   AuthenticatedAppAdminTreinadoresRoute: AuthenticatedAppAdminTreinadoresRoute,
+  AuthenticatedAppAdminVisaoRoute: AuthenticatedAppAdminVisaoRoute,
 }
 
 const AuthenticatedAppRouteWithChildren =
