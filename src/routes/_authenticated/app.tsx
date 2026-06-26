@@ -1,7 +1,7 @@
 import { createFileRoute, Outlet, Link, useNavigate, useLocation } from "@tanstack/react-router";
 import { useQueryClient, useSuspenseQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
-import { Dumbbell, Apple, Video, LogOut, ShieldCheck } from "lucide-react";
+import { Dumbbell, Apple, Video, LogOut, ShieldCheck, Users } from "lucide-react";
 import { getMyContext } from "@/lib/squad.functions";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
@@ -46,30 +46,48 @@ function AppShell() {
           </div>
           <div className="flex items-center gap-2">
             {ctx.isAdmin && (
+              <>
+                <Button
+                  asChild
+                  variant={
+                    loc.pathname.startsWith("/app/admin/visao")
+                      ? "default"
+                      : "outline"
+                  }
+                  size="sm"
+                  className="tactical-heading text-xs"
+                >
+                  <Link to="/app/admin/visao">
+                    <Users className="w-4 h-4 mr-1" /> VISÃO
+                  </Link>
+                </Button>
+                <Button
+                  asChild
+                  variant={
+                    loc.pathname.startsWith("/app/admin/treinadores")
+                      ? "default"
+                      : "outline"
+                  }
+                  size="sm"
+                  className="tactical-heading text-xs"
+                >
+                  <Link to="/app/admin/treinadores">
+                    <ShieldCheck className="w-4 h-4 mr-1" /> EQUIPE
+                  </Link>
+                </Button>
+              </>
+            )}
+            {(ctx.isTreinador || ctx.isAdmin) && (
               <Button
                 asChild
                 variant={
-                  loc.pathname.startsWith("/app/admin/treinadores")
-                    ? "default"
-                    : "outline"
+                  loc.pathname.startsWith("/app/admin/alunos") ? "default" : "outline"
                 }
                 size="sm"
                 className="tactical-heading text-xs"
               >
-                <Link to="/app/admin/treinadores">
-                  <ShieldCheck className="w-4 h-4 mr-1" /> EQUIPE
-                </Link>
-              </Button>
-            )}
-            {ctx.isTreinador && (
-              <Button
-                asChild
-                variant={isAdminArea && !loc.pathname.startsWith("/app/admin/treinadores") ? "default" : "outline"}
-                size="sm"
-                className="tactical-heading text-xs"
-              >
                 <Link to="/app/admin/alunos">
-                  <ShieldCheck className="w-4 h-4 mr-1" /> PAINEL
+                  <ShieldCheck className="w-4 h-4 mr-1" /> ALUNOS
                 </Link>
               </Button>
             )}

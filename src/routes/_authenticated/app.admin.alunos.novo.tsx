@@ -1,10 +1,22 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
+import { useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { useState } from "react";
-import { createStudent } from "@/lib/squad.functions";
+import {
+  createStudent,
+  getMyContext,
+  listTrainers,
+} from "@/lib/squad.functions";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/_authenticated/app/admin/alunos/novo")({
@@ -13,12 +25,26 @@ export const Route = createFileRoute("/_authenticated/app/admin/alunos/novo")({
 
 function NovoAluno() {
   const create = useServerFn(createStudent);
+  const fetchCtx = useServerFn(getMyContext);
+  const fetchTrainers = useServerFn(listTrainers);
   const navigate = useNavigate();
+
+  const { data: ctx } = useQuery({
+    queryKey: ["my-context"],
+    queryFn: () => fetchCtx(),
+  });
+  const { data: trainersData } = useQuery({
+    queryKey: ["trainers"],
+    queryFn: () => fetchTrainers(),
+    enabled: !!ctx?.isAdmin,
+  });
+
   const [form, setForm] = useState({
     full_name: "",
     email: "",
     password: "",
     phone: "",
+    trainer_id: "" as string,
   });
   const [loading, setLoading] = useState(false);
 
@@ -26,7 +52,16 @@ function NovoAluno() {
     e.preventDefault();
     setLoading(true);
     try {
-      await create({ data: form });
+      await create({
+        data: {
+          full_name: form.full_name,
+          email: form.email,
+          password: form.password,
+          phone: form.phone || undefined,
+          trainer_id:
+            ctx?.isAdmin && form.trainer_id ? form.trainer_id : undefined,
+        },
+      });
       toast.success("Aluno cadastrado");
       navigate({ to: "/app/admin/alunos" });
     } catch (err: any) {
@@ -75,6 +110,26 @@ function NovoAluno() {
             onChange={(e) => setForm({ ...form, phone: e.target.value })}
           />
         </div>
+        {ctx?.isAdmin && (
+          <div>
+            <Label className="tactical-heading text-xs">TREINADOR</Label>
+            <Select
+              value={form.trainer_id}
+              onValueChange={(v) => setForm({ ...form, trainer_id: v })}
+            >
+              <SelectTrigger>
+                <SelectValue placeholder="Selecione um treinador" />
+              </SelectTrigger>
+              <SelectContent>
+                {(trainersData?.rows ?? []).map((t: any) => (
+                  <SelectItem key={t.id} value={t.id}>
+                    {t.full_name || t.email}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+        )}
         <Button
           type="submit"
           disabled={loading}
