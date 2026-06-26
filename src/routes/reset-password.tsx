@@ -101,8 +101,12 @@ function getInitialRecoveryHref() {
     return href;
   }
 
-  const stored = sessionStorage.getItem("antifofista_password_recovery_href");
-  return stored || href;
+  try {
+    const stored = sessionStorage.getItem("antifofista_password_recovery_href");
+    return stored || href;
+  } catch {
+    return href;
+  }
 }
 
 function ResetPage() {
@@ -134,7 +138,11 @@ function ResetPage() {
         return;
       }
 
-      sessionStorage.removeItem("antifofista_password_recovery_href");
+      try {
+        sessionStorage.removeItem("antifofista_password_recovery_href");
+      } catch {
+        // ignore storage restrictions (ex.: navegação privada)
+      }
 
       if (accessToken && refreshToken) {
         resolvedAccessToken = accessToken;
