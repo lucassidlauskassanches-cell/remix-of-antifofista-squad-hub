@@ -6,6 +6,33 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
 
+async function waitForRecoverySession(attempts = 20) {
+  for (let i = 0; i < attempts; i++) {
+    const { data } = await supabase.auth.getSession();
+    if (data.session) return true;
+    await new Promise((resolve) => setTimeout(resolve, 150));
+  }
+  return false;
+}
+
+function getResetParams() {
+  const url = new URL(window.location.href);
+  const searchParams = url.searchParams;
+  const hashParams = new URLSearchParams(url.hash.replace(/^#/, ""));
+
+  return {
+    accessToken: hashParams.get("access_token"),
+    refreshToken: hashParams.get("refresh_token"),
+    code: searchParams.get("code") ?? hashParams.get("code"),
+    tokenHash: searchParams.get("token_hash") ?? hashParams.get("token_hash"),
+    error:
+      searchParams.get("error_description") ??
+      hashParams.get("error_description") ??
+      searchParams.get("error") ??
+      hashParams.get("error"),
+  };
+}
+
 export const Route = createFileRoute("/reset-password")({
   ssr: false,
   component: ResetPage,
@@ -22,36 +49,67 @@ function ResetPage() {
     let cancelled = false;
 
     async function init() {
-      // PKCE flow: ?code=xxx
-      const url = new URL(window.location.href);
-      const code = url.searchParams.get("code");
-      if (code) {
-        const { error } = await supabase.auth.exchangeCodeForSession(code);
-        if (error) {
+      const { accessToken, refreshToken, code, tokenHash, error } = getResetParams();
+
+      if (error) {
+        if (!cancelled) {
+          toast.error("Link inválido ou expirado. Solicite novo e-mail.");
+          setReady(true);
+        }
+        return;
+      }
+
+      if (accessToken && refreshToken) {
+        const { error: sessionError } = await supabase.auth.setSession({
+          access_token: accessToken,
+          refresh_token: refreshToken,
+        });
+        if (sessionError && !(await waitForRecoverySession(8))) {
           if (!cancelled) {
             toast.error("Link inválido ou expirado. Solicite novo e-mail.");
             setReady(true);
           }
           return;
         }
-        // limpa o code da URL
         window.history.replaceState({}, "", "/reset-password");
       }
 
-      // Implicit flow: #access_token=... — supabase processa automaticamente.
-      // Aguarda detectSessionInUrl terminar.
-      for (let i = 0; i < 20; i++) {
-        const { data } = await supabase.auth.getSession();
-        if (data.session) {
+      if (code) {
+        const { error } = await supabase.auth.exchangeCodeForSession(code);
+        if (error && !(await waitForRecoverySession(8))) {
           if (!cancelled) {
-            setHasSession(true);
+            toast.error("Link inválido ou expirado. Solicite novo e-mail.");
             setReady(true);
           }
           return;
         }
-        await new Promise((r) => setTimeout(r, 150));
+        window.history.replaceState({}, "", "/reset-password");
       }
-      if (!cancelled) setReady(true);
+
+      if (tokenHash) {
+        const { error } = await supabase.auth.verifyOtp({
+          token_hash: tokenHash,
+          type: "recovery",
+        });
+        if (error && !(await waitForRecoverySession(8))) {
+          if (!cancelled) {
+            toast.error("Link inválido ou expirado. Solicite novo e-mail.");
+            setReady(true);
+          }
+          return;
+        }
+        window.history.replaceState({}, "", "/reset-password");
+      }
+
+      const hasRecoverySession = await waitForRecoverySession();
+      if (cancelled) return;
+      if (hasRecoverySession) {
+        setHasSession(true);
+        setReady(true);
+        return;
+      }
+
+      setReady(true);
     }
 
     init();
