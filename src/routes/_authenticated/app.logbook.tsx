@@ -47,7 +47,6 @@ function LogbookPage() {
   }
 
   async function handleAdd() {
-    if (!draft.exercise.trim() && !draft.load.trim() && !draft.reps.trim()) return;
     try {
       await save({
         data: {
@@ -59,6 +58,7 @@ function LogbookPage() {
       });
       setDraft({ exercise: "", load: "", reps: "" });
       reload();
+      toast.success("Linha adicionada");
     } catch (e: any) {
       toast.error(e.message ?? "Erro ao salvar");
     }
