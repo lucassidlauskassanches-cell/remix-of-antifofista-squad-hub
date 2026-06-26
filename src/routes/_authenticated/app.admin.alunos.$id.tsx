@@ -97,7 +97,7 @@ function PdfUploader({
   onChanged,
 }: {
   studentId: string;
-  kind: "training" | "nutrition";
+  kind: "training" | "nutrition" | "action";
   currentName: string | null;
   hasFile: boolean;
   onChanged: () => void;
