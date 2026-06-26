@@ -45,10 +45,26 @@ function AppShell() {
             </p>
           </div>
           <div className="flex items-center gap-2">
+            {ctx.isAdmin && (
+              <Button
+                asChild
+                variant={
+                  loc.pathname.startsWith("/app/admin/treinadores")
+                    ? "default"
+                    : "outline"
+                }
+                size="sm"
+                className="tactical-heading text-xs"
+              >
+                <Link to="/app/admin/treinadores">
+                  <ShieldCheck className="w-4 h-4 mr-1" /> EQUIPE
+                </Link>
+              </Button>
+            )}
             {ctx.isTreinador && (
               <Button
                 asChild
-                variant={isAdminArea ? "default" : "outline"}
+                variant={isAdminArea && !loc.pathname.startsWith("/app/admin/treinadores") ? "default" : "outline"}
                 size="sm"
                 className="tactical-heading text-xs"
               >
@@ -57,6 +73,7 @@ function AppShell() {
                 </Link>
               </Button>
             )}
+
             <Button onClick={signOut} variant="ghost" size="icon" aria-label="Sair">
               <LogOut className="w-5 h-5" />
             </Button>

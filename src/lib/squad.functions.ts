@@ -18,8 +18,113 @@ export const getMyContext = createServerFn({ method: "GET" })
       profile,
       isTreinador: roleList.includes("treinador"),
       isAluno: roleList.includes("aluno"),
+      isAdmin: roleList.includes("admin"),
     };
   });
+
+// ===== Admin guard =====
+async function assertAdmin(ctx: { supabase: any; userId: string }) {
+  const { data } = await ctx.supabase
+    .from("user_roles")
+    .select("role")
+    .eq("user_id", ctx.userId)
+    .eq("role", "admin")
+    .maybeSingle();
+  if (!data) throw new Error("Forbidden: admin required");
+}
+
+// ===== Admin: trainers CRUD =====
+export const listTrainers = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }) => {
+    await assertAdmin(context);
+    const { data: trainerRoles } = await context.supabase
+      .from("user_roles")
+      .select("user_id")
+      .eq("role", "treinador");
+    const ids = (trainerRoles ?? []).map((r: any) => r.user_id);
+    if (!ids.length) return { rows: [] as any[] };
+    const { data: profiles } = await context.supabase
+      .from("profiles")
+      .select("id,full_name,email,phone,created_at")
+      .in("id", ids)
+      .order("full_name");
+    return { rows: profiles ?? [] };
+  });
+
+const createTrainerInput = z.object({
+  full_name: z.string().trim().min(1).max(200),
+  email: z.string().trim().email().max(255),
+  password: z.string().min(6).max(200),
+  phone: z.string().trim().max(40).optional(),
+});
+
+export const createTrainer = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: unknown) => createTrainerInput.parse(d))
+  .handler(async ({ data, context }) => {
+    await assertAdmin(context);
+    const { supabaseAdmin } = await import(
+      "@/integrations/supabase/client.server"
+    );
+    // Try create; if user already exists, reuse it
+    let userId: string | null = null;
+    const { data: created, error } = await supabaseAdmin.auth.admin.createUser({
+      email: data.email,
+      password: data.password,
+      email_confirm: true,
+      user_metadata: { full_name: data.full_name },
+    });
+    if (created?.user) userId = created.user.id;
+    else if (error) {
+      const { data: list } = await supabaseAdmin.auth.admin.listUsers();
+      const found = list?.users?.find(
+        (u) => u.email?.toLowerCase() === data.email.toLowerCase(),
+      );
+      if (!found) throw new Error(error.message);
+      userId = found.id;
+    }
+    if (!userId) throw new Error("Falha ao criar treinador");
+    await supabaseAdmin
+      .from("profiles")
+      .update({
+        full_name: data.full_name,
+        phone: data.phone ?? null,
+      })
+      .eq("id", userId);
+    // Grant treinador role; remove aluno default to keep panel clean
+    await supabaseAdmin
+      .from("user_roles")
+      .insert({ user_id: userId, role: "treinador" as any })
+      .select();
+    await supabaseAdmin
+      .from("user_roles")
+      .delete()
+      .eq("user_id", userId)
+      .eq("role", "aluno" as any);
+    return { id: userId };
+  });
+
+export const removeTrainer = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: unknown) =>
+    z.object({ userId: z.string().uuid() }).parse(d),
+  )
+  .handler(async ({ data, context }) => {
+    await assertAdmin(context);
+    if (data.userId === context.userId)
+      throw new Error("Não é possível remover a si mesmo.");
+    const { supabaseAdmin } = await import(
+      "@/integrations/supabase/client.server"
+    );
+    await supabaseAdmin
+      .from("user_roles")
+      .delete()
+      .eq("user_id", data.userId)
+      .eq("role", "treinador" as any);
+    return { ok: true };
+  });
+
 
 // ===== Aluno: views =====
 
