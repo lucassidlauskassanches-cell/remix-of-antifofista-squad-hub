@@ -788,7 +788,8 @@ export const getMyLogbook = createServerFn({ method: "GET" })
       .from("logbook_entries")
       .select("*")
       .eq("student_id", context.userId)
-      .order("order_index");
+      .order("exercise", { ascending: true })
+      .order("entry_date", { ascending: true });
     return { rows: data ?? [] };
   });
 
