@@ -778,3 +778,71 @@ export const deletePlanPdf = createServerFn({ method: "POST" })
       .eq("id", plan.id);
     return { ok: true };
   });
+
+// ===== Logbook =====
+
+export const getMyLogbook = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }) => {
+    const { data } = await context.supabase
+      .from("logbook_entries")
+      .select("*")
+      .eq("student_id", context.userId)
+      .order("order_index");
+    return { rows: data ?? [] };
+  });
+
+const logbookEntryInput = z.object({
+  id: z.string().uuid().optional(),
+  exercise: z.string().trim().max(200).default(""),
+  load: z.string().trim().max(80).default(""),
+  reps: z.string().trim().max(80).default(""),
+  order_index: z.number().int().default(0),
+});
+
+export const saveLogbookEntry = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: unknown) => logbookEntryInput.parse(d))
+  .handler(async ({ data, context }) => {
+    const { supabase, userId } = context;
+    if (data.id) {
+      const { error } = await supabase
+        .from("logbook_entries")
+        .update({
+          exercise: data.exercise,
+          load: data.load,
+          reps: data.reps,
+          order_index: data.order_index,
+        })
+        .eq("id", data.id)
+        .eq("student_id", userId);
+      if (error) throw new Error(error.message);
+      return { id: data.id };
+    }
+    const { data: created, error } = await supabase
+      .from("logbook_entries")
+      .insert({
+        student_id: userId,
+        exercise: data.exercise,
+        load: data.load,
+        reps: data.reps,
+        order_index: data.order_index,
+      })
+      .select("id")
+      .single();
+    if (error) throw new Error(error.message);
+    return { id: created.id };
+  });
+
+export const deleteLogbookEntry = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: unknown) => z.object({ id: z.string().uuid() }).parse(d))
+  .handler(async ({ data, context }) => {
+    const { error } = await context.supabase
+      .from("logbook_entries")
+      .delete()
+      .eq("id", data.id)
+      .eq("student_id", context.userId);
+    if (error) throw new Error(error.message);
+    return { ok: true };
+  });
