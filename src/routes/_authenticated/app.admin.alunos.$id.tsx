@@ -284,7 +284,7 @@ function StructuredPlanSection({ studentId }: { studentId: string }) {
   return (
     <StructuredTrainingUploader
       studentId={studentId}
-      current={data ?? null}
+      current={(data as any) ?? null}
       onChanged={() => refetch()}
     />
   );
