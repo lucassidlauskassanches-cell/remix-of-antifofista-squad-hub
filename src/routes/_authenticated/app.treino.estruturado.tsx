@@ -102,11 +102,6 @@ function EstruturadoPage() {
         </section>
       )}
 
-      {data?.source_name && (
-        <p className="text-[10px] text-muted-foreground text-center pt-4">
-          Origem: {data.source_name}
-        </p>
-      )}
     </div>
   );
 }
