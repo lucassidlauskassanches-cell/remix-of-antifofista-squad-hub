@@ -852,3 +852,114 @@ export const deleteLogbookEntry = createServerFn({ method: "POST" })
     if (error) throw new Error(error.message);
     return { ok: true };
   });
+
+// ===== Structured training plan (parsed XLSX) =====
+
+const structuredPlanSchema = z.object({
+  weeks: z.array(z.string()).max(20),
+  blocks: z
+    .array(
+      z.object({
+        name: z.string().max(60),
+        day: z.string().max(60).nullable(),
+        exercises: z
+          .array(
+            z.object({
+              name: z.string().max(200),
+              weeks: z.array(z.string().max(60)).max(20),
+              note: z.string().max(500),
+            }),
+          )
+          .max(200),
+      }),
+    )
+    .max(20),
+  abdomen: z
+    .array(
+      z.object({
+        name: z.string().max(200),
+        weeks: z.array(z.string().max(60)).max(20),
+        note: z.string().max(500),
+      }),
+    )
+    .max(50),
+  cardio: z
+    .array(
+      z.object({
+        name: z.string().max(200),
+        weeks: z.array(z.string().max(60)).max(20),
+        note: z.string().max(500),
+      }),
+    )
+    .max(50),
+  tips: z.array(z.string().max(1000)).max(50),
+});
+
+export const getMyStructuredTrainingPlan = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }) => {
+    const { data } = await context.supabase
+      .from("structured_training_plans")
+      .select("plan,source_name,updated_at")
+      .eq("student_id", context.userId)
+      .maybeSingle();
+    return data ?? null;
+  });
+
+export const getStudentStructuredTrainingPlan = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: unknown) =>
+    z.object({ studentId: z.string().uuid() }).parse(d),
+  )
+  .handler(async ({ data, context }) => {
+    await assertTrainerOrAdmin(context);
+    const { data: row } = await context.supabase
+      .from("structured_training_plans")
+      .select("plan,source_name,updated_at")
+      .eq("student_id", data.studentId)
+      .maybeSingle();
+    return row ?? null;
+  });
+
+export const saveStructuredTrainingPlan = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: unknown) =>
+    z
+      .object({
+        studentId: z.string().uuid(),
+        sourceName: z.string().max(255),
+        plan: structuredPlanSchema,
+      })
+      .parse(d),
+  )
+  .handler(async ({ data, context }) => {
+    await assertTrainerOrAdmin(context);
+    const { error } = await context.supabase
+      .from("structured_training_plans")
+      .upsert(
+        {
+          student_id: data.studentId,
+          source_name: data.sourceName,
+          plan: data.plan,
+          updated_at: new Date().toISOString(),
+        },
+        { onConflict: "student_id" },
+      );
+    if (error) throw new Error(error.message);
+    return { ok: true };
+  });
+
+export const deleteStructuredTrainingPlan = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: unknown) =>
+    z.object({ studentId: z.string().uuid() }).parse(d),
+  )
+  .handler(async ({ data, context }) => {
+    await assertTrainerOrAdmin(context);
+    const { error } = await context.supabase
+      .from("structured_training_plans")
+      .delete()
+      .eq("student_id", data.studentId);
+    if (error) throw new Error(error.message);
+    return { ok: true };
+  });
