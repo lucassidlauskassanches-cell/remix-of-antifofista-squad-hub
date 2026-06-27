@@ -24,6 +24,7 @@ export function DietUploader({
   const save = useServerFn(saveDiet);
   const del = useServerFn(deleteDiet);
   const inputRef = useRef<HTMLInputElement>(null);
+  const [busy, setBusy] = useState(false);
   const [preview, setPreview] = useState<DietPlan | null>(null);
   const [editing, setEditing] = useState(false);
 
