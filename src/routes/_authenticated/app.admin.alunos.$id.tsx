@@ -7,7 +7,9 @@ import {
   getStudentPlanPdfUrl,
   savePlanPdf,
   deletePlanPdf,
+  getStudentStructuredTrainingPlan,
 } from "@/lib/squad.functions";
+import { StructuredTrainingUploader } from "@/components/StructuredTrainingUploader";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -54,7 +56,7 @@ function AlunoEditor() {
           <TabsTrigger value="acao" className="tactical-heading">AÇÃO</TabsTrigger>
           <TabsTrigger value="logbook" className="tactical-heading">LOGBOOK</TabsTrigger>
         </TabsList>
-        <TabsContent value="treino" className="mt-4">
+        <TabsContent value="treino" className="mt-4 space-y-4">
           <PdfUploader
             studentId={id}
             kind="training"
@@ -62,6 +64,7 @@ function AlunoEditor() {
             hasFile={!!data.trainingPlan?.pdf_path}
             onChanged={() => refetch()}
           />
+          <StructuredPlanSection studentId={id} />
         </TabsContent>
         <TabsContent value="nutricao" className="mt-4">
           <PdfUploader
