@@ -79,7 +79,19 @@ function isBlankName(v: string): boolean {
   if (!t) return true;
   if (/^0+([.,]0+)?$/.test(t)) return true;
   if (/^-+$/.test(t)) return true;
+  // time placeholders like "00:00", "00:00:00", "0:00"
+  if (/^\d{1,2}:\d{2}(:\d{2})?$/.test(t) && /^[0:]+$/.test(t)) return true;
+  // any cell composed only of zeros, separators and whitespace
+  if (/^[0\s:.\-,/]+$/.test(t)) return true;
   return false;
+}
+
+function looksLikeTitle(v: string): boolean {
+  const t = v.trim();
+  if (!t) return false;
+  if (isBlankName(t)) return false;
+  // require at least one letter
+  return /[A-Za-zÀ-ÿ]/.test(t);
 }
 
 function findSupplements(M: string[][]): Supplement[] {
@@ -166,7 +178,7 @@ function findMeals(M: string[][]): { meals: Meal[]; usedRows: Set<number> } {
     const items: MealItem[] = [];
     for (let r = head.row + 1; r < nextHeaderRowInSameCol; r++) {
       const rawName = (M[r][head.alimentoCol] ?? "").trim();
-      if (isBlankName(rawName)) {
+      if (isBlankName(rawName) || !/[A-Za-zÀ-ÿ]/.test(rawName)) {
         if (items.length > 0) break;
         else continue;
       }
