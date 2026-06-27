@@ -66,13 +66,20 @@ function isMedidaHeader(v: string): boolean {
 function cleanQty(v: string): string {
   const t = v.trim();
   if (!t) return "";
-  if (t === "0" || t === "0.0" || t === "0,0") return "";
+  if (/^0+([.,]0+)?$/.test(t)) return "";
   return t;
 }
 function cleanMedida(v: string): string {
   const t = v.trim();
-  if (!t || t === "0") return "";
+  if (!t || /^0+$/.test(t)) return "";
   return t;
+}
+function isBlankName(v: string): boolean {
+  const t = v.trim();
+  if (!t) return true;
+  if (/^0+([.,]0+)?$/.test(t)) return true;
+  if (/^-+$/.test(t)) return true;
+  return false;
 }
 
 function findSupplements(M: string[][]): Supplement[] {
