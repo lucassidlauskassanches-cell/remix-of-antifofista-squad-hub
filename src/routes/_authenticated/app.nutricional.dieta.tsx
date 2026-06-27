@@ -22,7 +22,7 @@ function DietaPage() {
     );
   }
 
-  const plan = (data?.data as DietPlan | undefined) ?? null;
+  const plan = cleanDietPlan((data?.data as DietPlan | undefined) ?? null);
   if (!plan || (plan.suplementos.length === 0 && plan.refeicoes.length === 0)) {
     return (
       <div className="text-center py-16 text-muted-foreground">
@@ -97,4 +97,34 @@ function DietaPage() {
       )}
     </div>
   );
+}
+
+function isVisibleMealItem(item: { alimento?: string; quantidade?: string; medida?: string }) {
+  const alimento = item.alimento?.trim() ?? "";
+  if (!alimento) return false;
+  const normalized = alimento
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLowerCase()
+    .replace(/[^a-z0-9]/g, "");
+  if (!/[a-z]/.test(normalized)) return false;
+  if (["observacoes", "observacao", "obs", "alimento", "qtd", "quantidade", "medida"].includes(normalized)) {
+    return false;
+  }
+  return true;
+}
+
+function cleanDietPlan(plan: DietPlan | null): DietPlan | null {
+  if (!plan) return null;
+  return {
+    suplementos: (plan.suplementos ?? []).filter((s) => s.nome?.trim()),
+    refeicoes: (plan.refeicoes ?? [])
+      .map((meal) => ({
+        ...meal,
+        nome: meal.nome?.trim() || "Refeição",
+        itens: (meal.itens ?? []).filter(isVisibleMealItem),
+      }))
+      .filter((meal) => meal.itens.length > 0),
+    observacoes: plan.observacoes ?? "",
+  };
 }
