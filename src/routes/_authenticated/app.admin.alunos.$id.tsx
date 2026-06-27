@@ -68,7 +68,7 @@ function AlunoEditor() {
           />
           <StructuredPlanSection studentId={id} />
         </TabsContent>
-        <TabsContent value="nutricao" className="mt-4">
+        <TabsContent value="nutricao" className="mt-4 space-y-4">
           <PdfUploader
             studentId={id}
             kind="nutrition"
@@ -76,6 +76,7 @@ function AlunoEditor() {
             hasFile={!!data.nutritionPlan?.pdf_path}
             onChanged={() => refetch()}
           />
+          <DietSection studentId={id} />
         </TabsContent>
         <TabsContent value="acao" className="mt-4">
           <PdfUploader
