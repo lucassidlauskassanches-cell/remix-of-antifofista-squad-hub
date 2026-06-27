@@ -2,7 +2,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { useMemo, useState, useEffect } from "react";
-import { getMyStructuredTrainingPlan } from "@/lib/squad.functions";
+import { getMyStructuredTrainingPlan, listGallery } from "@/lib/squad.functions";
 import { Card } from "@/components/ui/card";
 import {
   Select,
@@ -11,11 +11,28 @@ import {
   SelectContent,
   SelectItem,
 } from "@/components/ui/select";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { YouTubePlayer } from "@/lib/youtube";
+import { Play } from "lucide-react";
 import { describeCell, type StructuredPlan, type StructuredExercise } from "@/lib/training-xlsx-parser";
 
 export const Route = createFileRoute("/_authenticated/app/treino/estruturado")({
   component: EstruturadoPage,
 });
+
+function normalize(s: string) {
+  return (s || "")
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/[^a-z0-9]+/g, " ")
+    .trim();
+}
 
 function EstruturadoPage() {
   const fetchPlan = useServerFn(getMyStructuredTrainingPlan);
