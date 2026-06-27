@@ -186,9 +186,13 @@ function LabeledSelect({
 function ExerciseList({
   exercises,
   weekIdx,
+  lookup,
+  onPlay,
 }: {
   exercises: StructuredExercise[];
   weekIdx: number;
+  lookup: (name: string) => { title: string; url: string } | null;
+  onPlay: (v: { title: string; url: string }) => void;
 }) {
   const items = useMemo(
     () => exercises.filter((e) => e.name || (e.weeks?.[weekIdx] ?? "").trim()),
@@ -202,6 +206,7 @@ function ExerciseList({
       {items.map((ex, i) => {
         const raw = ex.weeks?.[weekIdx] ?? "";
         const parsed = describeCell(raw);
+        const video = ex.name ? lookup(ex.name) : null;
         return (
           <Card key={i} className="p-3 space-y-1">
             <p className="font-medium leading-tight">{ex.name || "—"}</p>
@@ -230,9 +235,23 @@ function ExerciseList({
                 {ex.note}
               </p>
             )}
+            {video ? (
+              <button
+                type="button"
+                onClick={() => onPlay(video)}
+                className="inline-flex items-center gap-1 text-xs text-primary hover:underline mt-1"
+              >
+                <Play className="w-3 h-3" /> VER VÍDEO
+              </button>
+            ) : (
+              <p className="text-[10px] tracking-widest text-muted-foreground mt-1 tactical-heading">
+                VÍDEO NÃO DISPONÍVEL
+              </p>
+            )}
           </Card>
         );
       })}
     </div>
   );
 }
+
