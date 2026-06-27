@@ -24,6 +24,7 @@ import { Route as AuthenticatedAppTreinoIndexRouteImport } from './routes/_authe
 import { Route as AuthenticatedAppNutricionalIndexRouteImport } from './routes/_authenticated/app.nutricional.index'
 import { Route as AuthenticatedAppTreinoEstruturadoRouteImport } from './routes/_authenticated/app.treino.estruturado'
 import { Route as AuthenticatedAppNutricionalSubstituicoesRouteImport } from './routes/_authenticated/app.nutricional.substituicoes'
+import { Route as AuthenticatedAppNutricionalDietaRouteImport } from './routes/_authenticated/app.nutricional.dieta'
 import { Route as AuthenticatedAppAdminVisaoRouteImport } from './routes/_authenticated/app.admin.visao'
 import { Route as AuthenticatedAppAdminTreinadoresRouteImport } from './routes/_authenticated/app.admin.treinadores'
 import { Route as AuthenticatedAppAdminGaleriaRouteImport } from './routes/_authenticated/app.admin.galeria'
@@ -111,6 +112,12 @@ const AuthenticatedAppNutricionalSubstituicoesRoute =
     path: '/substituicoes',
     getParentRoute: () => AuthenticatedAppNutricionalRoute,
   } as any)
+const AuthenticatedAppNutricionalDietaRoute =
+  AuthenticatedAppNutricionalDietaRouteImport.update({
+    id: '/dieta',
+    path: '/dieta',
+    getParentRoute: () => AuthenticatedAppNutricionalRoute,
+  } as any)
 const AuthenticatedAppAdminVisaoRoute =
   AuthenticatedAppAdminVisaoRouteImport.update({
     id: '/admin/visao',
@@ -169,6 +176,7 @@ export interface FileRoutesByFullPath {
   '/app/admin/galeria': typeof AuthenticatedAppAdminGaleriaRoute
   '/app/admin/treinadores': typeof AuthenticatedAppAdminTreinadoresRoute
   '/app/admin/visao': typeof AuthenticatedAppAdminVisaoRoute
+  '/app/nutricional/dieta': typeof AuthenticatedAppNutricionalDietaRoute
   '/app/nutricional/substituicoes': typeof AuthenticatedAppNutricionalSubstituicoesRoute
   '/app/treino/estruturado': typeof AuthenticatedAppTreinoEstruturadoRoute
   '/app/nutricional/': typeof AuthenticatedAppNutricionalIndexRoute
@@ -188,6 +196,7 @@ export interface FileRoutesByTo {
   '/app/admin/galeria': typeof AuthenticatedAppAdminGaleriaRoute
   '/app/admin/treinadores': typeof AuthenticatedAppAdminTreinadoresRoute
   '/app/admin/visao': typeof AuthenticatedAppAdminVisaoRoute
+  '/app/nutricional/dieta': typeof AuthenticatedAppNutricionalDietaRoute
   '/app/nutricional/substituicoes': typeof AuthenticatedAppNutricionalSubstituicoesRoute
   '/app/treino/estruturado': typeof AuthenticatedAppTreinoEstruturadoRoute
   '/app/nutricional': typeof AuthenticatedAppNutricionalIndexRoute
@@ -213,6 +222,7 @@ export interface FileRoutesById {
   '/_authenticated/app/admin/galeria': typeof AuthenticatedAppAdminGaleriaRoute
   '/_authenticated/app/admin/treinadores': typeof AuthenticatedAppAdminTreinadoresRoute
   '/_authenticated/app/admin/visao': typeof AuthenticatedAppAdminVisaoRoute
+  '/_authenticated/app/nutricional/dieta': typeof AuthenticatedAppNutricionalDietaRoute
   '/_authenticated/app/nutricional/substituicoes': typeof AuthenticatedAppNutricionalSubstituicoesRoute
   '/_authenticated/app/treino/estruturado': typeof AuthenticatedAppTreinoEstruturadoRoute
   '/_authenticated/app/nutricional/': typeof AuthenticatedAppNutricionalIndexRoute
@@ -238,6 +248,7 @@ export interface FileRouteTypes {
     | '/app/admin/galeria'
     | '/app/admin/treinadores'
     | '/app/admin/visao'
+    | '/app/nutricional/dieta'
     | '/app/nutricional/substituicoes'
     | '/app/treino/estruturado'
     | '/app/nutricional/'
@@ -257,6 +268,7 @@ export interface FileRouteTypes {
     | '/app/admin/galeria'
     | '/app/admin/treinadores'
     | '/app/admin/visao'
+    | '/app/nutricional/dieta'
     | '/app/nutricional/substituicoes'
     | '/app/treino/estruturado'
     | '/app/nutricional'
@@ -281,6 +293,7 @@ export interface FileRouteTypes {
     | '/_authenticated/app/admin/galeria'
     | '/_authenticated/app/admin/treinadores'
     | '/_authenticated/app/admin/visao'
+    | '/_authenticated/app/nutricional/dieta'
     | '/_authenticated/app/nutricional/substituicoes'
     | '/_authenticated/app/treino/estruturado'
     | '/_authenticated/app/nutricional/'
@@ -404,6 +417,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedAppNutricionalSubstituicoesRouteImport
       parentRoute: typeof AuthenticatedAppNutricionalRoute
     }
+    '/_authenticated/app/nutricional/dieta': {
+      id: '/_authenticated/app/nutricional/dieta'
+      path: '/dieta'
+      fullPath: '/app/nutricional/dieta'
+      preLoaderRoute: typeof AuthenticatedAppNutricionalDietaRouteImport
+      parentRoute: typeof AuthenticatedAppNutricionalRoute
+    }
     '/_authenticated/app/admin/visao': {
       id: '/_authenticated/app/admin/visao'
       path: '/admin/visao'
@@ -457,12 +477,15 @@ declare module '@tanstack/react-router' {
 }
 
 interface AuthenticatedAppNutricionalRouteChildren {
+  AuthenticatedAppNutricionalDietaRoute: typeof AuthenticatedAppNutricionalDietaRoute
   AuthenticatedAppNutricionalSubstituicoesRoute: typeof AuthenticatedAppNutricionalSubstituicoesRoute
   AuthenticatedAppNutricionalIndexRoute: typeof AuthenticatedAppNutricionalIndexRoute
 }
 
 const AuthenticatedAppNutricionalRouteChildren: AuthenticatedAppNutricionalRouteChildren =
   {
+    AuthenticatedAppNutricionalDietaRoute:
+      AuthenticatedAppNutricionalDietaRoute,
     AuthenticatedAppNutricionalSubstituicoesRoute:
       AuthenticatedAppNutricionalSubstituicoesRoute,
     AuthenticatedAppNutricionalIndexRoute:
