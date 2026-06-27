@@ -96,12 +96,35 @@ export function DietUploader({
             <Button
               size="sm"
               variant="ghost"
+              onClick={() => setEditing(true)}
+              title="Editar"
+            >
+              <Pencil className="w-4 h-4" />
+            </Button>
+            <Button
+              size="sm"
+              variant="ghost"
               onClick={handleDelete}
               className="text-destructive"
+              title="Remover"
             >
               <Trash2 className="w-4 h-4" />
             </Button>
           </div>
+
+          {editing && (
+            <DietEditor
+              studentId={studentId}
+              sourceName={current?.source_name ?? "dieta.xlsx"}
+              initial={plan!}
+              onSaved={() => {
+                setEditing(false);
+                setPreview(null);
+                onChanged();
+              }}
+              onCancel={() => setEditing(false)}
+            />
+          )}
 
           <details className="rounded-md border border-border bg-background/40">
             <summary className="cursor-pointer px-3 py-2 text-xs tactical-heading tracking-widest text-primary">
