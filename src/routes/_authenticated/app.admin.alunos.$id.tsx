@@ -274,3 +274,18 @@ function formatDate(value?: string) {
   const [y, m, d] = value.split("-");
   return `${d}/${m}/${y}`;
 }
+
+function StructuredPlanSection({ studentId }: { studentId: string }) {
+  const fetchPlan = useServerFn(getStudentStructuredTrainingPlan);
+  const { data, refetch } = useQuery({
+    queryKey: ["student-structured-training", studentId],
+    queryFn: () => fetchPlan({ data: { studentId } }),
+  });
+  return (
+    <StructuredTrainingUploader
+      studentId={studentId}
+      current={data ?? null}
+      onChanged={() => refetch()}
+    />
+  );
+}
