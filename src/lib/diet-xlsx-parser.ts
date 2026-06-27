@@ -113,14 +113,18 @@ function findSupplements(M: string[][]): Supplement[] {
 /** Find the meal title cell above an "Alimento" header cell (scan upward, skip blanks). */
 function findMealTitleAbove(M: string[][], headerRow: number, alimentoCol: number): string {
   for (let r = headerRow - 1; r >= 0 && r >= headerRow - 6; r--) {
-    // Look around the alimento column (a merged title can land in adjacent cell)
     const candidates = [
       M[r][alimentoCol],
       M[r][Math.max(0, alimentoCol - 1)],
       M[r][alimentoCol + 1] ?? "",
     ].map((s) => (s ?? "").trim());
     const found = candidates.find(
-      (c) => c && !isAlimentoHeader(c) && !isQtdHeader(c) && !isMedidaHeader(c),
+      (c) =>
+        c &&
+        !isBlankName(c) &&
+        !isAlimentoHeader(c) &&
+        !isQtdHeader(c) &&
+        !isMedidaHeader(c),
     );
     if (found) return found;
   }
