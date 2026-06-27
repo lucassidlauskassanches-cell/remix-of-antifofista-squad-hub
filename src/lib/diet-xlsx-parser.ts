@@ -161,18 +161,19 @@ function findMeals(M: string[][]): { meals: Meal[]; usedRows: Set<number> } {
       .find((x) => x.alimentoCol === head.alimentoCol)?.row ?? M.length;
     const items: MealItem[] = [];
     for (let r = head.row + 1; r < nextHeaderRowInSameCol; r++) {
-      const nome = (M[r][head.alimentoCol] ?? "").trim();
-      if (!nome) {
-        // stop on first blank row
+      const rawName = (M[r][head.alimentoCol] ?? "").trim();
+      if (isBlankName(rawName)) {
         if (items.length > 0) break;
         else continue;
       }
       // If the name itself looks like a new section header (Alimento), stop
-      if (isAlimentoHeader(nome)) break;
-      const qtd = cleanQty(M[r][head.qtdCol] ?? "");
+      if (isAlimentoHeader(rawName)) break;
+      const nome = rawName;
+      let qtd = cleanQty(M[r][head.qtdCol] ?? "");
       let medida = cleanMedida(M[r][head.medidaCol] ?? "");
-      // "à vontade" handling: if no qty but a hint exists in name/medida
-      if (!qtd && !medida && /a\s*vontade/i.test(norm(nome))) {
+      // "à vontade" handling: name contains "vontade" → ignore qty/medida noise
+      if (/vontade/i.test(norm(nome))) {
+        qtd = "";
         medida = "à vontade";
       }
       items.push({ alimento: nome, quantidade: qtd, medida });
