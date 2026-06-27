@@ -100,8 +100,8 @@ function findSupplements(M: string[][]): Supplement[] {
         const nome = M[i][nomeCol] ?? "";
         const dose = M[i][doseCol] ?? "";
         const hora = M[i][horaCol] ?? "";
-        if (!nome.trim() && !dose.trim() && !hora.trim()) break;
-        if (!nome.trim()) continue;
+        if (isBlankName(nome) && !dose.trim() && !hora.trim()) break;
+        if (isBlankName(nome)) continue;
         out.push({ nome: nome.trim(), dose: dose.trim(), horario: hora.trim() });
       }
       return out;
