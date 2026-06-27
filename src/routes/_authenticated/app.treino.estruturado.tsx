@@ -36,14 +36,29 @@ function normalize(s: string) {
 
 function EstruturadoPage() {
   const fetchPlan = useServerFn(getMyStructuredTrainingPlan);
+  const fetchGallery = useServerFn(listGallery);
   const { data, isLoading } = useQuery({
     queryKey: ["my-structured-training"],
     queryFn: () => fetchPlan(),
   });
+  const { data: galleryData } = useQuery({
+    queryKey: ["gallery"],
+    queryFn: () => fetchGallery(),
+  });
+
+  const galleryMap = useMemo(() => {
+    const m = new Map<string, { title: string; url: string }>();
+    (galleryData?.items ?? []).forEach((it: any) => {
+      const key = normalize(it.title);
+      if (key && !m.has(key)) m.set(key, { title: it.title, url: it.youtube_url });
+    });
+    return m;
+  }, [galleryData]);
 
   const plan = (data?.plan ?? null) as StructuredPlan | null;
   const [weekIdx, setWeekIdx] = useState(0);
   const [blockIdx, setBlockIdx] = useState(0);
+  const [video, setVideo] = useState<{ url: string; title: string } | null>(null);
 
   useEffect(() => {
     setWeekIdx(0);
@@ -62,6 +77,10 @@ function EstruturadoPage() {
   }
 
   const block = plan.blocks[blockIdx];
+
+  function lookup(name: string) {
+    return galleryMap.get(normalize(name)) ?? null;
+  }
 
   return (
     <div className="space-y-4">
@@ -87,20 +106,20 @@ function EstruturadoPage() {
         <h2 className="tactical-heading text-sm text-primary tracking-widest">
           {block.day ? `${block.name} — ${block.day}` : block.name}
         </h2>
-        <ExerciseList exercises={block.exercises} weekIdx={weekIdx} />
+        <ExerciseList exercises={block.exercises} weekIdx={weekIdx} lookup={lookup} onPlay={setVideo} />
       </section>
 
       {plan.abdomen?.length > 0 && (
         <section className="space-y-2 pt-2">
           <h2 className="tactical-heading text-sm text-primary tracking-widest">ABDOMÊN</h2>
-          <ExerciseList exercises={plan.abdomen} weekIdx={weekIdx} />
+          <ExerciseList exercises={plan.abdomen} weekIdx={weekIdx} lookup={lookup} onPlay={setVideo} />
         </section>
       )}
 
       {plan.cardio?.length > 0 && (
         <section className="space-y-2 pt-2">
           <h2 className="tactical-heading text-sm text-primary tracking-widest">CARDIO</h2>
-          <ExerciseList exercises={plan.cardio} weekIdx={weekIdx} />
+          <ExerciseList exercises={plan.cardio} weekIdx={weekIdx} lookup={lookup} onPlay={setVideo} />
         </section>
       )}
 
@@ -119,9 +138,18 @@ function EstruturadoPage() {
         </section>
       )}
 
+      <Dialog open={!!video} onOpenChange={(o) => !o && setVideo(null)}>
+        <DialogContent className="max-w-2xl">
+          <DialogHeader>
+            <DialogTitle className="tactical-heading">{video?.title}</DialogTitle>
+          </DialogHeader>
+          {video && <YouTubePlayer url={video.url} />}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
+
 
 function LabeledSelect({
   label,
