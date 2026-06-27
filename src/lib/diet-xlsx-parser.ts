@@ -178,7 +178,7 @@ function findMeals(M: string[][]): { meals: Meal[]; usedRows: Set<number> } {
     const items: MealItem[] = [];
     for (let r = head.row + 1; r < nextHeaderRowInSameCol; r++) {
       const rawName = (M[r][head.alimentoCol] ?? "").trim();
-      if (isBlankName(rawName)) {
+      if (isBlankName(rawName) || !/[A-Za-zÀ-ÿ]/.test(rawName)) {
         if (items.length > 0) break;
         else continue;
       }
