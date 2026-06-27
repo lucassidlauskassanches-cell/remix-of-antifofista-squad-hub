@@ -66,13 +66,20 @@ function isMedidaHeader(v: string): boolean {
 function cleanQty(v: string): string {
   const t = v.trim();
   if (!t) return "";
-  if (t === "0" || t === "0.0" || t === "0,0") return "";
+  if (/^0+([.,]0+)?$/.test(t)) return "";
   return t;
 }
 function cleanMedida(v: string): string {
   const t = v.trim();
-  if (!t || t === "0") return "";
+  if (!t || /^0+$/.test(t)) return "";
   return t;
+}
+function isBlankName(v: string): boolean {
+  const t = v.trim();
+  if (!t) return true;
+  if (/^0+([.,]0+)?$/.test(t)) return true;
+  if (/^-+$/.test(t)) return true;
+  return false;
 }
 
 function findSupplements(M: string[][]): Supplement[] {
@@ -93,8 +100,8 @@ function findSupplements(M: string[][]): Supplement[] {
         const nome = M[i][nomeCol] ?? "";
         const dose = M[i][doseCol] ?? "";
         const hora = M[i][horaCol] ?? "";
-        if (!nome.trim() && !dose.trim() && !hora.trim()) break;
-        if (!nome.trim()) continue;
+        if (isBlankName(nome) && !dose.trim() && !hora.trim()) break;
+        if (isBlankName(nome)) continue;
         out.push({ nome: nome.trim(), dose: dose.trim(), horario: hora.trim() });
       }
       return out;
@@ -106,14 +113,18 @@ function findSupplements(M: string[][]): Supplement[] {
 /** Find the meal title cell above an "Alimento" header cell (scan upward, skip blanks). */
 function findMealTitleAbove(M: string[][], headerRow: number, alimentoCol: number): string {
   for (let r = headerRow - 1; r >= 0 && r >= headerRow - 6; r--) {
-    // Look around the alimento column (a merged title can land in adjacent cell)
     const candidates = [
       M[r][alimentoCol],
       M[r][Math.max(0, alimentoCol - 1)],
       M[r][alimentoCol + 1] ?? "",
     ].map((s) => (s ?? "").trim());
     const found = candidates.find(
-      (c) => c && !isAlimentoHeader(c) && !isQtdHeader(c) && !isMedidaHeader(c),
+      (c) =>
+        c &&
+        !isBlankName(c) &&
+        !isAlimentoHeader(c) &&
+        !isQtdHeader(c) &&
+        !isMedidaHeader(c),
     );
     if (found) return found;
   }
@@ -154,18 +165,19 @@ function findMeals(M: string[][]): { meals: Meal[]; usedRows: Set<number> } {
       .find((x) => x.alimentoCol === head.alimentoCol)?.row ?? M.length;
     const items: MealItem[] = [];
     for (let r = head.row + 1; r < nextHeaderRowInSameCol; r++) {
-      const nome = (M[r][head.alimentoCol] ?? "").trim();
-      if (!nome) {
-        // stop on first blank row
+      const rawName = (M[r][head.alimentoCol] ?? "").trim();
+      if (isBlankName(rawName)) {
         if (items.length > 0) break;
         else continue;
       }
       // If the name itself looks like a new section header (Alimento), stop
-      if (isAlimentoHeader(nome)) break;
-      const qtd = cleanQty(M[r][head.qtdCol] ?? "");
+      if (isAlimentoHeader(rawName)) break;
+      const nome = rawName;
+      let qtd = cleanQty(M[r][head.qtdCol] ?? "");
       let medida = cleanMedida(M[r][head.medidaCol] ?? "");
-      // "à vontade" handling: if no qty but a hint exists in name/medida
-      if (!qtd && !medida && /a\s*vontade/i.test(norm(nome))) {
+      // "à vontade" handling: name contains "vontade" → ignore qty/medida noise
+      if (/vontade/i.test(norm(nome))) {
+        qtd = "";
         medida = "à vontade";
       }
       items.push({ alimento: nome, quantidade: qtd, medida });

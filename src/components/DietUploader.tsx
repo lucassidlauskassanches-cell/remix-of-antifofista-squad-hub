@@ -3,9 +3,10 @@ import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import { Upload, FileSpreadsheet, Trash2 } from "lucide-react";
+import { Upload, FileSpreadsheet, Trash2, Pencil } from "lucide-react";
 import { parseDietXlsx, type DietPlan } from "@/lib/diet-xlsx-parser";
 import { saveDiet, deleteDiet } from "@/lib/squad.functions";
+import { DietEditor } from "@/components/DietEditor";
 
 export function DietUploader({
   studentId,
@@ -25,6 +26,7 @@ export function DietUploader({
   const inputRef = useRef<HTMLInputElement>(null);
   const [busy, setBusy] = useState(false);
   const [preview, setPreview] = useState<DietPlan | null>(null);
+  const [editing, setEditing] = useState(false);
 
   async function handleFile(file: File) {
     setBusy(true);
@@ -94,12 +96,35 @@ export function DietUploader({
             <Button
               size="sm"
               variant="ghost"
+              onClick={() => setEditing(true)}
+              title="Editar"
+            >
+              <Pencil className="w-4 h-4" />
+            </Button>
+            <Button
+              size="sm"
+              variant="ghost"
               onClick={handleDelete}
               className="text-destructive"
+              title="Remover"
             >
               <Trash2 className="w-4 h-4" />
             </Button>
           </div>
+
+          {editing && (
+            <DietEditor
+              studentId={studentId}
+              sourceName={current?.source_name ?? "dieta.xlsx"}
+              initial={plan!}
+              onSaved={() => {
+                setEditing(false);
+                setPreview(null);
+                onChanged();
+              }}
+              onCancel={() => setEditing(false)}
+            />
+          )}
 
           <details className="rounded-md border border-border bg-background/40">
             <summary className="cursor-pointer px-3 py-2 text-xs tactical-heading tracking-widest text-primary">
