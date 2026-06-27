@@ -1,0 +1,1237 @@
+{
+  "proteinas": [
+    {
+      "name": "Peito de Frango, cru",
+      "qtdBase": 100,
+      "unidBase": "g",
+      "qtdAlim": 100,
+      "unidAlim": "g"
+    },
+    {
+      "name": "Atum fresco, cru",
+      "qtdBase": 100,
+      "unidBase": "g",
+      "qtdAlim": 85,
+      "unidAlim": "g"
+    },
+    {
+      "name": "Bacalhau salgado, cru",
+      "qtdBase": 100,
+      "unidBase": "g",
+      "qtdAlim": 76,
+      "unidAlim": "g"
+    },
+    {
+      "name": "Corimba, crua",
+      "qtdBase": 100,
+      "unidBase": "g",
+      "qtdAlim": 130,
+      "unidAlim": "g"
+    },
+    {
+      "name": "Corvina de Água Doce, crua",
+      "qtdBase": 100,
+      "unidBase": "g",
+      "qtdAlim": 116,
+      "unidAlim": "g"
+    },
+    {
+      "name": "Corvina do Mar, crua",
+      "qtdBase": 100,
+      "unidBase": "g",
+      "qtdAlim": 116,
+      "unidAlim": "g"
+    },
+    {
+      "name": "Filé de Merluza, cru",
+      "qtdBase": 100,
+      "unidBase": "g",
+      "qtdAlim": 130,
+      "unidAlim": "g"
+    },
+    {
+      "name": "Filé de Pescado, cru",
+      "qtdBase": 100,
+      "unidBase": "g",
+      "qtdAlim": 130,
+      "unidAlim": "g"
+    },
+    {
+      "name": "Pintado, cru",
+      "qtdBase": 100,
+      "unidBase": "g",
+      "qtdAlim": 116,
+      "unidAlim": "g"
+    },
+    {
+      "name": "Sardinha em Lata",
+      "qtdBase": 100,
+      "unidBase": "g",
+      "qtdAlim": 135,
+      "unidAlim": "g"
+    },
+    {
+      "name": "Camarão, cru",
+      "qtdBase": 100,
+      "unidBase": "g",
+      "qtdAlim": 170,
+      "unidAlim": "g"
+    },
+    {
+      "name": "Filé de Tilápia, cru",
+      "qtdBase": 100,
+      "unidBase": "g",
+      "qtdAlim": 125,
+      "unidAlim": "g"
+    },
+    {
+      "name": "Salmão, cru",
+      "qtdBase": 100,
+      "unidBase": "g",
+      "qtdAlim": 110,
+      "unidAlim": "g"
+    },
+    {
+      "name": "Bacalhau grelhado",
+      "qtdBase": 100,
+      "unidBase": "g",
+      "qtdAlim": 92,
+      "unidAlim": "g"
+    },
+    {
+      "name": "Camarão grelhado",
+      "qtdBase": 100,
+      "unidBase": "g",
+      "qtdAlim": 105,
+      "unidAlim": "g"
+    },
+    {
+      "name": "Atum grelhado",
+      "qtdBase": 100,
+      "unidBase": "g",
+      "qtdAlim": 61,
+      "unidAlim": "g"
+    },
+    {
+      "name": "Acém Bovino Moído",
+      "qtdBase": 100,
+      "unidBase": "g",
+      "qtdAlim": 82,
+      "unidAlim": "g"
+    },
+    {
+      "name": "Capa de Contra-Filé Grelhada",
+      "qtdBase": 100,
+      "unidBase": "g",
+      "qtdAlim": 71,
+      "unidAlim": "g"
+    },
+    {
+      "name": "Contra-Filé de Costela Grelhada",
+      "qtdBase": 100,
+      "unidBase": "g",
+      "qtdAlim": 74,
+      "unidAlim": "g"
+    },
+    {
+      "name": "Contra-Filé Grelhado",
+      "qtdBase": 100,
+      "unidBase": "g",
+      "qtdAlim": 69,
+      "unidAlim": "g"
+    },
+    {
+      "name": "Costela de Boi Assada",
+      "qtdBase": 100,
+      "unidBase": "g",
+      "qtdAlim": 76,
+      "unidAlim": "g"
+    },
+    {
+      "name": "Coxão-Duro Cozido",
+      "qtdBase": 100,
+      "unidBase": "g",
+      "qtdAlim": 69,
+      "unidAlim": "g"
+    },
+    {
+      "name": "Coxão-Mole Cozido",
+      "qtdBase": 100,
+      "unidBase": "g",
+      "qtdAlim": 69,
+      "unidAlim": "g"
+    },
+    {
+      "name": "Fígado Bovino Grelhado",
+      "qtdBase": 100,
+      "unidBase": "g",
+      "qtdAlim": 74,
+      "unidAlim": "g"
+    },
+    {
+      "name": "Filé Mignon Grelhado",
+      "qtdBase": 100,
+      "unidBase": "g",
+      "qtdAlim": 67,
+      "unidAlim": "g"
+    },
+    {
+      "name": "Flanco Bovino",
+      "qtdBase": 100,
+      "unidBase": "g",
+      "qtdAlim": 76,
+      "unidAlim": "g"
+    },
+    {
+      "name": "Fraldinha Bovina Cozida",
+      "qtdBase": 100,
+      "unidBase": "g",
+      "qtdAlim": 92,
+      "unidAlim": "g"
+    },
+    {
+      "name": "Lagarto Bovino Cozido",
+      "qtdBase": 100,
+      "unidBase": "g",
+      "qtdAlim": 67,
+      "unidAlim": "g"
+    },
+    {
+      "name": "Língua Bovina Cozida",
+      "qtdBase": 100,
+      "unidBase": "g",
+      "qtdAlim": 105,
+      "unidAlim": "g"
+    },
+    {
+      "name": "Maminha Bovina Grelhada",
+      "qtdBase": 100,
+      "unidBase": "g",
+      "qtdAlim": 105,
+      "unidAlim": "g"
+    },
+    {
+      "name": "Miolo de Alcatra Grelhado",
+      "qtdBase": 100,
+      "unidBase": "g",
+      "qtdAlim": 69,
+      "unidAlim": "g"
+    },
+    {
+      "name": "Músculo Bovino Cozido",
+      "qtdBase": 100,
+      "unidBase": "g",
+      "qtdAlim": 71,
+      "unidAlim": "g"
+    },
+    {
+      "name": "Paleta Bovina Cozida",
+      "qtdBase": 100,
+      "unidBase": "g",
+      "qtdAlim": 105,
+      "unidAlim": "g"
+    },
+    {
+      "name": "Patinho Bovino Grelhado",
+      "qtdBase": 100,
+      "unidBase": "g",
+      "qtdAlim": 62,
+      "unidAlim": "g"
+    },
+    {
+      "name": "Peito Bovino Cozido",
+      "qtdBase": 100,
+      "unidBase": "g",
+      "qtdAlim": 100,
+      "unidAlim": "g"
+    },
+    {
+      "name": "Picanha Grelhada",
+      "qtdBase": 100,
+      "unidBase": "g",
+      "qtdAlim": 69,
+      "unidAlim": "g"
+    },
+    {
+      "name": "Patinho Cozido",
+      "qtdBase": 100,
+      "unidBase": "g",
+      "qtdAlim": 61,
+      "unidAlim": "g"
+    },
+    {
+      "name": "Asa de Frango, crua",
+      "qtdBase": 100,
+      "unidBase": "g",
+      "qtdAlim": 123,
+      "unidAlim": "g"
+    },
+    {
+      "name": "Coração de Frango, cru",
+      "qtdBase": 100,
+      "unidBase": "g",
+      "qtdAlim": 170,
+      "unidAlim": "g"
+    },
+    {
+      "name": "Coxa de Frango s/ pele, crua",
+      "qtdBase": 100,
+      "unidBase": "g",
+      "qtdAlim": 123,
+      "unidAlim": "g"
+    },
+    {
+      "name": "Fígado de Frango, cru",
+      "qtdBase": 100,
+      "unidBase": "g",
+      "qtdAlim": 123,
+      "unidAlim": "g"
+    },
+    {
+      "name": "Peito de Frango Grelhado",
+      "qtdBase": 100,
+      "unidBase": "g",
+      "qtdAlim": 85,
+      "unidAlim": "g"
+    },
+    {
+      "name": "Sobrecoxa, crua",
+      "qtdBase": 100,
+      "unidBase": "g",
+      "qtdAlim": 123,
+      "unidAlim": "g"
+    },
+    {
+      "name": "Ovo Inteiro",
+      "qtdBase": 100,
+      "unidBase": "g",
+      "qtdAlim": 5,
+      "unidAlim": "unid"
+    },
+    {
+      "name": "Clara de Ovo",
+      "qtdBase": 100,
+      "unidBase": "g",
+      "qtdAlim": 9,
+      "unidAlim": "claras"
+    },
+    {
+      "name": "Asa de Frango assada",
+      "qtdBase": 100,
+      "unidBase": "g",
+      "qtdAlim": 85,
+      "unidAlim": "g"
+    },
+    {
+      "name": "Coração de Frango assado",
+      "qtdBase": 100,
+      "unidBase": "g",
+      "qtdAlim": 80,
+      "unidAlim": "g"
+    },
+    {
+      "name": "Fígado de Frango frito",
+      "qtdBase": 100,
+      "unidBase": "g",
+      "qtdAlim": 84,
+      "unidAlim": "g"
+    },
+    {
+      "name": "Bisteca Grelhada",
+      "qtdBase": 100,
+      "unidBase": "g",
+      "qtdAlim": 76,
+      "unidAlim": "g"
+    },
+    {
+      "name": "Pernil Assado",
+      "qtdBase": 100,
+      "unidBase": "g",
+      "qtdAlim": 88,
+      "unidAlim": "g"
+    },
+    {
+      "name": "Costela Suína Grelhada",
+      "qtdBase": 100,
+      "unidBase": "g",
+      "qtdAlim": 76,
+      "unidAlim": "g"
+    },
+    {
+      "name": "Lombo Grelhado",
+      "qtdBase": 100,
+      "unidBase": "g",
+      "qtdAlim": 88,
+      "unidAlim": "g"
+    },
+    {
+      "name": "Toucinho",
+      "qtdBase": 100,
+      "unidBase": "g",
+      "qtdAlim": 60,
+      "unidAlim": "g"
+    },
+    {
+      "name": "Filé Suíno Grelhado",
+      "qtdBase": 100,
+      "unidBase": "g",
+      "qtdAlim": 88,
+      "unidAlim": "g"
+    },
+    {
+      "name": "Clara de Ovo Pasteurizada",
+      "qtdBase": 100,
+      "unidBase": "g",
+      "qtdAlim": 320,
+      "unidAlim": "ml"
+    },
+    {
+      "name": "Whey 80%",
+      "qtdBase": 100,
+      "unidBase": "g",
+      "qtdAlim": 45,
+      "unidAlim": "g"
+    }
+  ],
+  "carboidratos": [
+    {
+      "name": "Arroz Branco Cozido",
+      "qtdBase": 100,
+      "unidBase": "g",
+      "qtdAlim": 100,
+      "unidAlim": "g"
+    },
+    {
+      "name": "Aveia em Flocos",
+      "qtdBase": 100,
+      "unidBase": "g",
+      "qtdAlim": 42,
+      "unidAlim": "g"
+    },
+    {
+      "name": "Macarrão Nissin",
+      "qtdBase": 100,
+      "unidBase": "g",
+      "qtdAlim": 46,
+      "unidAlim": "g"
+    },
+    {
+      "name": "Macarrão, cru",
+      "qtdBase": 100,
+      "unidBase": "g",
+      "qtdAlim": 36,
+      "unidAlim": "g"
+    },
+    {
+      "name": "Macarrão Cozido com Ovos",
+      "qtdBase": 100,
+      "unidBase": "g",
+      "qtdAlim": 37,
+      "unidAlim": "g"
+    },
+    {
+      "name": "Maisena",
+      "qtdBase": 100,
+      "unidBase": "g",
+      "qtdAlim": 33,
+      "unidAlim": "g"
+    },
+    {
+      "name": "Milho Verde Enlatado",
+      "qtdBase": 100,
+      "unidBase": "g",
+      "qtdAlim": 165,
+      "unidAlim": "g"
+    },
+    {
+      "name": "Pão, trigo, francês",
+      "qtdBase": 100,
+      "unidBase": "g",
+      "qtdAlim": 48,
+      "unidAlim": "g"
+    },
+    {
+      "name": "Trigo, Farinha",
+      "qtdBase": 100,
+      "unidBase": "g",
+      "qtdAlim": 38,
+      "unidAlim": "g"
+    },
+    {
+      "name": "Tapioca de Goma",
+      "qtdBase": 100,
+      "unidBase": "g",
+      "qtdAlim": 35,
+      "unidAlim": "g"
+    },
+    {
+      "name": "Cuscuz Preparado",
+      "qtdBase": 100,
+      "unidBase": "g",
+      "qtdAlim": 108,
+      "unidAlim": "g"
+    },
+    {
+      "name": "Pão de Hambúrguer",
+      "qtdBase": 100,
+      "unidBase": "g",
+      "qtdAlim": 58,
+      "unidAlim": "g"
+    },
+    {
+      "name": "Pão de Forma",
+      "qtdBase": 100,
+      "unidBase": "g",
+      "qtdAlim": 56,
+      "unidAlim": "g"
+    },
+    {
+      "name": "Pão de Queijo",
+      "qtdBase": 100,
+      "unidBase": "g",
+      "qtdAlim": 83,
+      "unidAlim": "g"
+    },
+    {
+      "name": "Pão Integral",
+      "qtdBase": 100,
+      "unidBase": "g",
+      "qtdAlim": 69,
+      "unidAlim": "g"
+    },
+    {
+      "name": "Batata Doce, crua",
+      "qtdBase": 100,
+      "unidBase": "g",
+      "qtdAlim": 102,
+      "unidAlim": "g"
+    },
+    {
+      "name": "Batata Inglesa, crua",
+      "qtdBase": 100,
+      "unidBase": "g",
+      "qtdAlim": 187,
+      "unidAlim": "g"
+    },
+    {
+      "name": "Inhame, cru",
+      "qtdBase": 100,
+      "unidBase": "g",
+      "qtdAlim": 122,
+      "unidAlim": "g"
+    },
+    {
+      "name": "Mandioca, crua",
+      "qtdBase": 100,
+      "unidBase": "g",
+      "qtdAlim": 78,
+      "unidAlim": "g"
+    },
+    {
+      "name": "Farinha de Mandioca",
+      "qtdBase": 100,
+      "unidBase": "g",
+      "qtdAlim": 32,
+      "unidAlim": "g"
+    },
+    {
+      "name": "Ervilha Enlatada",
+      "qtdBase": 100,
+      "unidBase": "g",
+      "qtdAlim": 200,
+      "unidAlim": "g"
+    },
+    {
+      "name": "Feijão Carioca Cru",
+      "qtdBase": 100,
+      "unidBase": "g",
+      "qtdAlim": 45,
+      "unidAlim": "g"
+    },
+    {
+      "name": "Feijão Preto Cru",
+      "qtdBase": 100,
+      "unidBase": "g",
+      "qtdAlim": 47,
+      "unidAlim": "g"
+    },
+    {
+      "name": "Lentilha, crua",
+      "qtdBase": 100,
+      "unidBase": "g",
+      "qtdAlim": 44,
+      "unidAlim": "g"
+    },
+    {
+      "name": "Polvilho Doce",
+      "qtdBase": 100,
+      "unidBase": "g",
+      "qtdAlim": 33,
+      "unidAlim": "g"
+    },
+    {
+      "name": "Granola",
+      "qtdBase": 100,
+      "unidBase": "g",
+      "qtdAlim": 39,
+      "unidAlim": "g"
+    },
+    {
+      "name": "Açaí",
+      "qtdBase": 100,
+      "unidBase": "g",
+      "qtdAlim": 50,
+      "unidAlim": "g"
+    },
+    {
+      "name": "Achocolatado em Pó",
+      "qtdBase": 100,
+      "unidBase": "g",
+      "qtdAlim": 31,
+      "unidAlim": "g"
+    },
+    {
+      "name": "Açúcar Cristal",
+      "qtdBase": 100,
+      "unidBase": "g",
+      "qtdAlim": 28,
+      "unidAlim": "g"
+    },
+    {
+      "name": "Açúcar Refinado",
+      "qtdBase": 100,
+      "unidBase": "g",
+      "qtdAlim": 28,
+      "unidAlim": "g"
+    },
+    {
+      "name": "Chocolate ao Leite",
+      "qtdBase": 100,
+      "unidBase": "g",
+      "qtdAlim": 46,
+      "unidAlim": "g"
+    },
+    {
+      "name": "Café em Pó",
+      "qtdBase": 100,
+      "unidBase": "g",
+      "qtdAlim": 43,
+      "unidAlim": "g"
+    },
+    {
+      "name": "Bolo de Milho",
+      "qtdBase": 100,
+      "unidBase": "g",
+      "qtdAlim": 63,
+      "unidAlim": "g"
+    },
+    {
+      "name": "Bolo de Chocolate",
+      "qtdBase": 100,
+      "unidBase": "g",
+      "qtdAlim": 50,
+      "unidAlim": "g"
+    },
+    {
+      "name": "Biscoito Doce Maisena",
+      "qtdBase": 100,
+      "unidBase": "g",
+      "qtdAlim": 38,
+      "unidAlim": "g"
+    },
+    {
+      "name": "Biscoito Rec. Chocolate",
+      "qtdBase": 100,
+      "unidBase": "g",
+      "qtdAlim": 40,
+      "unidAlim": "g"
+    },
+    {
+      "name": "Biscoito Rec. Morango",
+      "qtdBase": 100,
+      "unidBase": "g",
+      "qtdAlim": 40,
+      "unidAlim": "g"
+    },
+    {
+      "name": "Biscoito Wafer Chocolate",
+      "qtdBase": 100,
+      "unidBase": "g",
+      "qtdAlim": 42,
+      "unidAlim": "g"
+    },
+    {
+      "name": "Biscoito Wafer Morango",
+      "qtdBase": 100,
+      "unidBase": "g",
+      "qtdAlim": 42,
+      "unidAlim": "g"
+    },
+    {
+      "name": "Biscoito Cream Cracker",
+      "qtdBase": 100,
+      "unidBase": "g",
+      "qtdAlim": 41,
+      "unidAlim": "g"
+    },
+    {
+      "name": "Doce de Leite Light",
+      "qtdBase": 100,
+      "unidBase": "g",
+      "qtdAlim": 55,
+      "unidAlim": "g"
+    },
+    {
+      "name": "Geleia de Frutas",
+      "qtdBase": 100,
+      "unidBase": "g",
+      "qtdAlim": 41,
+      "unidAlim": "g"
+    },
+    {
+      "name": "Geleia de Frutas Light",
+      "qtdBase": 100,
+      "unidBase": "g",
+      "qtdAlim": 61,
+      "unidAlim": "g"
+    },
+    {
+      "name": "Bolo Comum",
+      "qtdBase": 100,
+      "unidBase": "g",
+      "qtdAlim": 33,
+      "unidAlim": "g"
+    },
+    {
+      "name": "Cereal Matinal Milho",
+      "qtdBase": 100,
+      "unidBase": "g",
+      "qtdAlim": 34,
+      "unidAlim": "g"
+    },
+    {
+      "name": "Cereal Matinal Milho c/ Açúcar",
+      "qtdBase": 100,
+      "unidBase": "g",
+      "qtdAlim": 32,
+      "unidAlim": "g"
+    },
+    {
+      "name": "Farinha Láctea",
+      "qtdBase": 100,
+      "unidBase": "g",
+      "qtdAlim": 36,
+      "unidAlim": "g"
+    },
+    {
+      "name": "Arroz Integral",
+      "qtdBase": 100,
+      "unidBase": "g",
+      "qtdAlim": 121,
+      "unidAlim": "g"
+    },
+    {
+      "name": "Leite Condensado",
+      "qtdBase": 100,
+      "unidBase": "g",
+      "qtdAlim": 50,
+      "unidAlim": "g"
+    },
+    {
+      "name": "Leite Desnatado em Pó",
+      "qtdBase": 100,
+      "unidBase": "g",
+      "qtdAlim": 53,
+      "unidAlim": "g"
+    },
+    {
+      "name": "Leite Integral em Pó",
+      "qtdBase": 100,
+      "unidBase": "g",
+      "qtdAlim": 72,
+      "unidAlim": "g"
+    },
+    {
+      "name": "Nescau Cereal",
+      "qtdBase": 100,
+      "unidBase": "g",
+      "qtdAlim": 37,
+      "unidAlim": "g"
+    },
+    {
+      "name": "Pipoca",
+      "qtdBase": 100,
+      "unidBase": "g",
+      "qtdAlim": 38,
+      "unidAlim": "g"
+    }
+  ],
+  "frutas": [
+    {
+      "name": "Banana",
+      "qtdBase": 100,
+      "unidBase": "g",
+      "qtdAlim": 100,
+      "unidAlim": "g"
+    },
+    {
+      "name": "Abacaxi",
+      "qtdBase": 100,
+      "unidBase": "g",
+      "qtdAlim": 284,
+      "unidAlim": "g"
+    },
+    {
+      "name": "Ameixa",
+      "qtdBase": 100,
+      "unidBase": "g",
+      "qtdAlim": 243,
+      "unidAlim": "g"
+    },
+    {
+      "name": "Banana da Terra",
+      "qtdBase": 100,
+      "unidBase": "g",
+      "qtdAlim": 100,
+      "unidAlim": "g"
+    },
+    {
+      "name": "Banana Maçã",
+      "qtdBase": 100,
+      "unidBase": "g",
+      "qtdAlim": 155,
+      "unidAlim": "g"
+    },
+    {
+      "name": "Banana Nanica",
+      "qtdBase": 100,
+      "unidBase": "g",
+      "qtdAlim": 142,
+      "unidAlim": "g"
+    },
+    {
+      "name": "Banana Ouro",
+      "qtdBase": 100,
+      "unidBase": "g",
+      "qtdAlim": 118,
+      "unidAlim": "g"
+    },
+    {
+      "name": "Banana Prata",
+      "qtdBase": 100,
+      "unidBase": "g",
+      "qtdAlim": 131,
+      "unidAlim": "g"
+    },
+    {
+      "name": "Caju",
+      "qtdBase": 100,
+      "unidBase": "g",
+      "qtdAlim": 340,
+      "unidAlim": "g"
+    },
+    {
+      "name": "Figo",
+      "qtdBase": 100,
+      "unidBase": "g",
+      "qtdAlim": 340,
+      "unidAlim": "g"
+    },
+    {
+      "name": "Figo Enlatado em Calda",
+      "qtdBase": 100,
+      "unidBase": "g",
+      "qtdAlim": 68,
+      "unidAlim": "g"
+    },
+    {
+      "name": "Goiaba",
+      "qtdBase": 100,
+      "unidBase": "g",
+      "qtdAlim": 284,
+      "unidAlim": "g"
+    },
+    {
+      "name": "Kiwi",
+      "qtdBase": 100,
+      "unidBase": "g",
+      "qtdAlim": 310,
+      "unidAlim": "g"
+    },
+    {
+      "name": "Laranja (fruta)",
+      "qtdBase": 100,
+      "unidBase": "g",
+      "qtdAlim": 310,
+      "unidAlim": "g"
+    },
+    {
+      "name": "Maçã",
+      "qtdBase": 100,
+      "unidBase": "g",
+      "qtdAlim": 227,
+      "unidAlim": "g"
+    },
+    {
+      "name": "Maracujá",
+      "qtdBase": 100,
+      "unidBase": "g",
+      "qtdAlim": 284,
+      "unidAlim": "g"
+    },
+    {
+      "name": "Melancia",
+      "qtdBase": 100,
+      "unidBase": "g",
+      "qtdAlim": 425,
+      "unidAlim": "g"
+    },
+    {
+      "name": "Tangerina",
+      "qtdBase": 100,
+      "unidBase": "g",
+      "qtdAlim": 340,
+      "unidAlim": "g"
+    },
+    {
+      "name": "Uva",
+      "qtdBase": 100,
+      "unidBase": "g",
+      "qtdAlim": 243,
+      "unidAlim": "g"
+    },
+    {
+      "name": "Açaí (fruta)",
+      "qtdBase": 100,
+      "unidBase": "g",
+      "qtdAlim": 60,
+      "unidAlim": "g"
+    },
+    {
+      "name": "Laranja (suco)",
+      "qtdBase": 100,
+      "unidBase": "g",
+      "qtdAlim": 378,
+      "unidAlim": "g"
+    },
+    {
+      "name": "Limão (suco)",
+      "qtdBase": 100,
+      "unidBase": "g",
+      "qtdAlim": 486,
+      "unidAlim": "g"
+    },
+    {
+      "name": "Tangerina (suco)",
+      "qtdBase": 100,
+      "unidBase": "g",
+      "qtdAlim": 378,
+      "unidAlim": "g"
+    },
+    {
+      "name": "Polpa de Morango",
+      "qtdBase": 100,
+      "unidBase": "g",
+      "qtdAlim": 500,
+      "unidAlim": "g"
+    },
+    {
+      "name": "Polpa de Acerola",
+      "qtdBase": 100,
+      "unidBase": "g",
+      "qtdAlim": 680,
+      "unidAlim": "g"
+    },
+    {
+      "name": "Polpa de Cajá",
+      "qtdBase": 100,
+      "unidBase": "g",
+      "qtdAlim": 473,
+      "unidAlim": "g"
+    },
+    {
+      "name": "Polpa de Graviola",
+      "qtdBase": 100,
+      "unidBase": "g",
+      "qtdAlim": 347,
+      "unidAlim": "g"
+    },
+    {
+      "name": "Polpa de Manga",
+      "qtdBase": 100,
+      "unidBase": "g",
+      "qtdAlim": 227,
+      "unidAlim": "g"
+    }
+  ],
+  "gorduras": [
+    {
+      "name": "Pasta de Amendoim",
+      "qtdBase": 25,
+      "unidBase": "g",
+      "qtdAlim": 25,
+      "unidAlim": "g"
+    },
+    {
+      "name": "Leite Integral",
+      "qtdBase": 25,
+      "unidBase": "g",
+      "qtdAlim": 47,
+      "unidAlim": "g"
+    },
+    {
+      "name": "Queijo Muçarela",
+      "qtdBase": 25,
+      "unidBase": "g",
+      "qtdAlim": 53,
+      "unidAlim": "g"
+    },
+    {
+      "name": "Queijo Coalho",
+      "qtdBase": 25,
+      "unidBase": "g",
+      "qtdAlim": 42,
+      "unidAlim": "g"
+    },
+    {
+      "name": "Queijo de Ricota",
+      "qtdBase": 25,
+      "unidBase": "g",
+      "qtdAlim": 105,
+      "unidAlim": "g"
+    },
+    {
+      "name": "Requeijão",
+      "qtdBase": 25,
+      "unidBase": "g",
+      "qtdAlim": 70,
+      "unidAlim": "g"
+    },
+    {
+      "name": "Coco",
+      "qtdBase": 25,
+      "unidBase": "g",
+      "qtdAlim": 30,
+      "unidAlim": "g"
+    },
+    {
+      "name": "Pasta de Amendoim c/ Choc. Branco",
+      "qtdBase": 25,
+      "unidBase": "g",
+      "qtdAlim": 15,
+      "unidAlim": "g"
+    },
+    {
+      "name": "Pão de Queijo (gordura)",
+      "qtdBase": 25,
+      "unidBase": "g",
+      "qtdAlim": 50,
+      "unidAlim": "g"
+    },
+    {
+      "name": "Semente de Linhaça",
+      "qtdBase": 25,
+      "unidBase": "g",
+      "qtdAlim": 30,
+      "unidAlim": "g"
+    },
+    {
+      "name": "Amêndoas",
+      "qtdBase": 25,
+      "unidBase": "g",
+      "qtdAlim": 20,
+      "unidAlim": "g"
+    },
+    {
+      "name": "Azeite",
+      "qtdBase": 25,
+      "unidBase": "g",
+      "qtdAlim": 10,
+      "unidAlim": "ml"
+    },
+    {
+      "name": "Castanha-do-Pará",
+      "qtdBase": 25,
+      "unidBase": "g",
+      "qtdAlim": 4,
+      "unidAlim": "unid"
+    },
+    {
+      "name": "Castanha de Caju",
+      "qtdBase": 25,
+      "unidBase": "g",
+      "qtdAlim": 15,
+      "unidAlim": "g"
+    },
+    {
+      "name": "Amendoim",
+      "qtdBase": 25,
+      "unidBase": "g",
+      "qtdAlim": 26,
+      "unidAlim": "g"
+    },
+    {
+      "name": "Abacate",
+      "qtdBase": 25,
+      "unidBase": "g",
+      "qtdAlim": 157,
+      "unidAlim": "g"
+    },
+    {
+      "name": "Manteiga Betania",
+      "qtdBase": 25,
+      "unidBase": "g",
+      "qtdAlim": 17,
+      "unidAlim": "g"
+    },
+    {
+      "name": "Margarina Qualy",
+      "qtdBase": 25,
+      "unidBase": "g",
+      "qtdAlim": 16,
+      "unidAlim": "g"
+    }
+  ],
+  "lowfat": [
+    {
+      "name": "Pão Branco Plusvita Artesano",
+      "qtdBase": 50,
+      "unidBase": "g",
+      "qtdAlim": 50,
+      "unidAlim": "g"
+    },
+    {
+      "name": "Bolo de Chocolate (LF)",
+      "qtdBase": 50,
+      "unidBase": "g",
+      "qtdAlim": 45,
+      "unidAlim": "g"
+    },
+    {
+      "name": "Bolo Comum (LF)",
+      "qtdBase": 50,
+      "unidBase": "g",
+      "qtdAlim": 30,
+      "unidAlim": "g"
+    },
+    {
+      "name": "Leite Condensado (LF)",
+      "qtdBase": 50,
+      "unidBase": "g",
+      "qtdAlim": 44,
+      "unidAlim": "g"
+    },
+    {
+      "name": "Doce de Leite Light (LF)",
+      "qtdBase": 50,
+      "unidBase": "g",
+      "qtdAlim": 50,
+      "unidAlim": "g"
+    },
+    {
+      "name": "Geleia de Frutas Vermelhas",
+      "qtdBase": 50,
+      "unidBase": "g",
+      "qtdAlim": 37,
+      "unidAlim": "g"
+    },
+    {
+      "name": "Geleia de Frutas Light (LF)",
+      "qtdBase": 50,
+      "unidBase": "g",
+      "qtdAlim": 55,
+      "unidAlim": "g"
+    },
+    {
+      "name": "Cereal Matinal Milho (LF)",
+      "qtdBase": 50,
+      "unidBase": "g",
+      "qtdAlim": 30,
+      "unidAlim": "g"
+    },
+    {
+      "name": "Cereal Matinal c/ Açúcar",
+      "qtdBase": 50,
+      "unidBase": "g",
+      "qtdAlim": 29,
+      "unidAlim": "g"
+    },
+    {
+      "name": "Farinha Láctea (LF)",
+      "qtdBase": 50,
+      "unidBase": "g",
+      "qtdAlim": 33,
+      "unidAlim": "g"
+    },
+    {
+      "name": "Iogurte Molico",
+      "qtdBase": 50,
+      "unidBase": "g",
+      "qtdAlim": 250,
+      "unidAlim": "g"
+    },
+    {
+      "name": "Iogurte Activia",
+      "qtdBase": 50,
+      "unidBase": "g",
+      "qtdAlim": 167,
+      "unidAlim": "g"
+    },
+    {
+      "name": "Iogurte Nesfit",
+      "qtdBase": 50,
+      "unidBase": "g",
+      "qtdAlim": 26,
+      "unidAlim": "g"
+    },
+    {
+      "name": "Iogurte Grego",
+      "qtdBase": 50,
+      "unidBase": "g",
+      "qtdAlim": 48,
+      "unidAlim": "g"
+    },
+    {
+      "name": "Iogurte Danio",
+      "qtdBase": 50,
+      "unidBase": "g",
+      "qtdAlim": 42,
+      "unidAlim": "g"
+    },
+    {
+      "name": "Chips de Batata Doce",
+      "qtdBase": 50,
+      "unidBase": "g",
+      "qtdAlim": 91,
+      "unidAlim": "g"
+    },
+    {
+      "name": "Requeijão Zero Gordura DANUBIO",
+      "qtdBase": 50,
+      "unidBase": "g",
+      "qtdAlim": 91,
+      "unidAlim": "g"
+    },
+    {
+      "name": "Iogurte YOPRO",
+      "qtdBase": 50,
+      "unidBase": "g",
+      "qtdAlim": 17,
+      "unidAlim": "g"
+    },
+    {
+      "name": "Iogurte VERDE CAMPO",
+      "qtdBase": 50,
+      "unidBase": "g",
+      "qtdAlim": 44,
+      "unidAlim": "g"
+    },
+    {
+      "name": "Queijo Cottage",
+      "qtdBase": 50,
+      "unidBase": "g",
+      "qtdAlim": 16,
+      "unidAlim": "g"
+    }
+  ]
+}
