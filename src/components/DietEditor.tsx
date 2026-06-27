@@ -116,7 +116,7 @@ export function DietEditor({
               quantidade: i.quantidade.trim(),
               medida: i.medida.trim(),
             }))
-            .filter((i) => i.alimento),
+            .filter((i) => isVisibleMealItem(i.alimento)),
         }))
         .filter((m) => m.itens.length > 0),
       observacoes: plan.observacoes?.trim() ?? "",
@@ -291,4 +291,13 @@ export function DietEditor({
       <Pencil className="hidden" />
     </Card>
   );
+}
+
+function isVisibleMealItem(alimento: string) {
+  const normalized = alimento
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLowerCase()
+    .replace(/[^a-z0-9]/g, "");
+  return /[a-z]/.test(normalized) && !["observacoes", "observacao", "obs", "alimento", "qtd", "quantidade", "medida"].includes(normalized);
 }
