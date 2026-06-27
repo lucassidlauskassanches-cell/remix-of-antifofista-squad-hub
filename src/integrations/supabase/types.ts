@@ -47,6 +47,33 @@ export type Database = {
         }
         Relationships: []
       }
+      diet_prescriptions: {
+        Row: {
+          created_at: string
+          data: Json
+          observacoes: string | null
+          source_name: string | null
+          student_id: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          data?: Json
+          observacoes?: string | null
+          source_name?: string | null
+          student_id: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          data?: Json
+          observacoes?: string | null
+          source_name?: string | null
+          student_id?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       exercise_gallery: {
         Row: {
           created_at: string

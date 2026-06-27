@@ -963,3 +963,94 @@ export const deleteStructuredTrainingPlan = createServerFn({ method: "POST" })
     if (error) throw new Error(error.message);
     return { ok: true };
   });
+
+// ===== Diet (parsed XLSX) =====
+const dietItemSchema = z.object({
+  alimento: z.string(),
+  quantidade: z.string(),
+  medida: z.string(),
+});
+const dietMealSchema = z.object({
+  nome: z.string(),
+  itens: z.array(dietItemSchema),
+});
+const dietSupplementSchema = z.object({
+  nome: z.string(),
+  dose: z.string(),
+  horario: z.string(),
+});
+const dietPlanSchema = z.object({
+  suplementos: z.array(dietSupplementSchema),
+  refeicoes: z.array(dietMealSchema),
+  observacoes: z.string().default(""),
+});
+
+export const getMyDiet = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }) => {
+    const { data } = await context.supabase
+      .from("diet_prescriptions")
+      .select("data,source_name,observacoes,updated_at")
+      .eq("student_id", context.userId)
+      .maybeSingle();
+    return data ?? null;
+  });
+
+export const getStudentDiet = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: unknown) =>
+    z.object({ studentId: z.string().uuid() }).parse(d),
+  )
+  .handler(async ({ data, context }) => {
+    await assertTrainerOrAdmin(context);
+    const { data: row } = await context.supabase
+      .from("diet_prescriptions")
+      .select("data,source_name,observacoes,updated_at")
+      .eq("student_id", data.studentId)
+      .maybeSingle();
+    return row ?? null;
+  });
+
+export const saveDiet = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: unknown) =>
+    z
+      .object({
+        studentId: z.string().uuid(),
+        sourceName: z.string().max(255),
+        plan: dietPlanSchema,
+      })
+      .parse(d),
+  )
+  .handler(async ({ data, context }) => {
+    await assertTrainerOrAdmin(context);
+    const { error } = await context.supabase
+      .from("diet_prescriptions")
+      .upsert(
+        {
+          student_id: data.studentId,
+          source_name: data.sourceName,
+          observacoes: data.plan.observacoes ?? "",
+          data: data.plan,
+          updated_at: new Date().toISOString(),
+        },
+        { onConflict: "student_id" },
+      );
+    if (error) throw new Error(error.message);
+    return { ok: true };
+  });
+
+export const deleteDiet = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: unknown) =>
+    z.object({ studentId: z.string().uuid() }).parse(d),
+  )
+  .handler(async ({ data, context }) => {
+    await assertTrainerOrAdmin(context);
+    const { error } = await context.supabase
+      .from("diet_prescriptions")
+      .delete()
+      .eq("student_id", data.studentId);
+    if (error) throw new Error(error.message);
+    return { ok: true };
+  });

@@ -8,8 +8,10 @@ import {
   savePlanPdf,
   deletePlanPdf,
   getStudentStructuredTrainingPlan,
+  getStudentDiet,
 } from "@/lib/squad.functions";
 import { StructuredTrainingUploader } from "@/components/StructuredTrainingUploader";
+import { DietUploader } from "@/components/DietUploader";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -66,7 +68,7 @@ function AlunoEditor() {
           />
           <StructuredPlanSection studentId={id} />
         </TabsContent>
-        <TabsContent value="nutricao" className="mt-4">
+        <TabsContent value="nutricao" className="mt-4 space-y-4">
           <PdfUploader
             studentId={id}
             kind="nutrition"
@@ -74,6 +76,7 @@ function AlunoEditor() {
             hasFile={!!data.nutritionPlan?.pdf_path}
             onChanged={() => refetch()}
           />
+          <DietSection studentId={id} />
         </TabsContent>
         <TabsContent value="acao" className="mt-4">
           <PdfUploader
