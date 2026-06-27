@@ -63,6 +63,11 @@ function isMedidaHeader(v: string): boolean {
   return n === "medida" || n === "unidade" || n === "unid" || n === "un";
 }
 
+function isObservacoesLabel(v: string): boolean {
+  const n = norm(v).replace(/[^a-z]/g, "");
+  return n === "observacoes" || n === "observacao" || n === "obs";
+}
+
 function cleanQty(v: string): string {
   const t = v.trim();
   if (!t) return "";
@@ -92,6 +97,15 @@ function looksLikeTitle(v: string): boolean {
   if (isBlankName(t)) return false;
   // require at least one letter
   return /[A-Za-zÀ-ÿ]/.test(t);
+}
+
+function isValidFoodName(v: string): boolean {
+  const t = v.trim();
+  if (isBlankName(t)) return false;
+  if (!/[A-Za-zÀ-ÿ]/.test(t)) return false;
+  if (isAlimentoHeader(t) || isQtdHeader(t) || isMedidaHeader(t)) return false;
+  if (isObservacoesLabel(t)) return false;
+  return true;
 }
 
 function findSupplements(M: string[][]): Supplement[] {
@@ -178,12 +192,11 @@ function findMeals(M: string[][]): { meals: Meal[]; usedRows: Set<number> } {
     const items: MealItem[] = [];
     for (let r = head.row + 1; r < nextHeaderRowInSameCol; r++) {
       const rawName = (M[r][head.alimentoCol] ?? "").trim();
-      if (isBlankName(rawName) || !/[A-Za-zÀ-ÿ]/.test(rawName)) {
+      if (isObservacoesLabel(rawName)) break;
+      if (!isValidFoodName(rawName)) {
         if (items.length > 0) break;
         else continue;
       }
-      // If the name itself looks like a new section header (Alimento), stop
-      if (isAlimentoHeader(rawName)) break;
       const nome = rawName;
       let qtd = cleanQty(M[r][head.qtdCol] ?? "");
       let medida = cleanMedida(M[r][head.medidaCol] ?? "");

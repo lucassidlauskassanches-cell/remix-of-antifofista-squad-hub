@@ -28,10 +28,35 @@ export function DietUploader({
   const [preview, setPreview] = useState<DietPlan | null>(null);
   const [editing, setEditing] = useState(false);
 
+  function isVisibleMealItem(item: { alimento?: string }) {
+    const alimento = item.alimento?.trim() ?? "";
+    const normalized = alimento
+      .normalize("NFD")
+      .replace(/[\u0300-\u036f]/g, "")
+      .toLowerCase()
+      .replace(/[^a-z0-9]/g, "");
+    return /[a-z]/.test(normalized) && !["observacoes", "observacao", "obs", "alimento", "qtd", "quantidade", "medida"].includes(normalized);
+  }
+
+  function cleanPlan(plan: DietPlan | null): DietPlan | null {
+    if (!plan) return null;
+    return {
+      suplementos: (plan.suplementos ?? []).filter((s) => s.nome?.trim()),
+      refeicoes: (plan.refeicoes ?? [])
+        .map((meal) => ({
+          ...meal,
+          nome: meal.nome?.trim() || "Refeição",
+          itens: (meal.itens ?? []).filter(isVisibleMealItem),
+        }))
+        .filter((meal) => meal.itens.length > 0),
+      observacoes: plan.observacoes ?? "",
+    };
+  }
+
   async function handleFile(file: File) {
     setBusy(true);
     try {
-      const plan = await parseDietXlsx(file);
+      const plan = cleanPlan(await parseDietXlsx(file))!;
       if (!plan.suplementos.length && !plan.refeicoes.length) {
         throw new Error(
           "Nada foi encontrado na aba IMPRESSÃO (nem suplementos nem refeições).",
@@ -63,7 +88,7 @@ export function DietUploader({
     }
   }
 
-  const plan = (preview ?? (current?.data as DietPlan | undefined)) ?? null;
+  const plan = cleanPlan((preview ?? (current?.data as DietPlan | undefined)) ?? null);
   const has =
     !!plan && (plan.suplementos.length > 0 || plan.refeicoes.length > 0);
 
