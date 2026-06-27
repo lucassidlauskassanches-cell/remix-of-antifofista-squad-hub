@@ -3,9 +3,10 @@ import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import { Upload, FileSpreadsheet, Trash2 } from "lucide-react";
+import { Upload, FileSpreadsheet, Trash2, Pencil } from "lucide-react";
 import { parseDietXlsx, type DietPlan } from "@/lib/diet-xlsx-parser";
 import { saveDiet, deleteDiet } from "@/lib/squad.functions";
+import { DietEditor } from "@/components/DietEditor";
 
 export function DietUploader({
   studentId,
