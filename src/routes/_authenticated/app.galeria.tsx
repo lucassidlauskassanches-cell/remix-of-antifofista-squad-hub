@@ -18,7 +18,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { YouTubePlayer, extractYouTubeId } from "./app.treino";
+import { YouTubePlayer, extractYouTubeId } from "@/lib/youtube";
 import { Play } from "lucide-react";
 
 export const Route = createFileRoute("/_authenticated/app/galeria")({

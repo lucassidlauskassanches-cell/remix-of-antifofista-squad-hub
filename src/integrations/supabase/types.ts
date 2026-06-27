@@ -271,6 +271,38 @@ export type Database = {
           },
         ]
       }
+      structured_training_plans: {
+        Row: {
+          created_at: string
+          plan: Json
+          source_name: string | null
+          student_id: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          plan?: Json
+          source_name?: string | null
+          student_id: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          plan?: Json
+          source_name?: string | null
+          student_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "structured_training_plans_student_id_fkey"
+            columns: ["student_id"]
+            isOneToOne: true
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       training_exercises: {
         Row: {
           day_label: string
