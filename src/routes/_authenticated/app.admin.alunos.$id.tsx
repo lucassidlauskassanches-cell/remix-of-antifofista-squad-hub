@@ -8,8 +8,10 @@ import {
   savePlanPdf,
   deletePlanPdf,
   getStudentStructuredTrainingPlan,
+  getStudentDiet,
 } from "@/lib/squad.functions";
 import { StructuredTrainingUploader } from "@/components/StructuredTrainingUploader";
+import { DietUploader } from "@/components/DietUploader";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
