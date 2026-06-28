@@ -690,7 +690,7 @@ export const savePlanPdf = createServerFn({ method: "POST" })
       .parse(d),
   )
   .handler(async ({ data, context }) => {
-    await assertTrainer(context);
+    await assertCanManageStudent(context, data.studentId);
     const { supabase } = context;
     const table = tableForKind(data.kind);
     const { data: existing } = await supabase
