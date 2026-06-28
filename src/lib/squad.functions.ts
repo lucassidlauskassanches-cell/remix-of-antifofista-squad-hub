@@ -985,23 +985,23 @@ export const deleteStructuredTrainingPlan = createServerFn({ method: "POST" })
 
 // ===== Diet (parsed XLSX) =====
 const dietItemSchema = z.object({
-  alimento: z.string(),
-  quantidade: z.string(),
-  medida: z.string(),
+  alimento: z.string().max(200),
+  quantidade: z.string().max(80),
+  medida: z.string().max(80),
 });
 const dietMealSchema = z.object({
-  nome: z.string(),
-  itens: z.array(dietItemSchema),
+  nome: z.string().max(200),
+  itens: z.array(dietItemSchema).max(100),
 });
 const dietSupplementSchema = z.object({
-  nome: z.string(),
-  dose: z.string(),
-  horario: z.string(),
+  nome: z.string().max(200),
+  dose: z.string().max(80),
+  horario: z.string().max(80),
 });
 const dietPlanSchema = z.object({
-  suplementos: z.array(dietSupplementSchema),
-  refeicoes: z.array(dietMealSchema),
-  observacoes: z.string().default(""),
+  suplementos: z.array(dietSupplementSchema).max(50),
+  refeicoes: z.array(dietMealSchema).max(50),
+  observacoes: z.string().max(4000).default(""),
 });
 
 export const getMyDiet = createServerFn({ method: "GET" })
