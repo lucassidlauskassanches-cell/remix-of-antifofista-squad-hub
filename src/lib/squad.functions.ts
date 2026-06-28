@@ -386,8 +386,8 @@ export const getStudentDetail = createServerFn({ method: "POST" })
     z.object({ studentId: z.string().uuid() }).parse(d),
   )
   .handler(async ({ data, context }) => {
-    await assertTrainer(context);
     const { studentId } = data;
+    await assertCanManageStudent(context, studentId);
     const [
       { data: profile },
       { data: trainingPlan },
