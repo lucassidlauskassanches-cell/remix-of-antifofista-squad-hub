@@ -6,7 +6,7 @@ export const Route = createFileRoute("/_authenticated/app/treino")({
 
 function TreinoLayout() {
   const loc = useLocation();
-  const isEstruturado = loc.pathname.startsWith("/app/treino/estruturado");
+  const isPdf = loc.pathname.startsWith("/app/treino/pdf");
   return (
     <div className="space-y-4">
       <div>
@@ -17,18 +17,18 @@ function TreinoLayout() {
         <Link
           to="/app/treino"
           className={`tactical-heading text-xs py-2 text-center ${
-            !isEstruturado ? "bg-primary text-primary-foreground" : "bg-card"
-          }`}
-        >
-          PLANILHA (PDF)
-        </Link>
-        <Link
-          to="/app/treino/estruturado"
-          className={`tactical-heading text-xs py-2 text-center ${
-            isEstruturado ? "bg-primary text-primary-foreground" : "bg-card"
+            !isPdf ? "bg-primary text-primary-foreground" : "bg-card"
           }`}
         >
           ESTRUTURADO
+        </Link>
+        <Link
+          to="/app/treino/pdf"
+          className={`tactical-heading text-xs py-2 text-center ${
+            isPdf ? "bg-primary text-primary-foreground" : "bg-card"
+          }`}
+        >
+          PLANILHA (PDF)
         </Link>
       </nav>
       <Outlet />

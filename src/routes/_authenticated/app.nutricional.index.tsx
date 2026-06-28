@@ -1,54 +1,130 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
-import { getMyPlanPdfUrl } from "@/lib/squad.functions";
+import { getMyDiet } from "@/lib/squad.functions";
 import { Card } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { FileText, ExternalLink } from "lucide-react";
-import { PdfViewer } from "@/components/PdfViewer";
+import type { DietPlan } from "@/lib/diet-xlsx-parser";
 
 export const Route = createFileRoute("/_authenticated/app/nutricional/")({
-  component: NutriPage,
+  component: DietaPage,
 });
 
-function NutriPage() {
-  const fetchUrl = useServerFn(getMyPlanPdfUrl);
+function DietaPage() {
+  const fetchDiet = useServerFn(getMyDiet);
   const { data, isLoading } = useQuery({
-    queryKey: ["my-nutrition-pdf"],
-    queryFn: () => fetchUrl({ data: { kind: "nutrition" } }),
+    queryKey: ["my-diet"],
+    queryFn: () => fetchDiet(),
   });
 
   if (isLoading) {
-    return <p className="text-center py-16 text-muted-foreground">Carregando...</p>;
+    return (
+      <p className="text-center py-16 text-muted-foreground">Carregando...</p>
+    );
   }
 
-  if (!data?.url) {
+  const plan = cleanDietPlan((data?.data as DietPlan | undefined) ?? null);
+  if (!plan || (plan.suplementos.length === 0 && plan.refeicoes.length === 0)) {
     return (
       <div className="text-center py-16 text-muted-foreground">
-        Nenhuma dieta disponível ainda. Aguarde seu treinador enviar o PDF.
+        Nenhuma dieta disponível ainda. Aguarde seu treinador enviar a planilha.
       </div>
     );
   }
 
   return (
     <div className="space-y-4">
-      <div>
-        <p className="tactical-heading text-xs text-primary tracking-widest">PLANO ATIVO</p>
-        <h1 className="tactical-heading text-2xl">{data.title || "Dieta"}</h1>
-        <div className="tactical-divider mt-2" />
-      </div>
+      {plan.suplementos.length > 0 && (
+        <Card className="p-4 space-y-3">
+          <div>
+            <p className="tactical-heading text-xs text-primary tracking-widest">
+              SUPLEMENTAÇÃO E MANIPULADOS
+            </p>
+            <div className="tactical-divider mt-2" />
+          </div>
+          <ul className="divide-y divide-border">
+            {plan.suplementos.map((s, i) => (
+              <li key={i} className="py-2">
+                <p className="text-sm font-semibold">{s.nome}</p>
+                <p className="text-xs text-muted-foreground">
+                  {s.dose ? <span>Dose: {s.dose}</span> : null}
+                  {s.dose && s.horario ? <span className="mx-1">·</span> : null}
+                  {s.horario ? <span>{s.horario}</span> : null}
+                </p>
+              </li>
+            ))}
+          </ul>
+        </Card>
+      )}
 
-      <Card className="p-4 flex items-center gap-3">
-        <FileText className="w-6 h-6 text-primary shrink-0" />
-        <span className="flex-1 truncate text-sm">{data.name ?? "dieta.pdf"}</span>
-        <Button asChild size="sm" variant="outline">
-          <a href={data.url} target="_blank" rel="noopener noreferrer">
-            <ExternalLink className="w-4 h-4 mr-1" /> ABRIR
-          </a>
-        </Button>
-      </Card>
+      {plan.refeicoes.length > 0 && (
+        <div className="space-y-3">
+          <p className="tactical-heading text-xs text-primary tracking-widest">
+            PRESCRIÇÃO ALIMENTAR
+          </p>
+          {plan.refeicoes.map((m, i) => (
+            <Card key={i} className="p-4 space-y-2">
+              <p className="tactical-heading text-sm tracking-widest">
+                {m.nome.toUpperCase()}
+              </p>
+              <div className="tactical-divider" />
+              <ul className="divide-y divide-border">
+                {m.itens.map((it, j) => (
+                  <li
+                    key={j}
+                    className="py-2 grid grid-cols-[1fr_auto] gap-2 items-baseline"
+                  >
+                    <span className="text-sm">{it.alimento}</span>
+                    <span className="text-xs text-muted-foreground whitespace-nowrap">
+                      {it.quantidade}
+                      {it.quantidade && it.medida ? " " : ""}
+                      {it.medida}
+                    </span>
+                  </li>
+                ))}
+              </ul>
+            </Card>
+          ))}
+        </div>
+      )}
 
-      <PdfViewer url={data.url} />
+      {plan.observacoes && (
+        <Card className="p-4">
+          <p className="tactical-heading text-xs text-primary tracking-widest mb-2">
+            OBSERVAÇÕES
+          </p>
+          <p className="text-sm whitespace-pre-wrap">{plan.observacoes}</p>
+        </Card>
+      )}
     </div>
   );
+}
+
+function isVisibleMealItem(item: { alimento?: string; quantidade?: string; medida?: string }) {
+  const alimento = item.alimento?.trim() ?? "";
+  if (!alimento) return false;
+  const normalized = alimento
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLowerCase()
+    .replace(/[^a-z0-9]/g, "");
+  if (!/[a-z]/.test(normalized)) return false;
+  if (["observacoes", "observacao", "obs", "alimento", "qtd", "quantidade", "medida"].includes(normalized)) {
+    return false;
+  }
+  return true;
+}
+
+function cleanDietPlan(plan: DietPlan | null): DietPlan | null {
+  if (!plan) return null;
+  return {
+    suplementos: (plan.suplementos ?? []).filter((s) => s.nome?.trim()),
+    refeicoes: (plan.refeicoes ?? [])
+      .map((meal) => ({
+        ...meal,
+        nome: meal.nome?.trim() || "Refeição",
+        itens: (meal.itens ?? []).filter(isVisibleMealItem),
+      }))
+      .filter((meal) => meal.itens.length > 0),
+    observacoes: plan.observacoes ?? "",
+  };
 }
