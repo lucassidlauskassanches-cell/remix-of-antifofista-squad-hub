@@ -209,6 +209,25 @@ async function assertTrainerOrAdmin(ctx: {
 // Backwards compatible alias
 const assertTrainer = assertTrainerOrAdmin;
 
+// Ensure caller is admin, or the trainer assigned to this student.
+async function assertCanManageStudent(
+  ctx: { supabase: any; userId: string },
+  studentId: string,
+) {
+  const { isAdmin } = await assertTrainerOrAdmin(ctx);
+  if (isAdmin) return { isAdmin: true };
+  const { data, error } = await ctx.supabase
+    .from("profiles")
+    .select("trainer_id")
+    .eq("id", studentId)
+    .maybeSingle();
+  if (error) throw new Error(error.message);
+  if (!data || data.trainer_id !== ctx.userId) {
+    throw new Error("Forbidden: aluno não atribuído a este treinador");
+  }
+  return { isAdmin: false };
+}
+
 // ===== Trainer: students =====
 
 const listStudentsInput = z.object({
