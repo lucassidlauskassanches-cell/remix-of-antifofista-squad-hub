@@ -12,6 +12,7 @@ import {
 } from "@/lib/squad.functions";
 import { StructuredTrainingUploader } from "@/components/StructuredTrainingUploader";
 import { DietUploader } from "@/components/DietUploader";
+import { GerarPlanoAcao } from "@/components/GerarPlanoAcao";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -79,13 +80,7 @@ function AlunoEditor() {
           <DietSection studentId={id} />
         </TabsContent>
         <TabsContent value="acao" className="mt-4">
-          <PdfUploader
-            studentId={id}
-            kind="action"
-            currentName={(data as any).actionPlan?.pdf_name ?? null}
-            hasFile={!!(data as any).actionPlan?.pdf_path}
-            onChanged={() => refetch()}
-          />
+          <GerarPlanoAcao studentId={id} alunoNome={data.profile?.full_name ?? ""} />
         </TabsContent>
         <TabsContent value="logbook" className="mt-4">
           <LogbookReadOnly rows={(data as any).logbook ?? []} />

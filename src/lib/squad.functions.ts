@@ -1,6 +1,8 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+// type-only: apagado no build, não vai pro bundle do cliente.
+import type { GenerateInputs } from "@/lib/plano/anthropic";
 
 // ===== Role / profile =====
 
@@ -1072,4 +1074,106 @@ export const deleteDiet = createServerFn({ method: "POST" })
       .eq("student_id", data.studentId);
     if (error) throw new Error(error.message);
     return { ok: true };
+  });
+
+// ===== Plano de Ação: geração via IA (gerador consolidado no Hub) =====
+// Reaproveita o treino/dieta já estruturados (XLSX→JSON, no banco) + anamnese e
+// fotos que o treinador sobe na hora. NÃO salva o plano nem mostra pro aluno:
+// devolve o PlanData pro editor; o treinador revisa e baixa o PDF.
+const generateActionPlanInput = z.object({
+  studentId: z.string().uuid(),
+  alunoNome: z.string().trim().min(1).max(200),
+  cicloMeses: z.number().int().min(1).max(36).default(12),
+  diaFeedback: z.string().trim().max(40).optional(),
+  telefone: z.string().trim().max(40).optional(),
+  anamnesePath: z.string().min(1).max(300),
+  fotoFrentePath: z.string().min(1).max(300),
+  fotoLadoPath: z.string().min(1).max(300),
+  fotoCostasPath: z.string().min(1).max(300),
+});
+
+export const generateActionPlan = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: unknown) => generateActionPlanInput.parse(d))
+  .handler(async ({ data, context }) => {
+    await assertCanManageStudent(context, data.studentId);
+
+    // Todos os caminhos têm que estar dentro da pasta do próprio aluno.
+    const prefix = `${data.studentId}/`;
+    const paths = [
+      data.anamnesePath,
+      data.fotoFrentePath,
+      data.fotoLadoPath,
+      data.fotoCostasPath,
+    ];
+    for (const p of paths) {
+      if (!p.startsWith(prefix)) throw new Error("Caminho de arquivo inválido.");
+    }
+
+    const { supabaseAdmin } = await import(
+      "@/integrations/supabase/client.server"
+    );
+
+    async function downloadBuffer(path: string): Promise<Buffer> {
+      const { data: blob, error } = await supabaseAdmin.storage
+        .from("plans")
+        .download(path);
+      if (error || !blob) throw new Error(`Falha ao ler arquivo: ${path}`);
+      return Buffer.from(await blob.arrayBuffer());
+    }
+
+    // Treino/dieta já estruturados (do upload de XLSX).
+    const [{ data: trainingRow }, { data: dietRow }] = await Promise.all([
+      context.supabase
+        .from("structured_training_plans")
+        .select("plan")
+        .eq("student_id", data.studentId)
+        .maybeSingle(),
+      context.supabase
+        .from("diet_prescriptions")
+        .select("data")
+        .eq("student_id", data.studentId)
+        .maybeSingle(),
+    ]);
+
+    const { serializeTraining, serializeDiet } = await import(
+      "@/lib/plano/serialize"
+    );
+    const treinoTexto = trainingRow?.plan
+      ? serializeTraining(trainingRow.plan as never)
+      : undefined;
+    const dietaTexto = dietRow?.data
+      ? serializeDiet(dietRow.data as never)
+      : undefined;
+
+    const [anamnesePdf, frente, lado, costas] = await Promise.all([
+      downloadBuffer(data.anamnesePath),
+      downloadBuffer(data.fotoFrentePath),
+      downloadBuffer(data.fotoLadoPath),
+      downloadBuffer(data.fotoCostasPath),
+    ]);
+
+    const { generateCopy, buildPlanData } = await import(
+      "@/lib/plano/anthropic"
+    );
+    const inputs: GenerateInputs = {
+      alunoNome: data.alunoNome,
+      cicloMeses: data.cicloMeses,
+      diaFeedback: data.diaFeedback,
+      anamnesePdf,
+      treinoTexto,
+      dietaTexto,
+      fotos: { frente, lado, costas },
+      // salesContext (cruzamento por telefone) fica pra v2: precisa do funil/pg.
+    };
+    const copy = await generateCopy(inputs);
+    const plan = buildPlanData(copy, inputs);
+
+    // Limpa os arquivos temporários: já viraram bytes/data-uri no PlanData.
+    await supabaseAdmin.storage
+      .from("plans")
+      .remove(paths)
+      .catch(() => {});
+
+    return { plan };
   });
