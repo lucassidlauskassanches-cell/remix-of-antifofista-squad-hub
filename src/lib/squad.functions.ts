@@ -483,7 +483,7 @@ export const saveTrainingPlan = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((d: unknown) => saveTrainingInput.parse(d))
   .handler(async ({ data, context }) => {
-    await assertTrainer(context);
+    await assertCanManageStudent(context, data.studentId);
     const { supabase } = context;
     let planId = data.planId;
     if (planId) {
