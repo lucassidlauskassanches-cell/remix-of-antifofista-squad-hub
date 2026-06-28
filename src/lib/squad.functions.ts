@@ -733,7 +733,7 @@ export const getStudentPlanPdfUrl = createServerFn({ method: "POST" })
     z.object({ studentId: z.string().uuid(), kind: planKind }).parse(d),
   )
   .handler(async ({ data, context }) => {
-    await assertTrainer(context);
+    await assertCanManageStudent(context, data.studentId);
     const table = tableForKind(data.kind);
     const { data: plan } = await context.supabase
       .from(table)
