@@ -209,6 +209,25 @@ async function assertTrainerOrAdmin(ctx: {
 // Backwards compatible alias
 const assertTrainer = assertTrainerOrAdmin;
 
+// Ensure caller is admin, or the trainer assigned to this student.
+async function assertCanManageStudent(
+  ctx: { supabase: any; userId: string },
+  studentId: string,
+) {
+  const { isAdmin } = await assertTrainerOrAdmin(ctx);
+  if (isAdmin) return { isAdmin: true };
+  const { data, error } = await ctx.supabase
+    .from("profiles")
+    .select("trainer_id")
+    .eq("id", studentId)
+    .maybeSingle();
+  if (error) throw new Error(error.message);
+  if (!data || data.trainer_id !== ctx.userId) {
+    throw new Error("Forbidden: aluno não atribuído a este treinador");
+  }
+  return { isAdmin: false };
+}
+
 // ===== Trainer: students =====
 
 const listStudentsInput = z.object({
@@ -367,8 +386,8 @@ export const getStudentDetail = createServerFn({ method: "POST" })
     z.object({ studentId: z.string().uuid() }).parse(d),
   )
   .handler(async ({ data, context }) => {
-    await assertTrainer(context);
     const { studentId } = data;
+    await assertCanManageStudent(context, studentId);
     const [
       { data: profile },
       { data: trainingPlan },
@@ -464,7 +483,7 @@ export const saveTrainingPlan = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((d: unknown) => saveTrainingInput.parse(d))
   .handler(async ({ data, context }) => {
-    await assertTrainer(context);
+    await assertCanManageStudent(context, data.studentId);
     const { supabase } = context;
     let planId = data.planId;
     if (planId) {
@@ -542,7 +561,7 @@ export const saveNutritionPlan = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((d: unknown) => saveNutritionInput.parse(d))
   .handler(async ({ data, context }) => {
-    await assertTrainer(context);
+    await assertCanManageStudent(context, data.studentId);
     const { supabase } = context;
     let planId = data.planId;
     if (planId) {
@@ -671,7 +690,7 @@ export const savePlanPdf = createServerFn({ method: "POST" })
       .parse(d),
   )
   .handler(async ({ data, context }) => {
-    await assertTrainer(context);
+    await assertCanManageStudent(context, data.studentId);
     const { supabase } = context;
     const table = tableForKind(data.kind);
     const { data: existing } = await supabase
@@ -714,7 +733,7 @@ export const getStudentPlanPdfUrl = createServerFn({ method: "POST" })
     z.object({ studentId: z.string().uuid(), kind: planKind }).parse(d),
   )
   .handler(async ({ data, context }) => {
-    await assertTrainer(context);
+    await assertCanManageStudent(context, data.studentId);
     const table = tableForKind(data.kind);
     const { data: plan } = await context.supabase
       .from(table)
@@ -759,7 +778,7 @@ export const deletePlanPdf = createServerFn({ method: "POST" })
     z.object({ studentId: z.string().uuid(), kind: planKind }).parse(d),
   )
   .handler(async ({ data, context }) => {
-    await assertTrainer(context);
+    await assertCanManageStudent(context, data.studentId);
     const table = tableForKind(data.kind);
     const { data: plan } = await context.supabase
       .from(table)
@@ -966,23 +985,23 @@ export const deleteStructuredTrainingPlan = createServerFn({ method: "POST" })
 
 // ===== Diet (parsed XLSX) =====
 const dietItemSchema = z.object({
-  alimento: z.string(),
-  quantidade: z.string(),
-  medida: z.string(),
+  alimento: z.string().max(200),
+  quantidade: z.string().max(80),
+  medida: z.string().max(80),
 });
 const dietMealSchema = z.object({
-  nome: z.string(),
-  itens: z.array(dietItemSchema),
+  nome: z.string().max(200),
+  itens: z.array(dietItemSchema).max(100),
 });
 const dietSupplementSchema = z.object({
-  nome: z.string(),
-  dose: z.string(),
-  horario: z.string(),
+  nome: z.string().max(200),
+  dose: z.string().max(80),
+  horario: z.string().max(80),
 });
 const dietPlanSchema = z.object({
-  suplementos: z.array(dietSupplementSchema),
-  refeicoes: z.array(dietMealSchema),
-  observacoes: z.string().default(""),
+  suplementos: z.array(dietSupplementSchema).max(50),
+  refeicoes: z.array(dietMealSchema).max(50),
+  observacoes: z.string().max(4000).default(""),
 });
 
 export const getMyDiet = createServerFn({ method: "GET" })
