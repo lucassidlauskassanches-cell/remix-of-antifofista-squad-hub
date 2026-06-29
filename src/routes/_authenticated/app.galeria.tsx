@@ -4,7 +4,6 @@ import { useServerFn } from "@tanstack/react-start";
 import { useMemo, useState } from "react";
 import { listGallery } from "@/lib/squad.functions";
 import { Input } from "@/components/ui/input";
-import { Card } from "@/components/ui/card";
 import {
   Select,
   SelectContent,
@@ -49,16 +48,11 @@ function GaleriaPage() {
   });
 
   return (
-    <div className="space-y-4">
-      <div>
-        <p className="tactical-heading text-xs text-primary tracking-widest">
-          BIBLIOTECA
-        </p>
-        <h1 className="tactical-heading text-2xl">GALERIA DE EXERCÍCIOS</h1>
-        <div className="tactical-divider mt-2" />
-      </div>
+    <div>
+      <div className="af-eyebrow">Execução dos exercícios</div>
+      <div className="af-title">Galeria</div>
 
-      <div className="flex gap-2">
+      <div className="flex gap-2 mt-3 mb-3">
         <Input
           placeholder="Buscar exercício..."
           value={search}
@@ -79,39 +73,39 @@ function GaleriaPage() {
         </Select>
       </div>
 
-      <div className="grid grid-cols-2 gap-3">
+      <div className="space-y-2.5">
         {filtered.map((it) => {
           const id = extractYouTubeId(it.youtube_url);
           return (
-            <Card
+            <div
               key={it.id}
+              className="af-vid cursor-pointer"
               onClick={() => setOpen({ url: it.youtube_url, title: it.title })}
-              className="overflow-hidden cursor-pointer hover:border-primary transition-colors"
             >
-              <div className="relative aspect-video bg-muted">
+              <div className="thumb aspect-video !h-auto overflow-hidden">
                 {id && (
                   <img
                     src={`https://i.ytimg.com/vi/${id}/hqdefault.jpg`}
                     alt={it.title}
                     loading="lazy"
-                    className="w-full h-full object-cover"
+                    className="absolute inset-0 w-full h-full object-cover"
                   />
                 )}
-                <div className="absolute inset-0 flex items-center justify-center bg-black/30">
-                  <Play className="w-8 h-8 text-primary" />
+                <div className="pl relative z-[1]">
+                  <Play className="w-[18px] h-[18px]" fill="currentColor" />
                 </div>
               </div>
-              <div className="p-2">
-                <p className="text-xs tactical-heading text-primary">
-                  {it.muscle_group}
-                </p>
-                <p className="text-sm font-medium line-clamp-2">{it.title}</p>
+              <div className="cap2">
+                {it.muscle_group && (
+                  <span className="af-eyebrow block mb-0.5">{it.muscle_group}</span>
+                )}
+                {it.title}
               </div>
-            </Card>
+            </div>
           );
         })}
         {filtered.length === 0 && (
-          <p className="col-span-2 text-center text-muted-foreground py-8">
+          <p className="text-center text-muted-foreground py-8">
             Nenhum vídeo encontrado.
           </p>
         )}

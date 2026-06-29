@@ -1,10 +1,10 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { useState } from "react";
 import { getMyDiet } from "@/lib/squad.functions";
 import { Card } from "@/components/ui/card";
-import { Table2, LayoutList } from "lucide-react";
+import { Table2, LayoutList, ArrowRightLeft } from "lucide-react";
 import type { DietPlan } from "@/lib/diet-xlsx-parser";
 
 export const Route = createFileRoute("/_authenticated/app/nutricional/")({
@@ -35,98 +35,95 @@ function DietaPage() {
   }
 
   return (
-    <div className="space-y-4">
+    <div>
+      <div className="af-eyebrow">Sugestão alimentar</div>
+      <div className="af-title">Sua Dieta</div>
+
+      <button type="button" className="af-planilha" onClick={() => setPlanilha((v) => !v)}>
+        {planilha ? <LayoutList className="w-3.5 h-3.5" /> : <Table2 className="w-3.5 h-3.5" />}
+        {planilha ? "Ver dieta em cards" : "Ver dieta em planilha"}
+      </button>
+
+      <div className="mt-3" />
+
       {plan.suplementos.length > 0 && (
-        <Card className="p-4 space-y-3">
-          <div>
-            <p className="tactical-heading text-xs text-primary tracking-widest">
-              SUPLEMENTAÇÃO E MANIPULADOS
-            </p>
-            <div className="tactical-divider mt-2" />
+        <>
+          <div className="af-sec">
+            <span>Suplementação e manipulados</span>
+            <div className="ln" />
           </div>
-          <ul className="divide-y divide-border">
-            {plan.suplementos.map((s, i) => (
-              <li key={i} className="py-2">
-                <p className="text-sm font-semibold">{s.nome}</p>
-                <p className="text-xs text-muted-foreground">
-                  {s.dose ? <span>Dose: {s.dose}</span> : null}
-                  {s.dose && s.horario ? <span className="mx-1">·</span> : null}
-                  {s.horario ? <span>{s.horario}</span> : null}
-                </p>
-              </li>
-            ))}
-          </ul>
-        </Card>
+          <div className="af-meal">
+            <ul>
+              {plan.suplementos.map((s, i) => (
+                <li key={i}>
+                  <span>{s.nome}</span>
+                  <span className="q">
+                    {s.dose ? s.dose : ""}
+                    {s.dose && s.horario ? " · " : ""}
+                    {s.horario ? s.horario : ""}
+                  </span>
+                </li>
+              ))}
+            </ul>
+          </div>
+        </>
       )}
 
-      {plan.refeicoes.length > 0 && (
-        <div className="space-y-3">
-          <div className="flex items-center justify-between">
-            <p className="tactical-heading text-xs text-primary tracking-widest">
-              SUGESTÃO ALIMENTAR
-            </p>
-            <button
-              type="button"
-              onClick={() => setPlanilha((v) => !v)}
-              className="inline-flex items-center gap-1 text-[11px] text-muted-foreground hover:text-foreground"
-            >
-              {planilha ? (
-                <>
-                  <LayoutList className="w-3.5 h-3.5" /> Ver em cards
-                </>
-              ) : (
-                <>
-                  <Table2 className="w-3.5 h-3.5" /> Ver em planilha
-                </>
-              )}
-            </button>
-          </div>
-
-          {planilha ? (
-            <Card className="overflow-hidden">
-              <table className="w-full text-sm">
-                <tbody>
-                  {plan.refeicoes.map((m, i) => (
-                    <FragmentMeal key={i} nome={m.nome} itens={m.itens} />
-                  ))}
-                </tbody>
-              </table>
-            </Card>
-          ) : (
-            plan.refeicoes.map((m, i) => (
-              <Card key={i} className="p-4 space-y-2">
-                <p className="tactical-heading text-sm tracking-widest">
-                  {m.nome.toUpperCase()}
-                </p>
-                <div className="tactical-divider" />
-                <ul className="divide-y divide-border">
+      {plan.refeicoes.length > 0 &&
+        (planilha ? (
+          <Card className="overflow-hidden mt-4">
+            <table className="w-full text-sm">
+              <tbody>
+                {plan.refeicoes.map((m, i) => (
+                  <FragmentMeal key={i} nome={m.nome} itens={m.itens} />
+                ))}
+              </tbody>
+            </table>
+          </Card>
+        ) : (
+          plan.refeicoes.map((m, i) => (
+            <div key={i}>
+              <div className="af-sec">
+                <span>{m.nome}</span>
+                <div className="ln" />
+              </div>
+              <div className="af-meal">
+                <ul>
                   {m.itens.map((it, j) => (
-                    <li
-                      key={j}
-                      className="py-2 grid grid-cols-[1fr_auto] gap-2 items-baseline"
-                    >
-                      <span className="text-sm">{it.alimento}</span>
-                      <span className="text-xs text-muted-foreground whitespace-nowrap">
-                        {it.quantidade}
-                        {it.quantidade && it.medida ? " " : ""}
-                        {it.medida}
+                    <li key={j}>
+                      <span>{it.alimento}</span>
+                      <span className="right">
+                        <span className="q">
+                          {it.quantidade}
+                          {it.quantidade && it.medida ? " " : ""}
+                          {it.medida}
+                        </span>
+                        <Link
+                          to="/app/nutricional/substituicoes"
+                          className="af-swap"
+                          aria-label="Ver substituições"
+                        >
+                          <ArrowRightLeft className="w-[13px] h-[13px]" />
+                        </Link>
                       </span>
                     </li>
                   ))}
                 </ul>
-              </Card>
-            ))
-          )}
-        </div>
-      )}
+              </div>
+            </div>
+          ))
+        ))}
 
       {plan.observacoes && (
-        <Card className="p-4">
-          <p className="tactical-heading text-xs text-primary tracking-widest mb-2">
-            OBSERVAÇÕES
-          </p>
-          <p className="text-sm whitespace-pre-wrap">{plan.observacoes}</p>
-        </Card>
+        <>
+          <div className="af-sec">
+            <span>Observações</span>
+            <div className="ln" />
+          </div>
+          <div className="af-meal">
+            <p className="text-sm whitespace-pre-wrap">{plan.observacoes}</p>
+          </div>
+        </>
       )}
     </div>
   );
@@ -168,7 +165,7 @@ function isVisibleMealItem(item: { alimento?: string; quantidade?: string; medid
   if (!alimento) return false;
   const normalized = alimento
     .normalize("NFD")
-    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/[̀-ͯ]/g, "")
     .toLowerCase()
     .replace(/[^a-z0-9]/g, "");
   if (!/[a-z]/.test(normalized)) return false;

@@ -8,15 +8,6 @@ import {
   getMyLogbook,
   saveLogbookEntry,
 } from "@/lib/squad.functions";
-import { Card } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import {
-  Select,
-  SelectTrigger,
-  SelectValue,
-  SelectContent,
-  SelectItem,
-} from "@/components/ui/select";
 import {
   Dialog,
   DialogContent,
@@ -24,9 +15,14 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { YouTubePlayer } from "@/lib/youtube";
-import { Play, Check } from "lucide-react";
+import { Play, Check, Table2, LayoutList } from "lucide-react";
 import { toast } from "sonner";
-import { describeCell, type StructuredPlan, type StructuredExercise } from "@/lib/training-xlsx-parser";
+import {
+  describeCell,
+  type StructuredPlan,
+  type StructuredExercise,
+  type StructuredBlock,
+} from "@/lib/training-xlsx-parser";
 
 function todayStr() {
   return new Date().toISOString().split("T")[0];
@@ -43,9 +39,14 @@ function normalize(s: string) {
   return (s || "")
     .toLowerCase()
     .normalize("NFD")
-    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/[̀-ͯ]/g, "")
     .replace(/[^a-z0-9]+/g, " ")
     .trim();
+}
+
+function shortWeek(label: string, i: number) {
+  const m = (label || "").match(/(\d+)/);
+  return m ? `S${m[1]}` : label?.trim() || `S${i + 1}`;
 }
 
 function EstruturadoPage() {
@@ -123,6 +124,7 @@ function EstruturadoPage() {
   const [weekIdx, setWeekIdx] = useState(0);
   const [blockIdx, setBlockIdx] = useState(0);
   const [video, setVideo] = useState<{ url: string; title: string } | null>(null);
+  const [planilha, setPlanilha] = useState(false);
   const [restored, setRestored] = useState(false);
 
   // Lembra o último treino/semana que o aluno abriu (por aparelho), pra não
@@ -175,59 +177,95 @@ function EstruturadoPage() {
   };
 
   return (
-    <div className="space-y-4">
-      <div className="grid grid-cols-2 gap-2">
-        <LabeledSelect
-          label="SEMANA"
-          value={String(safeWeekIdx)}
-          options={plan.weeks.map((w, i) => ({ value: String(i), label: w }))}
-          onChange={(v) => setWeekIdx(Number(v))}
-        />
-        <LabeledSelect
-          label="TREINO"
-          value={String(safeBlockIdx)}
-          options={plan.blocks.map((b, i) => ({
-            value: String(i),
-            label: b.day ? `${b.name} — ${b.day}` : b.name,
-          }))}
-          onChange={(v) => setBlockIdx(Number(v))}
-        />
+    <div>
+      <div className="af-eyebrow">{block.name || "Treino"}</div>
+      <div className="af-title">{block.day || block.name}</div>
+
+      <button type="button" className="af-planilha" onClick={() => setPlanilha((v) => !v)}>
+        {planilha ? <LayoutList className="w-3.5 h-3.5" /> : <Table2 className="w-3.5 h-3.5" />}
+        {planilha ? "Ver treino em cards" : "Ver treino em planilha"}
+      </button>
+
+      {plan.blocks.length > 1 && (
+        <div className="af-week">
+          {plan.blocks.map((b, i) => (
+            <button
+              key={i}
+              type="button"
+              className={`af-wk${i === safeBlockIdx ? " on" : ""}`}
+              onClick={() => setBlockIdx(i)}
+            >
+              {b.name}
+            </button>
+          ))}
+        </div>
+      )}
+
+      <div className="af-week">
+        {plan.weeks.map((w, i) => (
+          <button
+            key={i}
+            type="button"
+            className={`af-wk${i === safeWeekIdx ? " on" : ""}`}
+            onClick={() => setWeekIdx(i)}
+          >
+            {shortWeek(w, i)}
+          </button>
+        ))}
       </div>
 
-      <section className="space-y-2">
-        <h2 className="tactical-heading text-sm text-primary tracking-widest">
-          {block.day ? `${block.name} — ${block.day}` : block.name}
-        </h2>
-        <ExerciseList exercises={block.exercises} weekIdx={safeWeekIdx} lookup={lookup} onPlay={setVideo} {...cargaProps} />
-      </section>
+      {planilha ? (
+        <PlanilhaTable block={block} weeks={plan.weeks} />
+      ) : (
+        <>
+          <div className="af-sec">
+            <span>{block.day ? `${block.name} — ${block.day}` : block.name}</span>
+            <div className="ln" />
+          </div>
+          <ExerciseList
+            exercises={block.exercises}
+            weekIdx={safeWeekIdx}
+            lookup={lookup}
+            onPlay={setVideo}
+            {...cargaProps}
+          />
 
-      {plan.abdomen?.length > 0 && (
-        <section className="space-y-2 pt-2">
-          <h2 className="tactical-heading text-sm text-primary tracking-widest">ABDOMÊN</h2>
-          <ExerciseList exercises={plan.abdomen} weekIdx={safeWeekIdx} lookup={lookup} onPlay={setVideo} />
-        </section>
-      )}
+          {plan.abdomen?.length > 0 && (
+            <>
+              <div className="af-sec">
+                <span>Abdômen</span>
+                <div className="ln" />
+              </div>
+              <ExerciseList exercises={plan.abdomen} weekIdx={safeWeekIdx} lookup={lookup} onPlay={setVideo} />
+            </>
+          )}
 
-      {plan.cardio?.length > 0 && (
-        <section className="space-y-2 pt-2">
-          <h2 className="tactical-heading text-sm text-primary tracking-widest">CARDIO</h2>
-          <ExerciseList exercises={plan.cardio} weekIdx={safeWeekIdx} lookup={lookup} onPlay={setVideo} />
-        </section>
-      )}
+          {plan.cardio?.length > 0 && (
+            <>
+              <div className="af-sec">
+                <span>Cardio</span>
+                <div className="ln" />
+              </div>
+              <ExerciseList exercises={plan.cardio} weekIdx={safeWeekIdx} lookup={lookup} onPlay={setVideo} />
+            </>
+          )}
 
-      {plan.tips?.length > 0 && (
-        <section className="space-y-2 pt-2">
-          <h2 className="tactical-heading text-sm text-primary tracking-widest">
-            DICAS E CONSIDERAÇÕES
-          </h2>
-          <Card className="p-4 space-y-2">
-            {plan.tips.map((t, i) => (
-              <p key={i} className="text-sm leading-relaxed">
-                {t}
-              </p>
-            ))}
-          </Card>
-        </section>
+          {plan.tips?.length > 0 && (
+            <>
+              <div className="af-sec">
+                <span>Dicas e considerações</span>
+                <div className="ln" />
+              </div>
+              <div className="af-ex space-y-2">
+                {plan.tips.map((t, i) => (
+                  <p key={i} className="text-sm leading-relaxed">
+                    {t}
+                  </p>
+                ))}
+              </div>
+            </>
+          )}
+        </>
       )}
 
       <Dialog open={!!video} onOpenChange={(o) => !o && setVideo(null)}>
@@ -242,35 +280,42 @@ function EstruturadoPage() {
   );
 }
 
-
-function LabeledSelect({
-  label,
-  value,
-  options,
-  onChange,
-}: {
-  label: string;
-  value: string;
-  options: { value: string; label: string }[];
-  onChange: (v: string) => void;
-}) {
+function PlanilhaTable({ block, weeks }: { block: StructuredBlock; weeks: string[] }) {
+  const exercises: StructuredExercise[] = block.exercises ?? [];
   return (
-    <div className="space-y-1">
-      <p className="tactical-heading text-[10px] tracking-widest text-muted-foreground">
-        {label}
-      </p>
-      <Select value={value} onValueChange={onChange}>
-        <SelectTrigger>
-          <SelectValue />
-        </SelectTrigger>
-        <SelectContent>
-          {options.map((o) => (
-            <SelectItem key={o.value} value={o.value}>
-              {o.label}
-            </SelectItem>
+    <div className="af-ex p-0 overflow-x-auto">
+      <table className="w-full text-sm border-collapse">
+        <thead>
+          <tr>
+            <th className="text-left px-3 py-2 tactical-heading text-[10px] tracking-widest text-muted-foreground">
+              Exercício
+            </th>
+            {weeks.map((w, i) => (
+              <th
+                key={i}
+                className="px-3 py-2 tactical-heading text-[10px] tracking-widest text-muted-foreground whitespace-nowrap"
+              >
+                {shortWeek(w, i)}
+              </th>
+            ))}
+          </tr>
+        </thead>
+        <tbody>
+          {exercises.map((ex, r) => (
+            <tr key={r} className="border-t border-border">
+              <td className="px-3 py-2 align-top">{ex.name || "—"}</td>
+              {weeks.map((_, c) => (
+                <td
+                  key={c}
+                  className="px-3 py-2 text-center text-xs text-muted-foreground whitespace-nowrap tabular-nums"
+                >
+                  {(ex.weeks?.[c] ?? "").trim() || "—"}
+                </td>
+              ))}
+            </tr>
           ))}
-        </SelectContent>
-      </Select>
+        </tbody>
+      </table>
     </div>
   );
 }
@@ -302,7 +347,7 @@ function ExerciseList({
     return <p className="text-sm text-muted-foreground">Sem exercícios nesta seção.</p>;
   }
   return (
-    <div className="space-y-2">
+    <div>
       {items.map((ex, i) => {
         const raw = ex.weeks?.[weekIdx] ?? "";
         const parsed = describeCell(raw);
@@ -311,46 +356,42 @@ function ExerciseList({
         const last = lastByExercise?.get(key) ?? null;
         const todayId = todayIdByExercise?.get(key);
         return (
-          <Card key={i} className="p-3 space-y-1">
-            <div className="flex items-start justify-between gap-2">
-              <p className="font-medium leading-tight">{ex.name || "—"}</p>
+          <div key={i} className="af-ex">
+            <div className="nm">
+              <span>{ex.name || "—"}</span>
               {video && (
-                <Button
+                <button
                   type="button"
-                  size="sm"
-                  variant="outline"
+                  className="af-iconbtn"
                   onClick={() => onPlay(video)}
-                  className="shrink-0 h-8 tactical-heading text-[10px] tracking-widest"
+                  aria-label="Ver vídeo"
                 >
-                  <Play className="w-3.5 h-3.5 mr-1" /> VÍDEO
-                </Button>
+                  <Play className="w-[15px] h-[15px]" />
+                </button>
               )}
             </div>
-            <div className="flex flex-wrap items-center gap-2 text-sm">
+            <div className="af-row">
               {parsed.sets && parsed.reps ? (
-                <span>
-                  <strong>{parsed.sets}</strong> séries ·{" "}
-                  <strong>{parsed.reps}</strong> reps
-                </span>
+                <>
+                  <div className="af-m">
+                    <span className="v">{parsed.sets}</span>
+                    <span className="u">séries</span>
+                  </div>
+                  <div className="af-m">
+                    <span className="v">{parsed.reps}</span>
+                    <span className="u">reps</span>
+                  </div>
+                </>
               ) : raw ? (
-                <span>{raw}</span>
+                <div className="af-m">
+                  <span className="v">{raw}</span>
+                </div>
               ) : (
-                <span className="text-muted-foreground">—</span>
+                <span className="text-muted-foreground text-sm">—</span>
               )}
-              {parsed.technique && (
-                <span className="inline-flex items-center rounded bg-primary/15 text-primary px-1.5 py-0.5 text-[10px] tracking-widest tactical-heading">
-                  {parsed.technique}
-                </span>
-              )}
-              {parsed.sets && parsed.reps && raw !== `${parsed.sets}x${parsed.reps.replace(" a ", "a")}` && (
-                <span className="text-[10px] text-muted-foreground">({raw})</span>
-              )}
+              {parsed.technique && <span className="af-tag2">{parsed.technique}</span>}
             </div>
-            {ex.note && (
-              <p className="text-xs text-muted-foreground border-l-2 border-primary/50 pl-2 mt-1">
-                {ex.note}
-              </p>
-            )}
+            {ex.note && <div className="af-note">{ex.note}</div>}
             {onSaveCarga && ex.name && (
               <RegistrarCarga
                 exercise={ex.name}
@@ -361,7 +402,7 @@ function ExerciseList({
                 saving={!!savingCarga}
               />
             )}
-          </Card>
+          </div>
         );
       })}
     </div>
@@ -370,7 +411,7 @@ function ExerciseList({
 
 function formatBR(date: string) {
   if (!date) return "";
-  const [y, m, d] = date.split("-");
+  const [, m, d] = date.split("-");
   return `${d}/${m}`;
 }
 
@@ -399,47 +440,43 @@ function RegistrarCarga({
     setReps(last?.reps || prescribedReps);
   }, [last?.date]);
 
-  const done = !!todayId;
-
   return (
-    <div className="mt-2 rounded-md border border-border bg-secondary/30 p-2 space-y-1.5">
-      <div className="flex items-center justify-between">
-        <span className="tactical-heading text-[10px] tracking-widest text-muted-foreground">
-          {done ? "REGISTRADO HOJE" : "REGISTRAR CARGA"}
-        </span>
-        {last?.date && (
-          <span className="text-[10px] text-muted-foreground">
-            última: {last.load || "—"}
-            {last.reps ? ` · ${last.reps} reps` : ""} ({formatBR(last.date)})
-          </span>
-        )}
-      </div>
-      <div className="flex items-center gap-2">
-        <input
-          inputMode="decimal"
-          value={load}
-          onChange={(e) => setLoad(e.target.value)}
-          placeholder="carga"
-          className="w-0 flex-1 min-w-0 rounded-md border border-border bg-background px-2 py-1.5 text-sm"
-        />
-        <input
-          inputMode="numeric"
-          value={reps}
-          onChange={(e) => setReps(e.target.value)}
-          placeholder="reps"
-          className="w-16 rounded-md border border-border bg-background px-2 py-1.5 text-sm"
-        />
-        <Button
+    <>
+      <div className="af-logrow">
+        <label className="af-field">
+          <span className="fl">Carga</span>
+          <input
+            inputMode="decimal"
+            value={load}
+            onChange={(e) => setLoad(e.target.value)}
+            placeholder="kg"
+          />
+        </label>
+        <label className="af-field">
+          <span className="fl">Reps</span>
+          <input
+            inputMode="numeric"
+            value={reps}
+            onChange={(e) => setReps(e.target.value)}
+            placeholder="—"
+          />
+        </label>
+        <button
           type="button"
-          size="sm"
+          className="af-savebtn"
           onClick={() => onSave({ id: todayId, exercise, load: load.trim(), reps: reps.trim() })}
           disabled={saving || !load.trim()}
-          className="h-8 shrink-0 bg-primary text-primary-foreground"
-          aria-label="Salvar carga"
         >
-          <Check className="w-4 h-4" />
-        </Button>
+          <Check className="w-[13px] h-[13px]" />
+          {todayId ? "Atualizar" : "Registrar"}
+        </button>
       </div>
-    </div>
+      {last?.date && (
+        <div className="af-lastval">
+          Última: {last.load || "—"}
+          {last.reps ? ` × ${last.reps}` : ""} · {formatBR(last.date)}
+        </div>
+      )}
+    </>
   );
 }

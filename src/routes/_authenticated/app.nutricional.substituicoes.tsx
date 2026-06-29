@@ -1,18 +1,8 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useMemo, useState } from "react";
+import { useMemo } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { getMyDiet } from "@/lib/squad.functions";
-import { Card } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import { ArrowRight } from "lucide-react";
 import data from "@/lib/substitutions-data.json";
 import type { DietPlan } from "@/lib/diet-xlsx-parser";
 
@@ -30,12 +20,12 @@ type Item = {
   unidAlim: string;
 };
 
-const GROUPS: { key: GroupKey; label: string }[] = [
-  { key: "proteinas", label: "PROTEÍNAS" },
-  { key: "carboidratos", label: "CARBOIDRATOS" },
-  { key: "frutas", label: "FRUTAS" },
-  { key: "gorduras", label: "GORDURAS" },
-  { key: "lowfat", label: "LOW FAT" },
+const GROUPS: { key: GroupKey }[] = [
+  { key: "proteinas" },
+  { key: "carboidratos" },
+  { key: "frutas" },
+  { key: "gorduras" },
+  { key: "lowfat" },
 ];
 
 function normalize(s: string) {
@@ -63,9 +53,8 @@ const ALL_ITEMS: { item: Item; group: GroupKey }[] = GROUPS.flatMap((g) =>
   (data[g.key] as Item[]).map((item) => ({ item, group: g.key })),
 );
 
-// Tenta achar o alimento da dieta na tabela de equivalência. Conservador: só
-// retorna match quando há boa sobreposição de palavras, pra não sugerir troca
-// entre grupos errados.
+// Acha o alimento da dieta na tabela de equivalência. Conservador: só casa
+// quando há boa sobreposição de palavras, pra não trocar entre grupos errados.
 function matchDietFood(food: string): { item: Item; group: GroupKey } | null {
   const ft = tokens(food);
   if (!ft.length) return null;
@@ -86,9 +75,8 @@ function matchDietFood(food: string): { item: Item; group: GroupKey } | null {
 }
 
 function parseQty(quantidade?: string) {
-  if (!quantidade) return "";
-  const n = parseFloat(quantidade.replace(",", "."));
-  return Number.isFinite(n) && n > 0 ? String(n) : "";
+  const n = parseFloat((quantidade || "").replace(",", "."));
+  return Number.isFinite(n) && n > 0 ? n : null;
 }
 
 type DietFood = { alimento: string; quantidade?: string; medida?: string };
@@ -117,208 +105,75 @@ function useDietFoods(): DietFood[] {
   }, [plan]);
 }
 
+type SubCard = {
+  food: DietFood;
+  alts: string[];
+};
+
 function SubstPage() {
   const dietFoods = useDietFoods();
-  const [group, setGroup] = useState<GroupKey>("proteinas");
-  const [fromName, setFromName] = useState("");
-  const [toName, setToName] = useState("");
-  const [weight, setWeight] = useState("");
 
-  const items = useMemo(
-    () =>
-      (data[group] as Item[])
-        .slice()
-        .sort((a, b) => a.name.localeCompare(b.name, "pt-BR")),
-    [group],
-  );
-
-  function pickDietFood(food: DietFood) {
-    const match = matchDietFood(food.alimento);
-    if (!match) return;
-    setGroup(match.group);
-    setFromName(match.item.name);
-    setToName("");
-    setWeight(parseQty(food.quantidade) || "");
-  }
-
-  const matchedFoods = useMemo(
-    () => dietFoods.filter((f) => matchDietFood(f.alimento)),
-    [dietFoods],
-  );
+  const cards = useMemo<SubCard[]>(() => {
+    return dietFoods
+      .map((food) => {
+        const match = matchDietFood(food.alimento);
+        if (!match) return null;
+        const { item: from, group } = match;
+        const weight = parseQty(food.quantidade);
+        const alts = (data[group] as Item[])
+          .filter((to) => to.name !== from.name)
+          .sort((a, b) => a.name.localeCompare(b.name, "pt-BR"))
+          .map((to) => {
+            if (weight === null) return to.name;
+            const qtd = Math.round((weight / from.qtdBase) * to.qtdAlim * 10) / 10;
+            return `${to.name} ${qtd}${to.unidAlim}`;
+          });
+        if (!alts.length) return null;
+        return { food, alts } satisfies SubCard;
+      })
+      .filter((c): c is SubCard => c !== null);
+  }, [dietFoods]);
 
   return (
-    <div className="space-y-4">
-      <div>
-        <p className="tactical-heading text-xs text-primary tracking-widest">CALCULADORA</p>
-        <h1 className="tactical-heading text-2xl">SUBSTITUIÇÃO ALIMENTAR</h1>
-        <div className="tactical-divider mt-2" />
-      </div>
-
-      {matchedFoods.length > 0 && (
-        <Card className="p-4 space-y-3">
-          <p className="tactical-heading text-xs text-primary tracking-widest">
-            DA SUA DIETA
-          </p>
-          <p className="text-xs text-muted-foreground">
-            Toque no alimento que você quer trocar. Já preenchemos a quantidade.
-          </p>
-          <div className="flex flex-wrap gap-2">
-            {matchedFoods.map((f, i) => {
-              const active = matchDietFood(f.alimento)?.item.name === fromName;
-              return (
-                <button
-                  key={i}
-                  type="button"
-                  onClick={() => pickDietFood(f)}
-                  className={`rounded-full border px-3 py-1.5 text-xs ${
-                    active
-                      ? "border-primary bg-primary/10 text-primary"
-                      : "border-border text-foreground hover:border-primary"
-                  }`}
-                >
-                  {f.alimento}
-                  {f.quantidade ? (
-                    <span className="text-muted-foreground">
-                      {" "}· {f.quantidade}
-                      {f.medida ? ` ${f.medida}` : ""}
-                    </span>
-                  ) : null}
-                </button>
-              );
-            })}
-          </div>
-        </Card>
-      )}
-
-      <div className="grid grid-cols-5 gap-1 p-1 bg-card rounded-md border border-border">
-        {GROUPS.map((g) => (
-          <button
-            key={g.key}
-            onClick={() => {
-              setGroup(g.key);
-              setFromName("");
-              setToName("");
-            }}
-            className={`tactical-heading text-[10px] py-2 rounded tracking-wider ${
-              group === g.key
-                ? "bg-primary text-primary-foreground"
-                : "text-muted-foreground"
-            }`}
-          >
-            {g.label}
-          </button>
-        ))}
-      </div>
-
-      <Calculator
-        items={items}
-        fromName={fromName}
-        toName={toName}
-        weight={weight}
-        onFrom={setFromName}
-        onTo={setToName}
-        onWeight={setWeight}
-      />
-    </div>
-  );
-}
-
-function Calculator({
-  items,
-  fromName,
-  toName,
-  weight,
-  onFrom,
-  onTo,
-  onWeight,
-}: {
-  items: Item[];
-  fromName: string;
-  toName: string;
-  weight: string;
-  onFrom: (v: string) => void;
-  onTo: (v: string) => void;
-  onWeight: (v: string) => void;
-}) {
-  const from = useMemo(() => items.find((i) => i.name === fromName), [items, fromName]);
-  const to = useMemo(() => items.find((i) => i.name === toName), [items, toName]);
-
-  const w = parseFloat(weight.replace(",", "."));
-  const result =
-    from && to && !isNaN(w) && w > 0
-      ? Math.round((w / from.qtdBase) * to.qtdAlim * 10) / 10
-      : null;
-
-  return (
-    <div className="space-y-4">
-      <Card className="p-4 space-y-3">
-        <p className="tactical-heading text-xs text-primary tracking-widest">TENHO / COMO</p>
-        <div className="space-y-2">
-          <label className="text-xs text-muted-foreground">Alimento atual</label>
-          <Select value={fromName} onValueChange={onFrom}>
-            <SelectTrigger>
-              <SelectValue placeholder="Selecione o alimento" />
-            </SelectTrigger>
-            <SelectContent className="max-h-[50vh]">
-              {items.map((i) => (
-                <SelectItem key={i.name} value={i.name}>
-                  {i.name}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </div>
-        <div className="space-y-2">
-          <label className="text-xs text-muted-foreground">
-            Peso do alimento atual {from ? `(${from.unidBase})` : ""}
-          </label>
-          <Input
-            type="number"
-            inputMode="decimal"
-            placeholder="0"
-            value={weight}
-            onChange={(e) => onWeight(e.target.value)}
-          />
-        </div>
-      </Card>
-
-      <div className="flex justify-center">
-        <ArrowRight className="w-6 h-6 text-primary" />
-      </div>
-
-      <Card className="p-4 space-y-3">
-        <p className="tactical-heading text-xs text-primary tracking-widest">
-          QUERO SUBSTITUIR POR
-        </p>
-        <div className="space-y-2">
-          <label className="text-xs text-muted-foreground">Substituto desejado</label>
-          <Select value={toName} onValueChange={onTo}>
-            <SelectTrigger>
-              <SelectValue placeholder="Selecione o substituto" />
-            </SelectTrigger>
-            <SelectContent className="max-h-[50vh]">
-              {items.map((i) => (
-                <SelectItem key={i.name} value={i.name}>
-                  {i.name}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </div>
-
-        <div className="rounded-md border border-primary/40 bg-primary/5 p-4 text-center">
-          <p className="tactical-heading text-xs text-muted-foreground tracking-widest">
-            PESO A CONSUMIR
-          </p>
-          <p className="tactical-heading text-3xl text-primary mt-1">
-            {result !== null ? `${result} ${to?.unidAlim ?? ""}` : "—"}
-          </p>
-        </div>
-      </Card>
-
-      <p className="text-[11px] text-muted-foreground text-center">
-        Todas as trocas são equivalentes dentro do mesmo grupo.
+    <div>
+      <div className="af-eyebrow">Baseado na sua dieta</div>
+      <div className="af-title">Substituições</div>
+      <p className="af-lead">
+        Cada alimento da sua dieta com trocas equivalentes do mesmo grupo, já no
+        peso que você consome.
       </p>
+
+      {cards.length === 0 ? (
+        <div className="text-center py-16 text-muted-foreground text-sm">
+          Quando seu treinador enviar a dieta, as trocas equivalentes de cada
+          alimento aparecem aqui.
+        </div>
+      ) : (
+        <div>
+          {cards.map((c, i) => (
+            <div key={i} className="af-sub-item">
+              <div className="from">
+                <span>{c.food.alimento}</span>
+                {(c.food.quantidade || c.food.medida) && (
+                  <span className="q">
+                    {c.food.quantidade}
+                    {c.food.quantidade && c.food.medida ? " " : ""}
+                    {c.food.medida}
+                  </span>
+                )}
+              </div>
+              <div className="arrow">pode trocar por</div>
+              <div className="alts">
+                {c.alts.map((a, j) => (
+                  <span key={j} className="af-alt">
+                    {a}
+                  </span>
+                ))}
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
     </div>
   );
 }

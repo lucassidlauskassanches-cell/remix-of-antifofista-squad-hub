@@ -70,6 +70,11 @@
   --input: oklch(0.20 0.005 45);
   --ring: oklch(0.575 0.18 25);
 
+  /* acento vivo + degradê de sangue (iguais ao mockup) */
+  --red-2: #e11d2a;
+  --grad: linear-gradient(135deg, #7a0911 0%, #c20015 100%);
+  --field-bg: #0c0908;
+
   color-scheme: dark;
 }
 
@@ -147,4 +152,465 @@
   pointer-events: none;
   opacity: 0.05;
   background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='220' height='220'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+}
+
+/* ============================================================
+   Componentes do redesign (replicam o mockup, detalhe a detalhe).
+   Namespace af-* pra não colidir com utilitários do Tailwind.
+   ============================================================ */
+@layer components {
+  /* cabeçalho de tela */
+  .af-eyebrow {
+    font-family: var(--font-display);
+    text-transform: uppercase;
+    letter-spacing: 0.24em;
+    font-size: 10px;
+    color: var(--color-muted-foreground);
+  }
+  .af-title {
+    font-family: var(--font-heavy);
+    text-transform: uppercase;
+    letter-spacing: 0.01em;
+    font-size: 25px;
+    line-height: 1;
+    margin-top: 6px;
+  }
+  .af-title em {
+    font-style: normal;
+    color: var(--red-2);
+  }
+  .af-lead {
+    font-size: 11px;
+    color: var(--color-muted-foreground);
+    line-height: 1.55;
+    margin: 7px 0 13px;
+  }
+
+  /* link discreto "ver em planilha" */
+  .af-planilha {
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+    margin-top: 12px;
+    color: var(--color-muted-foreground);
+    font-family: var(--font-display);
+    letter-spacing: 0.12em;
+    font-size: 9.5px;
+    text-transform: uppercase;
+    cursor: pointer;
+  }
+  .af-planilha:hover {
+    color: var(--color-foreground);
+  }
+
+  /* chips de semana / treino */
+  .af-week {
+    display: flex;
+    gap: 7px;
+    margin: 13px 0;
+    overflow-x: auto;
+    scrollbar-width: none;
+  }
+  .af-week::-webkit-scrollbar {
+    display: none;
+  }
+  .af-wk {
+    flex: 0 0 auto;
+    font-family: var(--font-display);
+    letter-spacing: 0.08em;
+    font-size: 11px;
+    text-transform: uppercase;
+    padding: 7px 12px;
+    border-radius: 8px;
+    border: 1px solid var(--color-border);
+    color: var(--color-muted-foreground);
+    background: transparent;
+    cursor: pointer;
+  }
+  .af-wk.on {
+    color: var(--color-foreground);
+    border-color: var(--color-primary);
+    background: rgba(194, 0, 21, 0.14);
+  }
+
+  /* divisor de seção */
+  .af-sec {
+    display: flex;
+    align-items: center;
+    gap: 9px;
+    margin: 15px 1px 10px;
+  }
+  .af-sec span {
+    font-family: var(--font-display);
+    font-weight: 600;
+    letter-spacing: 0.18em;
+    font-size: 10px;
+    text-transform: uppercase;
+    color: var(--color-muted-foreground);
+  }
+  .af-sec .ln {
+    flex: 1;
+    height: 1px;
+    background: var(--color-border);
+  }
+
+  /* card de exercício */
+  .af-ex {
+    border: 1px solid var(--color-border);
+    border-radius: 13px;
+    padding: 12px;
+    background: var(--color-card);
+  }
+  .af-ex + .af-ex {
+    margin-top: 9px;
+  }
+  .af-ex .nm {
+    font-weight: 600;
+    font-size: 13.5px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+  }
+  .af-iconbtn {
+    width: 28px;
+    height: 28px;
+    border-radius: 8px;
+    border: 1px solid var(--color-border);
+    display: grid;
+    place-items: center;
+    color: var(--color-foreground);
+    flex: 0 0 auto;
+    background: transparent;
+    cursor: pointer;
+  }
+  .af-row {
+    display: flex;
+    align-items: baseline;
+    gap: 16px;
+    margin-top: 10px;
+  }
+  .af-m .v {
+    font-family: var(--font-heavy);
+    font-size: 18px;
+    font-variant-numeric: tabular-nums;
+    line-height: 1;
+  }
+  .af-m .u {
+    font-family: var(--font-display);
+    letter-spacing: 0.1em;
+    font-size: 8.5px;
+    color: var(--color-muted-foreground);
+    text-transform: uppercase;
+    margin-left: 5px;
+  }
+  .af-tag2 {
+    font-family: var(--font-display);
+    letter-spacing: 0.12em;
+    font-size: 8.5px;
+    text-transform: uppercase;
+    padding: 3px 8px;
+    border-radius: 5px;
+    color: var(--red-2);
+    border: 1px solid rgba(225, 29, 42, 0.32);
+  }
+  .af-note {
+    font-size: 11px;
+    color: var(--color-muted-foreground);
+    border-left: 2px solid var(--color-primary);
+    padding-left: 8px;
+    margin-top: 10px;
+    line-height: 1.45;
+  }
+
+  /* registro de carga embutido */
+  .af-logrow {
+    display: flex;
+    align-items: stretch;
+    gap: 8px;
+    margin-top: 11px;
+    padding-top: 11px;
+    border-top: 1px dashed var(--color-border);
+  }
+  .af-field {
+    flex: 1;
+    min-width: 0;
+    border: 1px solid var(--color-border);
+    border-radius: 10px;
+    padding: 7px 10px;
+    background: var(--field-bg);
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+  }
+  .af-field .fl {
+    font-family: var(--font-display);
+    letter-spacing: 0.12em;
+    font-size: 7.5px;
+    text-transform: uppercase;
+    color: var(--color-muted-foreground);
+  }
+  .af-field input {
+    font-family: var(--font-heavy);
+    font-size: 17px;
+    font-variant-numeric: tabular-nums;
+    line-height: 1;
+    background: transparent;
+    border: 0;
+    outline: none;
+    color: var(--color-foreground);
+    width: 100%;
+  }
+  .af-field input::placeholder {
+    color: var(--color-muted-foreground);
+    opacity: 0.5;
+  }
+  .af-savebtn {
+    flex: 0 0 auto;
+    border: 0;
+    border-radius: 10px;
+    padding: 0 14px;
+    background: var(--grad);
+    color: #fff;
+    cursor: pointer;
+    font-family: var(--font-display);
+    font-weight: 600;
+    letter-spacing: 0.1em;
+    font-size: 10px;
+    text-transform: uppercase;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+  .af-savebtn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+  .af-lastval {
+    font-family: var(--font-display);
+    letter-spacing: 0.06em;
+    font-size: 9px;
+    text-transform: uppercase;
+    color: var(--color-muted-foreground);
+    margin-top: 8px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+  .af-lastval em {
+    font-style: normal;
+    color: var(--red-2);
+  }
+
+  /* evolução */
+  .af-evo {
+    border: 1px solid var(--color-border);
+    border-radius: 13px;
+    padding: 13px;
+    background: var(--color-card);
+  }
+  .af-evo + .af-evo {
+    margin-top: 10px;
+  }
+  .af-evo .eh {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+  }
+  .af-evo .eh .e {
+    font-weight: 600;
+    font-size: 13.5px;
+  }
+  .af-evo .eh .big {
+    text-align: right;
+  }
+  .af-evo .eh .big .v {
+    font-family: var(--font-heavy);
+    font-size: 20px;
+    font-variant-numeric: tabular-nums;
+    line-height: 1;
+  }
+  .af-evo .eh .big .u {
+    font-family: var(--font-display);
+    letter-spacing: 0.1em;
+    font-size: 8px;
+    color: var(--color-muted-foreground);
+    text-transform: uppercase;
+  }
+  .af-evo .eh .big .up {
+    color: var(--red-2);
+    font-size: 9px;
+    font-family: var(--font-display);
+    letter-spacing: 0.08em;
+    margin-top: 3px;
+  }
+  .af-spark {
+    margin-top: 11px;
+  }
+
+  /* refeição (dieta) */
+  .af-meal {
+    border: 1px solid var(--color-border);
+    border-radius: 13px;
+    padding: 13px;
+    background: var(--color-card);
+  }
+  .af-meal + .af-meal {
+    margin-top: 10px;
+  }
+  .af-meal h3 {
+    font-family: var(--font-display);
+    font-weight: 600;
+    letter-spacing: 0.1em;
+    font-size: 12px;
+    text-transform: uppercase;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+  .af-meal ul {
+    list-style: none;
+    margin-top: 11px;
+  }
+  .af-meal li {
+    display: flex;
+    justify-content: space-between;
+    gap: 10px;
+    padding: 7px 0;
+    border-top: 1px solid var(--color-border);
+    font-size: 12.5px;
+  }
+  .af-meal li:first-child {
+    border-top: 0;
+  }
+  .af-meal li .q {
+    color: var(--color-muted-foreground);
+    font-variant-numeric: tabular-nums;
+    white-space: nowrap;
+    font-size: 11.5px;
+  }
+  .af-meal li .right {
+    display: flex;
+    align-items: center;
+    gap: 9px;
+  }
+  .af-swap {
+    width: 24px;
+    height: 24px;
+    border-radius: 7px;
+    border: 1px solid var(--color-border);
+    display: grid;
+    place-items: center;
+    color: var(--color-muted-foreground);
+    flex: 0 0 auto;
+    background: transparent;
+    cursor: pointer;
+  }
+
+  /* galeria */
+  .af-vid {
+    border: 1px solid var(--color-border);
+    border-radius: 13px;
+    overflow: hidden;
+    background: var(--color-card);
+  }
+  .af-vid .thumb {
+    height: 104px;
+    background: #0d0908;
+    display: grid;
+    place-items: center;
+    position: relative;
+    border-bottom: 1px solid var(--color-border);
+    cursor: pointer;
+  }
+  .af-vid .pl {
+    width: 42px;
+    height: 42px;
+    border-radius: 50%;
+    border: 1px solid var(--color-border);
+    background: rgba(194, 0, 21, 0.12);
+    display: grid;
+    place-items: center;
+    color: var(--color-foreground);
+  }
+  .af-vid .cap2 {
+    padding: 10px 12px;
+    font-size: 12.5px;
+    font-weight: 600;
+  }
+
+  /* substituições */
+  .af-sub-item {
+    border: 1px solid var(--color-border);
+    border-radius: 13px;
+    padding: 13px;
+    background: var(--color-card);
+  }
+  .af-sub-item + .af-sub-item {
+    margin-top: 9px;
+  }
+  .af-sub-item .from {
+    font-weight: 600;
+    font-size: 13px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+  .af-sub-item .from .q {
+    color: var(--color-muted-foreground);
+    font-size: 11.5px;
+    font-variant-numeric: tabular-nums;
+  }
+  .af-sub-item .arrow {
+    color: var(--color-muted-foreground);
+    font-family: var(--font-display);
+    letter-spacing: 0.1em;
+    font-size: 9px;
+    text-transform: uppercase;
+    margin: 9px 0 8px;
+  }
+  .af-sub-item .alts {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+  }
+  .af-alt {
+    font-size: 11.5px;
+    color: var(--color-foreground);
+    border: 1px solid var(--color-border);
+    border-radius: 999px;
+    padding: 5px 11px;
+    background: transparent;
+    cursor: pointer;
+  }
+  .af-alt.on {
+    border-color: var(--color-primary);
+    background: rgba(194, 0, 21, 0.14);
+  }
+
+  /* CTA degradê */
+  .af-cta {
+    width: 100%;
+    border: 0;
+    border-radius: 12px;
+    padding: 15px;
+    cursor: pointer;
+    font-family: var(--font-display);
+    font-weight: 600;
+    letter-spacing: 0.16em;
+    font-size: 12px;
+    text-transform: uppercase;
+    color: #fff;
+    background: var(--grad);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 9px;
+  }
+  .af-cta.ghost {
+    background: transparent;
+    border: 1px solid var(--color-border);
+    color: var(--color-foreground);
+  }
 }

@@ -4,8 +4,6 @@ import { useServerFn } from "@tanstack/react-start";
 import { useMemo, useState } from "react";
 import { getMyLogbook, deleteLogbookEntry } from "@/lib/squad.functions";
 import { Input } from "@/components/ui/input";
-import { Card } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
 import { Search, Trash2, TrendingUp } from "lucide-react";
 import { toast } from "sonner";
 
@@ -101,18 +99,15 @@ function EvolucaoPage() {
   }
 
   return (
-    <div className="space-y-4">
-      <div>
-        <p className="tactical-heading text-xs text-primary tracking-widest">PROGRESSÃO</p>
-        <h1 className="tactical-heading text-2xl">EVOLUÇÃO</h1>
-        <p className="text-xs text-muted-foreground mt-1">
-          A carga que você registra no treino aparece aqui, exercício por exercício.
-        </p>
-        <div className="tactical-divider mt-2" />
-      </div>
+    <div>
+      <div className="af-eyebrow">Sua evolução de carga</div>
+      <div className="af-title">Evolução</div>
+      <p className="af-lead">
+        Cada exercício que você registra no treino vira progresso aqui.
+      </p>
 
       {rawRows.length > 0 && (
-        <div className="relative">
+        <div className="relative mb-3">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
           <Input
             placeholder="Buscar exercício..."
@@ -138,7 +133,7 @@ function EvolucaoPage() {
           Nenhum exercício encontrado.
         </p>
       ) : (
-        <div className="space-y-3">
+        <div>
           {groups.map((g) => (
             <ExerciseProgress key={g.exercise} group={g} onDelete={handleDelete} />
           ))}
@@ -162,25 +157,30 @@ function ExerciseProgress({
   const recent = [...group.entries].reverse().slice(0, 6);
 
   return (
-    <Card className="p-4 space-y-3">
-      <div className="flex items-start justify-between gap-2">
-        <p className="font-medium leading-tight">{group.exercise}</p>
+    <div className="af-evo">
+      <div className="eh">
+        <div className="e">{group.exercise}</div>
         {latest !== null && (
-          <div className="text-right shrink-0">
-            <p className="tactical-heading text-xl text-primary leading-none">{latest}</p>
+          <div className="big">
+            <span className="v">{latest}</span>
+            <span className="u"> kg</span>
             {delta !== null && delta !== 0 && (
-              <p className="text-[11px] text-muted-foreground">
-                {delta > 0 ? "+" : ""}
-                {delta} vs. anterior
-              </p>
+              <div className="up" style={delta < 0 ? { color: "var(--color-muted-foreground)" } : undefined}>
+                {delta > 0 ? "▲ +" : "▼ "}
+                {delta}kg
+              </div>
             )}
           </div>
         )}
       </div>
 
-      {numeric.length >= 2 && <Sparkline points={numeric.map((n) => n.value)} />}
+      {numeric.length >= 2 && (
+        <div className="af-spark">
+          <Sparkline points={numeric.map((n) => n.value)} />
+        </div>
+      )}
 
-      <ul className="divide-y divide-border">
+      <ul className="mt-3 divide-y divide-border">
         {recent.map((e) => (
           <li
             key={e.id}
@@ -191,19 +191,18 @@ function ExerciseProgress({
               {e.load || "—"}
               {e.reps ? <span className="text-muted-foreground"> · {e.reps} reps</span> : null}
             </span>
-            <Button
-              size="icon"
-              variant="ghost"
-              className="h-7 w-7 text-muted-foreground"
+            <button
+              type="button"
+              className="h-7 w-7 grid place-items-center text-muted-foreground hover:text-foreground"
               onClick={() => onDelete(e.id)}
               aria-label="Remover registro"
             >
               <Trash2 className="w-3.5 h-3.5" />
-            </Button>
+            </button>
           </li>
         ))}
       </ul>
-    </Card>
+    </div>
   );
 }
 
@@ -213,30 +212,29 @@ function Sparkline({ points }: { points: number[] }) {
   const span = max - min || 1;
   const n = points.length;
   const coords = points.map((v, i) => {
-    const x = n === 1 ? 50 : (i / (n - 1)) * 100;
-    const y = 28 - ((v - min) / span) * 26;
+    const x = n === 1 ? 150 : 5 + (i / (n - 1)) * 290;
+    const y = 52 - ((v - min) / span) * 44;
     return { x, y };
   });
-  const line = coords.map((c) => `${c.x.toFixed(1)},${c.y.toFixed(1)}`).join(" ");
+  const line = coords.map((c, i) => `${i === 0 ? "M" : "L"}${c.x.toFixed(1)},${c.y.toFixed(1)}`).join(" ");
+  const last = coords[coords.length - 1];
   return (
     <svg
-      viewBox="0 0 100 30"
+      viewBox="0 0 300 60"
       preserveAspectRatio="none"
-      className="w-full h-12"
+      width="100%"
+      style={{ display: "block" }}
       aria-hidden
     >
-      <polyline
-        points={line}
+      <path
+        d={line}
         fill="none"
-        stroke="var(--color-primary)"
-        strokeWidth={1.5}
-        vectorEffect="non-scaling-stroke"
+        stroke="var(--red-2)"
+        strokeWidth={2.4}
         strokeLinejoin="round"
         strokeLinecap="round"
       />
-      {coords.map((c, i) => (
-        <circle key={i} cx={c.x} cy={c.y} r={1.6} fill="var(--color-primary)" />
-      ))}
+      <circle cx={last.x} cy={last.y} r={3.4} fill="var(--red-2)" />
     </svg>
   );
 }
