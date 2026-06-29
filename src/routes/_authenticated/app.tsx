@@ -41,14 +41,11 @@ function AppShell() {
             <img
               src={logoAsset.url}
               alt="Antifofista Squad"
-              className="h-9 w-auto object-contain"
+              className="h-8 w-auto object-contain"
             />
-            <div className="flex flex-col leading-none">
-              <span className="af-eyebrow text-[9px] text-primary">NOT FOR EVERYONE</span>
-              <p className="text-sm text-foreground font-medium truncate max-w-[55vw] mt-1">
-                Olá, {ctx.profile?.full_name?.split(" ")[0] || "Soldado"}
-              </p>
-            </div>
+            <p className="text-sm text-foreground font-medium truncate max-w-[60vw]">
+              Olá, {ctx.profile?.full_name?.split(" ")[0] || "Soldado"}
+            </p>
           </div>
           <div className="flex items-center gap-2">
             {ctx.isAdmin && (

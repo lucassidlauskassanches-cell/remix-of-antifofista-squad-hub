@@ -1,68 +1,94 @@
-## Objetivo
+# ANTIFOFISTA SQUAD — Plano da V1
 
-Reformular o branding visual do app inteiro para refletir o folder/manifesto Antifofista Squad, seguindo a direção **Industrial Stencil** escolhida. Tirar a vibe SaaS com vermelho neon e instalar uma identidade tipo zine underground: papel preto, tinta off-white suja, Bebas Neue em CAPS, ember queimado como único acento, urso fantasma de fundo, grão de impressão.
+App web mobile-first em português, estética militar/tática, instalável como PWA. Dois papéis: **aluno** (visualiza) e **treinador** (administra). Backend via **Lovable Cloud** (Supabase gerenciado), com RLS por aluno.
 
-## Tokens de design (definidos uma vez em `src/styles.css`)
+## Escopo da V1 (entrega de ponta a ponta)
 
-Substituir os tokens atuais por:
+1. Login (e-mail/senha) + recuperação de senha
+2. Papéis aluno/treinador com redirecionamento automático
+3. Treinador: cadastrar aluno, criar/editar treino, criar/editar dieta, gerenciar galeria
+4. Aluno: 3 abas (Treino, Nutricional, Galeria) + player YouTube embed
+5. PWA instalável (manifest + ícones + splash + standalone)
 
-- `--background: #0a0a0a` (papel preto)
-- `--surface: #1a1a1a` (sombra/divisor)
-- `--foreground: #e8dfcc` (tinta off-white / bone)
-- `--muted-foreground: #e8dfcc @ 40% opacity`
-- `--accent / --primary: #a83216` (ember queimado — substitui o vermelho neon `#ef4444` em tudo)
-- `--border: #1a1a1a`
-- Fontes: `--font-display: 'Bebas Neue'` (todos os títulos/labels CAPS), `--font-body: 'Barlow'` (texto). Instalar via `@fontsource/bebas-neue` e `@fontsource/barlow`. Remover Anton.
+Fora da V1 (fase 2): importação CSV em massa, cálculo automático de macros, notificações, histórico.
 
-Adicionar 2 utilitários globais:
-- `.af-grain` — overlay de ruído sutil (5% opacity, mix-blend-overlay) aplicado no shell do app.
-- `.af-bear-ghost` — SVG do urso (já existe na marca) posicionado fixo no centro do viewport a ~3% de opacidade. Pointer-events none.
+## Design System
 
-## Componentes afetados
+- Tema escuro permanente. Fundo `#0A0A0A`/`#121212`
+- Verde militar `#3D4127`/`#556B2F` como secundária
+- Âmbar tático `#C9A227` como destaque principal; vermelho `#C8102E` para ações urgentes
+- Títulos: **Oswald** (condensada bold, CAIXA ALTA); corpo: **Inter**
+- Cantos levemente arredondados, divisórias fortes, ícones tipo patente/escudo (lucide-react)
+- Wordmark "ANTIFOFISTA SQUAD" no topo
 
-1. **Shell autenticado** (`src/routes/_authenticated/app.tsx`)
-   - Header: logo + eyebrow "NOT FOR EVERYONE" em ember + "ANTIFOFISTA" em Bebas Neue 4xl + saudação com dot ember pulsante. Botão SAIR vira pílula outline minúscula.
-   - Aplicar `.af-grain` e `.af-bear-ghost` no container raiz.
-   - Bottom nav: labels em Bebas Neue 10px tracking-tight; ativo = ember + dot acima. Sem ícones coloridos.
+Tokens definidos em `src/styles.css` via `@theme` (Tailwind v4), variantes de botão `tactical` (âmbar) e `urgent` (vermelho).
 
-2. **Tabs/chips reutilizáveis** (Treino A/B/C, S1-S4, subnavs de Nutrição)
-   - Ativo: fill bone (`#e8dfcc`) + texto preto, Bebas Neue.
-   - Inativo: outline `#1a1a1a`, texto `#e8dfcc` a 40%.
-   - Chips semanais: linha divisora top/bottom + texto pequeno underline ember no ativo.
+## Modelo de dados (Supabase)
 
-3. **Cards de exercício** (`src/routes/_authenticated/app.treino...`)
-   - Remover `bg-card`/cards arredondados. Trocar por borda esquerda de 2px (`#1a1a1a` → hover/active `#a83216`), padding-left.
-   - Título: Bebas Neue 2xl uppercase. Badge "01/06" no canto direito.
-   - Stats em colunas (Séries / Reps / Carga / Descanso) com label 10px opacity-40 e número Barlow bold.
-   - Botão primário "REGISTRAR CARGA": fill ember sólido, Bebas Neue tracking 0.2em. Botão secundário: outline `#1a1a1a`.
-   - Estado "done": opacity 40% + checkmark stencil; estado "ativo": borda ember.
+Tabelas: `profiles`, `user_roles` (separada, com enum `app_role` aluno/treinador — segurança), `training_plans`, `training_exercises`, `nutrition_plans`, `meals`, `meal_items`, `exercise_gallery`.
 
-4. **Cards de refeição** (Nutrição) — mesma linguagem dos cards de exercício (border-left + título Bebas + checkbox bone). Sem rounded.
+RLS:
+- Função `has_role(uuid, app_role)` SECURITY DEFINER
+- Aluno: SELECT apenas onde `student_id = auth.uid()` (planos + filhos via join); SELECT livre em `exercise_gallery`
+- Treinador: CRUD total via `has_role(auth.uid(), 'treinador')`
+- GRANTs explícitos para `authenticated` e `service_role`
 
-5. **Auth/login** (`src/routes/auth.tsx`)
-   - Mesmo header com "NOT FOR EVERYONE" + logo grande.
-   - Inputs: fundo `#1a1a1a`, sem border-radius, label Bebas Neue uppercase 10px.
-   - Botão entrar: ember sólido full-width Bebas Neue.
+Trigger `handle_new_user` cria perfil + papel padrão `aluno` no signup.
 
-6. **Galeria, Evolução, Substituições, Treinador (admin), Equipe**
-   - Aplicar mesmos tokens automaticamente via CSS variables — pouca/nenhuma mudança estrutural.
-   - Trocar quaisquer instâncias residuais de `text-red-*`, `bg-red-*`, `#ef4444`, `hsl(var(--destructive))` usadas como destaque por `text-accent`/`bg-accent` (o destructive real fica para erros).
-   - Garantir todos os títulos de seção em Bebas Neue uppercase.
+## Rotas (TanStack Start)
 
-7. **Diálogos/Toasters/Botões shadcn**
-   - Atualizar variants em `src/components/ui/button.tsx`: `default` = ember sólido + Bebas tracking; `outline` = `border-border` bone-on-black. Sem rounded (radius global 0 ou 2px).
-   - Toaster: fundo `#1a1a1a`, borda `#a83216` para info, sem rounded.
+```
+/auth                              público — login + esqueci senha
+/reset-password                    público
+/_authenticated/                   gate gerenciado (já existe)
+  ├ index                          redireciona por papel
+  ├ treino                         aba aluno
+  ├ nutricional                    aba aluno
+  ├ galeria                        aba aluno (+ filtros/busca)
+  └ admin/                         só treinador (gate has_role)
+     ├ alunos                      lista paginada + busca
+     ├ alunos/$id                  editor de treino + dieta (tabs)
+     ├ alunos/novo                 cadastro
+     └ galeria                     CRUD vídeos
+```
 
-## Detalhes técnicos
+Bottom tab bar fixa para aluno (Treino / Nutricional / Galeria). Header com saudação + logout.
 
-- Remover/limpar regras antigas em `src/styles.css` que referenciam Anton, gradientes vermelhos, sombras vermelhas, `--af-red`, etc.
-- Definir `--radius: 0px` (ou 2px discreto) globalmente. Cards e botões ficam retangulares como zine.
-- Substituir favicon/ícone do PWA por versão do urso em bone sobre preto (gerar via imagegen, atualizar `public/`).
-- Atualizar tela de splash do PWA (`manifest.webmanifest`) com cores `#0a0a0a` background e ícone novo.
-- Verificar com Playwright screenshots de Treino, Nutrição, Evolução, Galeria, Auth pós-mudança para garantir consistência.
+## Server functions
 
-## Fora de escopo
+- `createStudent` (treinador, via Auth Admin) — cria usuário + perfil
+- `getStudents` (treinador) — lista paginada com busca
+- `saveTrainingPlan` / `saveNutritionPlan` (treinador) — upsert plano + filhos
+- `getMyTraining` / `getMyNutrition` (aluno autenticado) — RLS aplica
+- `listGallery` / `saveGalleryItem` / `deleteGalleryItem`
 
-- Estrutura de navegação, rotas, lógica de negócio, server functions, schemas — nada disso muda.
-- Função de registrar carga, marcar refeição, upload de PDF — comportamento idêntico.
-- Não reintroduzir nenhum vermelho neon nem cores extras além dos tokens acima.
+Todas com `requireSupabaseAuth` + checagem `has_role` quando privilegiado.
+
+## PWA
+
+`vite-plugin-pwa` com `generateSW`, registro guardado (skill PWA): nunca registra em preview Lovable/dev/iframe. Manifest com nome "Antifofista Squad", theme color `#0A0A0A`, ícones 192/512, `display: standalone`.
+
+## Aspectos técnicos
+
+- Lovable Cloud habilitada na primeira ação
+- Validação Zod em todos os inputs de server functions
+- Player YouTube: `<iframe>` embed com `youtube-nocookie.com`
+- Editor tipo planilha: usar `<table>` editável com adicionar/remover/reordenar linhas (drag handle simples com setas ↑↓)
+- Galeria de vídeo vinculável por exercício via select populado de `exercise_gallery`
+
+## Ordem de implementação
+
+1. Habilitar Lovable Cloud
+2. Migration: enum, tabelas, RLS, grants, trigger, função `has_role`
+3. Design system + layout shell + bottom tab
+4. Telas /auth + /reset-password
+5. Server fns + telas aluno (treino, nutricional, galeria)
+6. Painel treinador (alunos, editores, galeria)
+7. PWA (manifest, ícones, plugin)
+8. SEO mínimo + sitemap/robots
+
+## Perguntas antes de começar
+
+Nenhuma bloqueante — vou seguir os defaults do brief. Confirme só:
+- **Importação CSV** fica para fase 2 conforme você indicou ✓
+- O **primeiro treinador** será criado manualmente via SQL após o primeiro signup (te passo o comando), já que o trigger cria todos como `aluno` por padrão. OK?

@@ -30,49 +30,49 @@
   --color-urgent: var(--urgent);
   --color-urgent-foreground: var(--urgent-foreground);
 
-  --font-display: "Bebas Neue", "Oswald", sans-serif;
-  --font-heavy: "Bebas Neue", "Oswald", sans-serif;
-  --font-sans: "Barlow", system-ui, sans-serif;
+  --font-display: "Oswald", "Inter", sans-serif;
+  --font-heavy: "Anton", "Oswald", sans-serif;
+  --font-sans: "Inter", system-ui, sans-serif;
 }
 
 :root {
   --radius: 0.5rem;
 
-  /* Antifofista Squad — manifesto zine: papel preto, tinta bone, ember queimado */
-  --background: oklch(0.10 0.004 50);          /* #0a0a0a papel preto */
-  --foreground: oklch(0.92 0.018 85);          /* #e8dfcc tinta off-white / bone */
-  --card: oklch(0.155 0.005 45);               /* #1a1a1a painel */
-  --card-foreground: oklch(0.92 0.018 85);
-  --popover: oklch(0.155 0.005 45);
-  --popover-foreground: oklch(0.92 0.018 85);
+  /* Antifofista Squad — preto, branco & sangue (alinhado ao folder) */
+  --background: oklch(0.10 0.004 50);          /* preto quente quase puro */
+  --foreground: oklch(0.93 0.006 80);          /* branco "sujo" de tinta */
+  --card: oklch(0.16 0.005 45);                /* painel */
+  --card-foreground: oklch(0.93 0.006 80);
+  --popover: oklch(0.16 0.005 45);
+  --popover-foreground: oklch(0.93 0.006 80);
 
-  /* Primary = ember queimado (acento único, usado com escassez) */
-  --primary: oklch(0.47 0.155 38);
-  --primary-foreground: oklch(0.92 0.018 85);
+  /* Primary = vermelho sangue/escarlate (acento, usado com escassez) */
+  --primary: oklch(0.575 0.215 25);
+  --primary-foreground: oklch(0.99 0 0);
 
-  /* Secondary = painel neutro escuro */
-  --secondary: oklch(0.18 0.005 45);
-  --secondary-foreground: oklch(0.92 0.018 85);
+  /* Secondary = painel neutro escuro (sem verde militar) */
+  --secondary: oklch(0.20 0.005 45);
+  --secondary-foreground: oklch(0.93 0.006 80);
 
-  --muted: oklch(0.155 0.005 45);
-  --muted-foreground: oklch(0.66 0.012 75);
+  --muted: oklch(0.19 0.005 45);
+  --muted-foreground: oklch(0.63 0.008 70);
 
-  --accent: oklch(0.47 0.155 38);
-  --accent-foreground: oklch(0.92 0.018 85);
+  --accent: oklch(0.24 0.04 25);
+  --accent-foreground: oklch(0.93 0.006 80);
 
-  /* Destrutivo permanece vermelho-padrão pra erros */
+  /* Destrutivo / urgente = mesmo vermelho */
   --destructive: oklch(0.575 0.215 25);
   --destructive-foreground: oklch(0.99 0 0);
-  --urgent: oklch(0.47 0.155 38);
-  --urgent-foreground: oklch(0.92 0.018 85);
+  --urgent: oklch(0.575 0.215 25);
+  --urgent-foreground: oklch(0.99 0 0);
 
-  --border: oklch(0.22 0.005 45);
-  --input: oklch(0.18 0.005 45);
-  --ring: oklch(0.47 0.155 38);
+  --border: oklch(0.255 0.006 45);
+  --input: oklch(0.20 0.005 45);
+  --ring: oklch(0.575 0.18 25);
 
-  /* ember + degradê queimado (substitui o vermelho neon do mockup antigo) */
-  --red-2: #a83216;
-  --grad: linear-gradient(135deg, #6e1f0d 0%, #a83216 100%);
+  /* acento vivo + degradê de sangue (iguais ao mockup) */
+  --red-2: #e11d2a;
+  --grad: linear-gradient(135deg, #7a0911 0%, #c20015 100%);
   --field-bg: #0c0908;
 
   color-scheme: dark;
@@ -139,9 +139,9 @@
   z-index: 0;
   pointer-events: none;
   background:
-    radial-gradient(120% 65% at 50% -6%, rgba(168, 50, 22, 0.10), transparent 58%),
+    radial-gradient(120% 65% at 50% -6%, rgba(225, 29, 42, 0.16), transparent 58%),
     radial-gradient(90% 50% at 50% 108%, rgba(0, 0, 0, 0.6), transparent 60%),
-    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 200 200'%3E%3Cdefs%3E%3CradialGradient id='g' cx='50%25' cy='44%25' r='58%25'%3E%3Cstop offset='0' stop-color='%23e8dfcc' stop-opacity='0.045'/%3E%3Cstop offset='55%25' stop-color='%23e8dfcc' stop-opacity='0.015'/%3E%3Cstop offset='100%25' stop-color='%23e8dfcc' stop-opacity='0'/%3E%3C/radialGradient%3E%3C/defs%3E%3Cg fill='url(%23g)'%3E%3Ccircle cx='54' cy='58' r='30'/%3E%3Ccircle cx='146' cy='58' r='30'/%3E%3Cellipse cx='100' cy='116' rx='74' ry='66'/%3E%3Cellipse cx='100' cy='156' rx='30' ry='24'/%3E%3C/g%3E%3C/svg%3E")
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 200 200'%3E%3Cdefs%3E%3CradialGradient id='g' cx='50%25' cy='44%25' r='58%25'%3E%3Cstop offset='0' stop-color='%23e11d2a' stop-opacity='0.13'/%3E%3Cstop offset='55%25' stop-color='%23c20015' stop-opacity='0.04'/%3E%3Cstop offset='100%25' stop-color='%23c20015' stop-opacity='0'/%3E%3C/radialGradient%3E%3C/defs%3E%3Cg fill='url(%23g)'%3E%3Ccircle cx='54' cy='58' r='30'/%3E%3Ccircle cx='146' cy='58' r='30'/%3E%3Cellipse cx='100' cy='116' rx='74' ry='66'/%3E%3Cellipse cx='100' cy='156' rx='30' ry='24'/%3E%3C/g%3E%3C/svg%3E")
       no-repeat center 30% / min(620px, 142%) auto;
 }
 
