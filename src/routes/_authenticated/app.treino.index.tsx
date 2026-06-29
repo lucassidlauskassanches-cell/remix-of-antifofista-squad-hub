@@ -15,7 +15,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { YouTubePlayer } from "@/lib/youtube";
-import { Play, Check, Table2, LayoutList } from "lucide-react";
+import { Play, Check, Table2, LayoutList, Pencil } from "lucide-react";
 import { toast } from "sonner";
 import {
   describeCell,
@@ -29,7 +29,12 @@ function todayStr() {
 }
 
 type LastEntry = { load: string; reps: string; date: string };
-type SaveCarga = (v: { id?: string; exercise: string; load: string; reps: string }) => void;
+type SaveCarga = (v: {
+  id?: string;
+  exercise: string;
+  load: string;
+  reps: string;
+}) => void;
 
 export const Route = createFileRoute("/_authenticated/app/treino/")({
   component: EstruturadoPage,
@@ -69,8 +74,14 @@ function EstruturadoPage() {
 
   const queryClient = useQueryClient();
   const save = useServerFn(saveLogbookEntry);
+  const [activeKey, setActiveKey] = useState<string | null>(null);
   const saveMutation = useMutation({
-    mutationFn: (v: { id?: string; exercise: string; load: string; reps: string }) =>
+    mutationFn: (v: {
+      id?: string;
+      exercise: string;
+      load: string;
+      reps: string;
+    }) =>
       save({
         data: {
           id: v.id,
@@ -81,9 +92,10 @@ function EstruturadoPage() {
           order_index: 0,
         },
       }),
-    onSuccess: () => {
+    onSuccess: (_d, v) => {
       queryClient.invalidateQueries({ queryKey: ["my-logbook"] });
       toast.success("Carga registrada");
+      setActiveKey((cur) => (cur === normalize(v.exercise) ? null : cur));
     },
     onError: (e: unknown) =>
       toast.error(e instanceof Error ? e.message : "Falha ao registrar"),
@@ -98,7 +110,11 @@ function EstruturadoPage() {
       if (!key) return;
       const prev = m.get(key);
       if (!prev || (r.entry_date || "") >= prev.date)
-        m.set(key, { load: r.load || "", reps: r.reps || "", date: r.entry_date || "" });
+        m.set(key, {
+          load: r.load || "",
+          reps: r.reps || "",
+          date: r.entry_date || "",
+        });
     });
     return m;
   }, [logData]);
@@ -127,8 +143,6 @@ function EstruturadoPage() {
   const [planilha, setPlanilha] = useState(false);
   const [restored, setRestored] = useState(false);
 
-  // Lembra o último treino/semana que o aluno abriu (por aparelho), pra não
-  // resetar pra semana 1 toda vez que ele volta.
   useEffect(() => {
     const w = Number(localStorage.getItem("treino:weekIdx"));
     const b = Number(localStorage.getItem("treino:blockIdx"));
@@ -143,12 +157,16 @@ function EstruturadoPage() {
     localStorage.setItem("treino:blockIdx", String(blockIdx));
   }, [weekIdx, blockIdx, restored]);
 
-  // Se a planilha mudou e tem menos semanas/treinos, mantém dentro do limite.
   useEffect(() => {
     if (!plan) return;
     setWeekIdx((i) => Math.min(Math.max(i, 0), plan.weeks.length - 1));
     setBlockIdx((i) => Math.min(Math.max(i, 0), plan.blocks.length - 1));
   }, [plan?.weeks?.length, plan?.blocks?.length]);
+
+  // Trocar de bloco/semana fecha qualquer exercício em edição.
+  useEffect(() => {
+    setActiveKey(null);
+  }, [blockIdx, weekIdx]);
 
   if (isLoading) {
     return <p className="text-center py-16 text-muted-foreground">Carregando...</p>;
@@ -174,13 +192,12 @@ function EstruturadoPage() {
     todayIdByExercise,
     onSaveCarga: saveCarga,
     savingCarga: saveMutation.isPending,
+    activeKey,
+    onActivate: (key: string | null) => setActiveKey(key),
   };
 
   return (
     <div>
-      <div className="af-eyebrow">{block.name || "Treino"}</div>
-      <div className="af-title">{block.day || block.name}</div>
-
       <button type="button" className="af-planilha" onClick={() => setPlanilha((v) => !v)}>
         {planilha ? <LayoutList className="w-3.5 h-3.5" /> : <Table2 className="w-3.5 h-3.5" />}
         {planilha ? "Ver treino em cards" : "Ver treino em planilha"}
@@ -236,7 +253,12 @@ function EstruturadoPage() {
                 <span>Abdômen</span>
                 <div className="ln" />
               </div>
-              <ExerciseList exercises={plan.abdomen} weekIdx={safeWeekIdx} lookup={lookup} onPlay={setVideo} />
+              <ExerciseList
+                exercises={plan.abdomen}
+                weekIdx={safeWeekIdx}
+                lookup={lookup}
+                onPlay={setVideo}
+              />
             </>
           )}
 
@@ -246,7 +268,12 @@ function EstruturadoPage() {
                 <span>Cardio</span>
                 <div className="ln" />
               </div>
-              <ExerciseList exercises={plan.cardio} weekIdx={safeWeekIdx} lookup={lookup} onPlay={setVideo} />
+              <ExerciseList
+                exercises={plan.cardio}
+                weekIdx={safeWeekIdx}
+                lookup={lookup}
+                onPlay={setVideo}
+              />
             </>
           )}
 
@@ -320,6 +347,19 @@ function PlanilhaTable({ block, weeks }: { block: StructuredBlock; weeks: string
   );
 }
 
+type ListProps = {
+  exercises: StructuredExercise[];
+  weekIdx: number;
+  lookup: (name: string) => { title: string; url: string } | null;
+  onPlay: (v: { title: string; url: string }) => void;
+  lastByExercise?: Map<string, LastEntry>;
+  todayIdByExercise?: Map<string, string>;
+  onSaveCarga?: SaveCarga;
+  savingCarga?: boolean;
+  activeKey?: string | null;
+  onActivate?: (key: string | null) => void;
+};
+
 function ExerciseList({
   exercises,
   weekIdx,
@@ -329,16 +369,9 @@ function ExerciseList({
   todayIdByExercise,
   onSaveCarga,
   savingCarga,
-}: {
-  exercises: StructuredExercise[];
-  weekIdx: number;
-  lookup: (name: string) => { title: string; url: string } | null;
-  onPlay: (v: { title: string; url: string }) => void;
-  lastByExercise?: Map<string, LastEntry>;
-  todayIdByExercise?: Map<string, string>;
-  onSaveCarga?: SaveCarga;
-  savingCarga?: boolean;
-}) {
+  activeKey,
+  onActivate,
+}: ListProps) {
   const items = useMemo(
     () => exercises.filter((e) => e.name || (e.weeks?.[weekIdx] ?? "").trim()),
     [exercises, weekIdx],
@@ -355,10 +388,21 @@ function ExerciseList({
         const key = normalize(ex.name || "");
         const last = lastByExercise?.get(key) ?? null;
         const todayId = todayIdByExercise?.get(key);
+        const isActive = !!key && activeKey === key;
+        const isDone = !!todayId;
+        const cls =
+          "af-ex" +
+          (isActive ? " af-ex--active" : "") +
+          (isDone && !isActive ? " af-ex--done" : "");
         return (
-          <div key={i} className="af-ex">
+          <div key={i} className={cls}>
             <div className="nm">
-              <span>{ex.name || "—"}</span>
+              <span className="flex items-center gap-2">
+                {isDone && !isActive && (
+                  <Check className="w-4 h-4 text-primary shrink-0" />
+                )}
+                <span>{ex.name || "—"}</span>
+              </span>
               {video && (
                 <button
                   type="button"
@@ -392,14 +436,17 @@ function ExerciseList({
               {parsed.technique && <span className="af-tag2">{parsed.technique}</span>}
             </div>
             {ex.note && <div className="af-note">{ex.note}</div>}
-            {onSaveCarga && ex.name && (
+            {onSaveCarga && onActivate && ex.name && (
               <RegistrarCarga
                 exercise={ex.name}
+                exerciseKey={key}
                 last={last}
                 todayId={todayId}
                 prescribedReps={parsed.reps ?? ""}
                 onSave={onSaveCarga}
                 saving={!!savingCarga}
+                active={isActive}
+                onActivate={onActivate}
               />
             )}
           </div>
@@ -417,28 +464,60 @@ function formatBR(date: string) {
 
 function RegistrarCarga({
   exercise,
+  exerciseKey,
   last,
   todayId,
   prescribedReps,
   onSave,
   saving,
+  active,
+  onActivate,
 }: {
   exercise: string;
+  exerciseKey: string;
   last: LastEntry | null;
   todayId?: string;
   prescribedReps: string;
   onSave: SaveCarga;
   saving: boolean;
+  active: boolean;
+  onActivate: (key: string | null) => void;
 }) {
   const [load, setLoad] = useState("");
   const [reps, setReps] = useState("");
 
-  // Pré-preenche com a última carga registrada (ou as reps prescritas) só uma
-  // vez, quando o histórico carrega — depois respeita o que o aluno digitar.
+  // Quando o aluno ativa o registro, semeia os campos com o último valor
+  // (ou as reps prescritas) — mas só nesse momento, pra não sobrescrever
+  // o que ele está digitando.
   useEffect(() => {
-    setLoad(last?.load ?? "");
-    setReps(last?.reps || prescribedReps);
-  }, [last?.date]);
+    if (active) {
+      setLoad(last?.load ?? "");
+      setReps(last?.reps || prescribedReps);
+    }
+  }, [active]);
+
+  if (!active) {
+    return (
+      <button
+        type="button"
+        className="af-regbtn"
+        onClick={() => onActivate(exerciseKey)}
+      >
+        {todayId ? (
+          <>
+            <Pencil className="w-[12px] h-[12px]" />
+            Editar carga{last?.load ? ` · ${last.load}${last.reps ? ` × ${last.reps}` : ""}` : ""}
+          </>
+        ) : (
+          <>
+            <Check className="w-[12px] h-[12px]" />
+            Registrar carga
+            {last?.date ? ` · última ${last.load}${last.reps ? ` × ${last.reps}` : ""}` : ""}
+          </>
+        )}
+      </button>
+    );
+  }
 
   return (
     <>
@@ -450,6 +529,7 @@ function RegistrarCarga({
             value={load}
             onChange={(e) => setLoad(e.target.value)}
             placeholder="kg"
+            autoFocus
           />
         </label>
         <label className="af-field">
@@ -464,13 +544,22 @@ function RegistrarCarga({
         <button
           type="button"
           className="af-savebtn"
-          onClick={() => onSave({ id: todayId, exercise, load: load.trim(), reps: reps.trim() })}
+          onClick={() =>
+            onSave({ id: todayId, exercise, load: load.trim(), reps: reps.trim() })
+          }
           disabled={saving || !load.trim()}
         >
           <Check className="w-[13px] h-[13px]" />
           {todayId ? "Atualizar" : "Registrar"}
         </button>
       </div>
+      <button
+        type="button"
+        className="af-cancelbtn"
+        onClick={() => onActivate(null)}
+      >
+        Cancelar
+      </button>
       {last?.date && (
         <div className="af-lastval">
           Última: {last.load || "—"}

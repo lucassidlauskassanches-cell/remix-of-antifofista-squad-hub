@@ -614,3 +614,59 @@
     color: var(--color-foreground);
   }
 }
+
+@layer components {
+  .af-ex--active {
+    border-color: var(--red-2);
+    box-shadow: 0 0 0 1px var(--red-2), 0 6px 22px -10px rgba(225, 29, 42, 0.6);
+    background: linear-gradient(180deg, rgba(225, 29, 42, 0.06), var(--color-card));
+  }
+  .af-ex--done {
+    opacity: 0.72;
+  }
+  .af-ex--done .nm {
+    color: var(--color-muted-foreground);
+  }
+  .af-regbtn {
+    margin-top: 11px;
+    width: 100%;
+    border: 1px dashed var(--color-border);
+    background: transparent;
+    color: var(--color-foreground);
+    border-radius: 10px;
+    padding: 9px 12px;
+    cursor: pointer;
+    font-family: var(--font-display);
+    font-weight: 600;
+    letter-spacing: 0.08em;
+    font-size: 10px;
+    text-transform: uppercase;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+  }
+  .af-regbtn:hover {
+    border-color: var(--red-2);
+    color: var(--red-2);
+  }
+  .af-ex--done .af-regbtn {
+    border-style: solid;
+    border-color: rgba(225, 29, 42, 0.32);
+    color: var(--red-2);
+  }
+  .af-cancelbtn {
+    margin-top: 8px;
+    background: transparent;
+    border: 0;
+    color: var(--color-muted-foreground);
+    font-family: var(--font-display);
+    letter-spacing: 0.08em;
+    font-size: 9.5px;
+    text-transform: uppercase;
+    cursor: pointer;
+  }
+  .af-cancelbtn:hover {
+    color: var(--color-foreground);
+  }
+}
