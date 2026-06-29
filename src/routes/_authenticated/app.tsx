@@ -109,9 +109,9 @@ function AppShell() {
       {!isAdminArea && (
         <nav className="fixed bottom-0 inset-x-0 bg-card/95 backdrop-blur border-t border-border z-10">
           <div className="max-w-3xl mx-auto grid grid-cols-4">
+            <TabLink to="/app/galeria" icon={<Video className="w-5 h-5" />} label="GALERIA" />
             <TabLink to="/app/treino" icon={<Dumbbell className="w-5 h-5" />} label="TREINO" />
             <TabLink to="/app/nutricional" icon={<Apple className="w-5 h-5" />} label="NUTRIÇÃO" />
-            <TabLink to="/app/galeria" icon={<Video className="w-5 h-5" />} label="GALERIA" />
             <TabLink to="/app/logbook" icon={<TrendingUp className="w-5 h-5" />} label="EVOLUÇÃO" />
           </div>
         </nav>
