@@ -9,21 +9,23 @@ function NutriLayout() {
   const isSub = loc.pathname.includes("/nutricional/substituicoes");
   const isPdf = loc.pathname.includes("/nutricional/pdf");
   const isDieta = !isSub && !isPdf;
-  const tabCls = (active: boolean) =>
-    `tactical-heading text-xs text-center py-2 rounded ${
-      active ? "bg-primary text-primary-foreground" : "text-muted-foreground"
+  const linkCls = (active: boolean) =>
+    `tactical-heading text-[11px] tracking-widest pb-1 border-b-2 ${
+      active
+        ? "text-primary border-primary"
+        : "text-muted-foreground border-transparent hover:text-foreground"
     }`;
   return (
     <div className="space-y-4">
-      <div className="grid grid-cols-3 gap-2 p-1 bg-card rounded-md border border-border">
-        <Link to="/app/nutricional" className={tabCls(isDieta)}>
-          DIETA
+      <div className="flex items-center gap-5 border-b border-border">
+        <Link to="/app/nutricional" className={linkCls(isDieta)}>
+          SUGESTÃO
         </Link>
-        <Link to="/app/nutricional/pdf" className={tabCls(isPdf)}>
-          PLANO (PDF)
-        </Link>
-        <Link to="/app/nutricional/substituicoes" className={tabCls(isSub)}>
+        <Link to="/app/nutricional/substituicoes" className={linkCls(isSub)}>
           SUBSTITUIÇÕES
+        </Link>
+        <Link to="/app/nutricional/pdf" className={linkCls(isPdf)}>
+          PDF
         </Link>
       </div>
       <Outlet />

@@ -1,7 +1,7 @@
 import { createFileRoute, Outlet, Link, useNavigate, useLocation } from "@tanstack/react-router";
 import { useQueryClient, useSuspenseQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
-import { Dumbbell, Apple, Video, LogOut, ShieldCheck, Users, NotebookPen } from "lucide-react";
+import { Dumbbell, Apple, Video, LogOut, ShieldCheck, Users, TrendingUp } from "lucide-react";
 import { getMyContext } from "@/lib/squad.functions";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
@@ -22,6 +22,7 @@ function AppShell() {
   const queryClient = useQueryClient();
 
   async function signOut() {
+    if (!confirm("Sair da sua conta?")) return;
     await queryClient.cancelQueries();
     queryClient.clear();
     await supabase.auth.signOut();
@@ -32,7 +33,9 @@ function AppShell() {
 
   return (
     <div className="min-h-screen flex flex-col bg-background pb-20">
-      <header className="sticky top-0 z-10 bg-background/95 backdrop-blur border-b border-border">
+      <div className="bear-layer" aria-hidden />
+      <div className="bear-grain" aria-hidden />
+      <header className="sticky top-0 z-10 bg-background/80 backdrop-blur border-b border-border">
         <div className="max-w-3xl mx-auto px-4 py-3 flex items-center justify-between">
           <div className="flex items-center gap-3">
             <img
@@ -99,17 +102,17 @@ function AppShell() {
         </div>
       </header>
 
-      <main className="flex-1 max-w-3xl mx-auto w-full px-4 py-4">
+      <main className="relative z-10 flex-1 max-w-3xl mx-auto w-full px-4 py-4">
         <Outlet />
       </main>
 
       {!isAdminArea && (
-        <nav className="fixed bottom-0 inset-x-0 bg-card border-t border-border z-10">
+        <nav className="fixed bottom-0 inset-x-0 bg-card/95 backdrop-blur border-t border-border z-10">
           <div className="max-w-3xl mx-auto grid grid-cols-4">
-            <TabLink to="/app/nutricional" icon={<Apple className="w-5 h-5" />} label="NUTRIÇÃO" />
             <TabLink to="/app/treino" icon={<Dumbbell className="w-5 h-5" />} label="TREINO" />
+            <TabLink to="/app/nutricional" icon={<Apple className="w-5 h-5" />} label="NUTRIÇÃO" />
             <TabLink to="/app/galeria" icon={<Video className="w-5 h-5" />} label="GALERIA" />
-            <TabLink to="/app/logbook" icon={<NotebookPen className="w-5 h-5" />} label="LOGBOOK" />
+            <TabLink to="/app/logbook" icon={<TrendingUp className="w-5 h-5" />} label="EVOLUÇÃO" />
           </div>
         </nav>
       )}

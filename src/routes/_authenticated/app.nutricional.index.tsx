@@ -1,8 +1,10 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
+import { useState } from "react";
 import { getMyDiet } from "@/lib/squad.functions";
 import { Card } from "@/components/ui/card";
+import { Table2, LayoutList } from "lucide-react";
 import type { DietPlan } from "@/lib/diet-xlsx-parser";
 
 export const Route = createFileRoute("/_authenticated/app/nutricional/")({
@@ -11,6 +13,7 @@ export const Route = createFileRoute("/_authenticated/app/nutricional/")({
 
 function DietaPage() {
   const fetchDiet = useServerFn(getMyDiet);
+  const [planilha, setPlanilha] = useState(false);
   const { data, isLoading } = useQuery({
     queryKey: ["my-diet"],
     queryFn: () => fetchDiet(),
@@ -58,32 +61,62 @@ function DietaPage() {
 
       {plan.refeicoes.length > 0 && (
         <div className="space-y-3">
-          <p className="tactical-heading text-xs text-primary tracking-widest">
-            PRESCRIÇÃO ALIMENTAR
-          </p>
-          {plan.refeicoes.map((m, i) => (
-            <Card key={i} className="p-4 space-y-2">
-              <p className="tactical-heading text-sm tracking-widest">
-                {m.nome.toUpperCase()}
-              </p>
-              <div className="tactical-divider" />
-              <ul className="divide-y divide-border">
-                {m.itens.map((it, j) => (
-                  <li
-                    key={j}
-                    className="py-2 grid grid-cols-[1fr_auto] gap-2 items-baseline"
-                  >
-                    <span className="text-sm">{it.alimento}</span>
-                    <span className="text-xs text-muted-foreground whitespace-nowrap">
-                      {it.quantidade}
-                      {it.quantidade && it.medida ? " " : ""}
-                      {it.medida}
-                    </span>
-                  </li>
-                ))}
-              </ul>
+          <div className="flex items-center justify-between">
+            <p className="tactical-heading text-xs text-primary tracking-widest">
+              SUGESTÃO ALIMENTAR
+            </p>
+            <button
+              type="button"
+              onClick={() => setPlanilha((v) => !v)}
+              className="inline-flex items-center gap-1 text-[11px] text-muted-foreground hover:text-foreground"
+            >
+              {planilha ? (
+                <>
+                  <LayoutList className="w-3.5 h-3.5" /> Ver em cards
+                </>
+              ) : (
+                <>
+                  <Table2 className="w-3.5 h-3.5" /> Ver em planilha
+                </>
+              )}
+            </button>
+          </div>
+
+          {planilha ? (
+            <Card className="overflow-hidden">
+              <table className="w-full text-sm">
+                <tbody>
+                  {plan.refeicoes.map((m, i) => (
+                    <FragmentMeal key={i} nome={m.nome} itens={m.itens} />
+                  ))}
+                </tbody>
+              </table>
             </Card>
-          ))}
+          ) : (
+            plan.refeicoes.map((m, i) => (
+              <Card key={i} className="p-4 space-y-2">
+                <p className="tactical-heading text-sm tracking-widest">
+                  {m.nome.toUpperCase()}
+                </p>
+                <div className="tactical-divider" />
+                <ul className="divide-y divide-border">
+                  {m.itens.map((it, j) => (
+                    <li
+                      key={j}
+                      className="py-2 grid grid-cols-[1fr_auto] gap-2 items-baseline"
+                    >
+                      <span className="text-sm">{it.alimento}</span>
+                      <span className="text-xs text-muted-foreground whitespace-nowrap">
+                        {it.quantidade}
+                        {it.quantidade && it.medida ? " " : ""}
+                        {it.medida}
+                      </span>
+                    </li>
+                  ))}
+                </ul>
+              </Card>
+            ))
+          )}
         </div>
       )}
 
@@ -96,6 +129,37 @@ function DietaPage() {
         </Card>
       )}
     </div>
+  );
+}
+
+function FragmentMeal({
+  nome,
+  itens,
+}: {
+  nome: string;
+  itens: { alimento: string; quantidade?: string; medida?: string }[];
+}) {
+  return (
+    <>
+      <tr className="bg-secondary/40 border-b border-border">
+        <td
+          colSpan={2}
+          className="px-3 py-1.5 tactical-heading text-[10px] tracking-widest text-primary"
+        >
+          {nome.toUpperCase()}
+        </td>
+      </tr>
+      {itens.map((it, j) => (
+        <tr key={j} className="border-b border-border/60">
+          <td className="px-3 py-1.5">{it.alimento}</td>
+          <td className="px-3 py-1.5 text-right text-xs text-muted-foreground whitespace-nowrap">
+            {it.quantidade}
+            {it.quantidade && it.medida ? " " : ""}
+            {it.medida}
+          </td>
+        </tr>
+      ))}
+    </>
   );
 }
 
