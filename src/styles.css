@@ -30,9 +30,9 @@
   --color-urgent: var(--urgent);
   --color-urgent-foreground: var(--urgent-foreground);
 
-  --font-display: "Oswald", "Inter", sans-serif;
-  --font-heavy: "Anton", "Oswald", sans-serif;
-  --font-sans: "Inter", system-ui, sans-serif;
+  --font-display: "Bebas Neue", "Oswald", sans-serif;
+  --font-heavy: "Bebas Neue", "Oswald", sans-serif;
+  --font-sans: "Barlow", system-ui, sans-serif;
 }
 
 :root {
