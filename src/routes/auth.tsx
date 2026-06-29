@@ -119,14 +119,16 @@ function AuthPage() {
   }
 
   return (
-    <div className="min-h-screen flex flex-col items-center justify-center bg-background px-6 py-10">
-      <div className="w-full max-w-sm">
+    <div className="min-h-screen flex flex-col items-center justify-center bg-background px-6 py-10 relative">
+      <div className="bear-grain" aria-hidden />
+      <div className="w-full max-w-sm relative z-10">
         <div className="flex flex-col items-center mb-8">
           <img
             src={logoAsset.url}
             alt="Antifofista Squad"
             className="h-48 w-auto object-contain"
           />
+          <p className="af-eyebrow text-primary mt-2 tracking-[0.32em] text-[10px]">NOT FOR EVERYONE</p>
           <div className="tactical-divider w-full mt-4" />
         </div>
 
