@@ -121,6 +121,11 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
         content:
           "https://storage.googleapis.com/gpt-engineer-file-uploads/H8w5s4SXQ4VdqAnu0uIuVXOQFyu2/social-images/social-1781577807543-PHOTO-2026-04-25-01-01-05.webp",
       },
+      { name: "description", content: "A mobile-first web app for ANTIFOFISTA SQUAD, enabling athletes to view workouts and nutrition, and trainers to manage clients and content." },
+      { property: "og:description", content: "A mobile-first web app for ANTIFOFISTA SQUAD, enabling athletes to view workouts and nutrition, and trainers to manage clients and content." },
+      { name: "twitter:description", content: "A mobile-first web app for ANTIFOFISTA SQUAD, enabling athletes to view workouts and nutrition, and trainers to manage clients and content." },
+      { property: "og:image", content: "https://pub-bb2e103a32db4e198524a2e9ed8f35b4.r2.dev/05e61e34-4c66-44d1-87f3-211e8586bb79/id-preview-deac5ba9--ef01eb19-58ef-4276-969c-9a80270a14c2.lovable.app-1782696948712.png" },
+      { name: "twitter:image", content: "https://pub-bb2e103a32db4e198524a2e9ed8f35b4.r2.dev/05e61e34-4c66-44d1-87f3-211e8586bb79/id-preview-deac5ba9--ef01eb19-58ef-4276-969c-9a80270a14c2.lovable.app-1782696948712.png" },
     ],
     links: [
       { rel: "stylesheet", href: appCss },
