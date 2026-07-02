@@ -6,7 +6,7 @@ import { getMyContext } from "@/lib/squad.functions";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import logoAsset from "@/assets/logo-antifofista.png.asset.json";
-import bearIcon from "@/assets/icon-antifofista.png.asset.json";
+import bearIcon from "@/assets/icon-antifofista-v2.png.asset.json";
 
 export const Route = createFileRoute("/_authenticated/app")({
   component: AppShell,
