@@ -114,11 +114,7 @@ function AppShell() {
               to="/app/registro"
               isActive={loc.pathname.startsWith("/app/registro")}
               icon={
-                <img
-                  src={bearIcon.url}
-                  alt=""
-                  className="w-5 h-5 object-contain"
-                />
+                <BearIcon isActive={loc.pathname.startsWith("/app/registro")} />
               }
               label="ANTIFOFISTA"
             />
