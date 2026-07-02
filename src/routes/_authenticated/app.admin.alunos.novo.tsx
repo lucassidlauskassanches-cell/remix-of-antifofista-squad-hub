@@ -28,6 +28,7 @@ function NovoAluno() {
   const fetchCtx = useServerFn(getMyContext);
   const fetchTrainers = useServerFn(listTrainers);
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
 
   const { data: ctx } = useQuery({
     queryKey: ["my-context"],
