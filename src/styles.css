@@ -38,7 +38,7 @@
 :root {
   --radius: 0.5rem;
 
-  /* Antifofista Squad — preto, branco & sangue (alinhado ao folder) */
+  /* Antifofista Squad — preto, branco & dourado */
   --background: oklch(0.10 0.004 50);          /* preto quente quase puro */
   --foreground: oklch(0.93 0.006 80);          /* branco "sujo" de tinta */
   --card: oklch(0.16 0.005 45);                /* painel */
@@ -46,21 +46,21 @@
   --popover: oklch(0.16 0.005 45);
   --popover-foreground: oklch(0.93 0.006 80);
 
-  /* Primary = vermelho sangue/escarlate (acento, usado com escassez) */
-  --primary: oklch(0.575 0.215 25);
-  --primary-foreground: oklch(0.99 0 0);
+  /* Primary = dourado quente (acento, usado com escassez) */
+  --primary: oklch(0.78 0.16 82);
+  --primary-foreground: oklch(0.14 0.006 50);
 
-  /* Secondary = painel neutro escuro (sem verde militar) */
+  /* Secondary = painel neutro escuro */
   --secondary: oklch(0.20 0.005 45);
   --secondary-foreground: oklch(0.93 0.006 80);
 
   --muted: oklch(0.19 0.005 45);
   --muted-foreground: oklch(0.63 0.008 70);
 
-  --accent: oklch(0.24 0.04 25);
+  --accent: oklch(0.26 0.05 82);
   --accent-foreground: oklch(0.93 0.006 80);
 
-  /* Destrutivo / urgente = mesmo vermelho */
+  /* Destrutivo / urgente permanecem vermelhos — alerta é alerta */
   --destructive: oklch(0.575 0.215 25);
   --destructive-foreground: oklch(0.99 0 0);
   --urgent: oklch(0.575 0.215 25);
@@ -68,11 +68,11 @@
 
   --border: oklch(0.255 0.006 45);
   --input: oklch(0.20 0.005 45);
-  --ring: oklch(0.575 0.18 25);
+  --ring: oklch(0.78 0.14 82);
 
-  /* acento vivo + degradê de sangue (iguais ao mockup) */
-  --red-2: #e11d2a;
-  --grad: linear-gradient(135deg, #7a0911 0%, #c20015 100%);
+  /* acento vivo + degradê dourado (nome --red-2 mantido por churn; valor dourado) */
+  --red-2: #e6b64c;      /* dourado */
+  --grad: linear-gradient(135deg, #8a6a1a 0%, #e6b64c 100%);
   --field-bg: #0c0908;
 
   color-scheme: dark;
@@ -139,9 +139,9 @@
   z-index: 0;
   pointer-events: none;
   background:
-    radial-gradient(120% 65% at 50% -6%, rgba(225, 29, 42, 0.16), transparent 58%),
+    radial-gradient(120% 65% at 50% -6%, rgba(230, 182, 76, 0.16), transparent 58%),
     radial-gradient(90% 50% at 50% 108%, rgba(0, 0, 0, 0.6), transparent 60%),
-    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 200 200'%3E%3Cdefs%3E%3CradialGradient id='g' cx='50%25' cy='44%25' r='58%25'%3E%3Cstop offset='0' stop-color='%23e11d2a' stop-opacity='0.13'/%3E%3Cstop offset='55%25' stop-color='%23c20015' stop-opacity='0.04'/%3E%3Cstop offset='100%25' stop-color='%23c20015' stop-opacity='0'/%3E%3C/radialGradient%3E%3C/defs%3E%3Cg fill='url(%23g)'%3E%3Ccircle cx='54' cy='58' r='30'/%3E%3Ccircle cx='146' cy='58' r='30'/%3E%3Cellipse cx='100' cy='116' rx='74' ry='66'/%3E%3Cellipse cx='100' cy='156' rx='30' ry='24'/%3E%3C/g%3E%3C/svg%3E")
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 200 200'%3E%3Cdefs%3E%3CradialGradient id='g' cx='50%25' cy='44%25' r='58%25'%3E%3Cstop offset='0' stop-color='%23e6b64c' stop-opacity='0.13'/%3E%3Cstop offset='55%25' stop-color='%238a6a1a' stop-opacity='0.04'/%3E%3Cstop offset='100%25' stop-color='%238a6a1a' stop-opacity='0'/%3E%3C/radialGradient%3E%3C/defs%3E%3Cg fill='url(%23g)'%3E%3Ccircle cx='54' cy='58' r='30'/%3E%3Ccircle cx='146' cy='58' r='30'/%3E%3Cellipse cx='100' cy='116' rx='74' ry='66'/%3E%3Cellipse cx='100' cy='156' rx='30' ry='24'/%3E%3C/g%3E%3C/svg%3E")
       no-repeat center 30% / min(620px, 142%) auto;
 }
 
@@ -204,10 +204,18 @@
   }
 
   /* chips de semana / treino */
+  .af-wk-label {
+    font-family: var(--font-display);
+    text-transform: uppercase;
+    letter-spacing: 0.22em;
+    font-size: 9px;
+    color: var(--color-muted-foreground);
+    margin: 10px 1px 4px;
+  }
   .af-week {
     display: flex;
     gap: 7px;
-    margin: 13px 0;
+    margin: 6px 0 13px;
     overflow-x: auto;
     scrollbar-width: none;
   }
@@ -226,11 +234,13 @@
     color: var(--color-muted-foreground);
     background: transparent;
     cursor: pointer;
+    min-width: 32px;
+    text-align: center;
   }
   .af-wk.on {
     color: var(--color-foreground);
     border-color: var(--color-primary);
-    background: rgba(194, 0, 21, 0.14);
+    background: rgba(230, 182, 76, 0.14);
   }
 
   /* divisor de seção */
@@ -312,7 +322,7 @@
     padding: 3px 8px;
     border-radius: 5px;
     color: var(--red-2);
-    border: 1px solid rgba(225, 29, 42, 0.32);
+    border: 1px solid rgba(230, 182, 76, 0.32);
   }
   .af-note {
     font-size: 11px;
@@ -529,7 +539,7 @@
     height: 42px;
     border-radius: 50%;
     border: 1px solid var(--color-border);
-    background: rgba(194, 0, 21, 0.12);
+    background: rgba(230, 182, 76, 0.12);
     display: grid;
     place-items: center;
     color: var(--color-foreground);
@@ -586,7 +596,7 @@
   }
   .af-alt.on {
     border-color: var(--color-primary);
-    background: rgba(194, 0, 21, 0.14);
+    background: rgba(230, 182, 76, 0.14);
   }
 
   /* CTA degradê */
@@ -616,57 +626,122 @@
 }
 
 @layer components {
+  /* Exercício em edição: realce sutil dourado, sem borda flamejante. */
   .af-ex--active {
-    border-color: var(--red-2);
-    box-shadow: 0 0 0 1px var(--red-2), 0 6px 22px -10px rgba(225, 29, 42, 0.6);
-    background: linear-gradient(180deg, rgba(225, 29, 42, 0.06), var(--color-card));
+    border-color: rgba(230, 182, 76, 0.55);
+    box-shadow: 0 0 0 1px rgba(230, 182, 76, 0.35);
   }
-  .af-ex--done {
-    opacity: 0.72;
-  }
-  .af-ex--done .nm {
-    color: var(--color-muted-foreground);
-  }
-  .af-regbtn {
-    margin-top: 11px;
-    width: 100%;
+
+  /* Chip inline de "registrar carga" / "carga do dia" — mora dentro da .af-row. */
+  .af-logchip {
+    margin-left: auto;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 5px 10px;
+    border-radius: 999px;
     border: 1px dashed var(--color-border);
     background: transparent;
-    color: var(--color-foreground);
-    border-radius: 10px;
-    padding: 9px 12px;
-    cursor: pointer;
+    color: var(--color-muted-foreground);
     font-family: var(--font-display);
-    font-weight: 600;
     letter-spacing: 0.08em;
     font-size: 10px;
     text-transform: uppercase;
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    gap: 6px;
+    cursor: pointer;
+    line-height: 1;
+    transition: color .12s, border-color .12s, background .12s;
   }
-  .af-regbtn:hover {
-    border-color: var(--red-2);
-    color: var(--red-2);
+  .af-logchip:hover {
+    color: var(--color-foreground);
+    border-color: var(--color-muted-foreground);
   }
-  .af-ex--done .af-regbtn {
+  .af-logchip.filled {
     border-style: solid;
-    border-color: rgba(225, 29, 42, 0.32);
+    border-color: rgba(230, 182, 76, 0.4);
+    background: rgba(230, 182, 76, 0.10);
     color: var(--red-2);
   }
-  .af-cancelbtn {
-    margin-top: 8px;
+  .af-logchip .n {
+    font-family: var(--font-heavy);
+    font-size: 13px;
+    letter-spacing: 0.01em;
+    font-variant-numeric: tabular-nums;
+    line-height: 1;
+  }
+  .af-logchip .x {
+    font-family: var(--font-display);
+    font-size: 9px;
+    color: var(--color-muted-foreground);
+  }
+  .af-logchip.filled .x {
+    color: var(--red-2);
+    opacity: 0.7;
+  }
+
+  /* Faixa de edição embutida — 2 campos + botão, na mesma altura. */
+  .af-logedit {
+    display: flex;
+    gap: 6px;
+    margin-top: 10px;
+    align-items: stretch;
+  }
+  .af-logedit .fld {
+    flex: 1;
+    min-width: 0;
+    border: 1px solid var(--color-border);
+    border-radius: 9px;
+    padding: 5px 9px;
+    background: var(--field-bg);
+    display: flex;
+    flex-direction: column;
+    gap: 1px;
+  }
+  .af-logedit .fld .fl {
+    font-family: var(--font-display);
+    letter-spacing: 0.1em;
+    font-size: 7.5px;
+    text-transform: uppercase;
+    color: var(--color-muted-foreground);
+  }
+  .af-logedit .fld input {
+    font-family: var(--font-heavy);
+    font-size: 15px;
+    font-variant-numeric: tabular-nums;
+    line-height: 1;
     background: transparent;
     border: 0;
-    color: var(--color-muted-foreground);
-    font-family: var(--font-display);
-    letter-spacing: 0.08em;
-    font-size: 9.5px;
-    text-transform: uppercase;
-    cursor: pointer;
-  }
-  .af-cancelbtn:hover {
+    outline: none;
     color: var(--color-foreground);
+    width: 100%;
+    padding: 0;
+  }
+  .af-logedit .fld input::placeholder {
+    color: var(--color-muted-foreground);
+    opacity: 0.5;
+  }
+  .af-logedit .save {
+    flex: 0 0 auto;
+    border: 0;
+    border-radius: 9px;
+    padding: 0 14px;
+    background: var(--grad);
+    color: var(--primary-foreground);
+    cursor: pointer;
+    display: grid;
+    place-items: center;
+  }
+  .af-logedit .save:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+  }
+
+  /* Legenda "↳ semana passada" — 1 linha só, mora abaixo do chip fechado. */
+  .af-loghint {
+    margin-top: 6px;
+    font-family: var(--font-display);
+    letter-spacing: 0.06em;
+    font-size: 9px;
+    color: var(--color-muted-foreground);
+    text-transform: uppercase;
   }
 }

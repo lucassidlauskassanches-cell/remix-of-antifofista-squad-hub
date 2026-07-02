@@ -1,7 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
-import { useMemo, useState, useEffect } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import {
   getMyStructuredTrainingPlan,
   listGallery,
@@ -15,7 +15,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { YouTubePlayer } from "@/lib/youtube";
-import { Play, Check, Table2, LayoutList, Pencil } from "lucide-react";
+import { Play, Check, Table2, LayoutList } from "lucide-react";
 import { toast } from "sonner";
 import {
   describeCell,
@@ -49,9 +49,15 @@ function normalize(s: string) {
     .trim();
 }
 
-function shortWeek(label: string, i: number) {
+// "SEMANA 1", "SEMANA 2" — usada nos cabeçalhos da tabela e no chip ativo.
+function weekLabel(label: string, i: number) {
   const m = (label || "").match(/(\d+)/);
-  return m ? `S${m[1]}` : label?.trim() || `S${i + 1}`;
+  return `Semana ${m ? m[1] : i + 1}`;
+}
+// Só o número, para os chips inativos (mantém o strip compacto).
+function weekNumber(label: string, i: number) {
+  const m = (label || "").match(/(\d+)/);
+  return m ? m[1] : String(i + 1);
 }
 
 function EstruturadoPage() {
@@ -163,10 +169,20 @@ function EstruturadoPage() {
     setBlockIdx((i) => Math.min(Math.max(i, 0), plan.blocks.length - 1));
   }, [plan?.weeks?.length, plan?.blocks?.length]);
 
-  // Trocar de bloco/semana fecha qualquer exercício em edição.
+  // Trocar bloco/semana fecha o exercício em edição pra não perder foco.
   useEffect(() => {
     setActiveKey(null);
   }, [blockIdx, weekIdx]);
+
+  // Esc fecha o exercício em edição.
+  useEffect(() => {
+    if (!activeKey) return;
+    function onKey(e: KeyboardEvent) {
+      if (e.key === "Escape") setActiveKey(null);
+    }
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [activeKey]);
 
   if (isLoading) {
     return <p className="text-center py-16 text-muted-foreground">Carregando...</p>;
@@ -218,6 +234,7 @@ function EstruturadoPage() {
         </div>
       )}
 
+      <div className="af-wk-label">Semana</div>
       <div className="af-week">
         {plan.weeks.map((w, i) => (
           <button
@@ -225,8 +242,9 @@ function EstruturadoPage() {
             type="button"
             className={`af-wk${i === safeWeekIdx ? " on" : ""}`}
             onClick={() => setWeekIdx(i)}
+            aria-label={weekLabel(w, i)}
           >
-            {shortWeek(w, i)}
+            {i === safeWeekIdx ? weekLabel(w, i) : weekNumber(w, i)}
           </button>
         ))}
       </div>
@@ -322,7 +340,7 @@ function PlanilhaTable({ block, weeks }: { block: StructuredBlock; weeks: string
                 key={i}
                 className="px-3 py-2 tactical-heading text-[10px] tracking-widest text-muted-foreground whitespace-nowrap"
               >
-                {shortWeek(w, i)}
+                {weekLabel(w, i)}
               </th>
             ))}
           </tr>
@@ -389,20 +407,12 @@ function ExerciseList({
         const last = lastByExercise?.get(key) ?? null;
         const todayId = todayIdByExercise?.get(key);
         const isActive = !!key && activeKey === key;
-        const isDone = !!todayId;
-        const cls =
-          "af-ex" +
-          (isActive ? " af-ex--active" : "") +
-          (isDone && !isActive ? " af-ex--done" : "");
+        const cls = "af-ex" + (isActive ? " af-ex--active" : "");
+        const canRegister = !!(onSaveCarga && onActivate && ex.name);
         return (
           <div key={i} className={cls}>
             <div className="nm">
-              <span className="flex items-center gap-2">
-                {isDone && !isActive && (
-                  <Check className="w-4 h-4 text-primary shrink-0" />
-                )}
-                <span>{ex.name || "—"}</span>
-              </span>
+              <span>{ex.name || "—"}</span>
               {video && (
                 <button
                   type="button"
@@ -434,19 +444,30 @@ function ExerciseList({
                 <span className="text-muted-foreground text-sm">—</span>
               )}
               {parsed.technique && <span className="af-tag2">{parsed.technique}</span>}
+              {canRegister && !isActive && (
+                <LogChip
+                  todayId={todayId}
+                  last={last}
+                  onOpen={() => onActivate!(key)}
+                />
+              )}
             </div>
             {ex.note && <div className="af-note">{ex.note}</div>}
-            {onSaveCarga && onActivate && ex.name && (
-              <RegistrarCarga
-                exercise={ex.name}
-                exerciseKey={key}
+            {canRegister && !isActive && !todayId && last?.date && (
+              <div className="af-loghint">
+                ↳ última: {last.load || "—"}
+                {last.reps ? ` × ${last.reps}` : ""} · {formatBR(last.date)}
+              </div>
+            )}
+            {canRegister && isActive && (
+              <LogEdit
+                exercise={ex.name!}
                 last={last}
                 todayId={todayId}
                 prescribedReps={parsed.reps ?? ""}
-                onSave={onSaveCarga}
+                onSave={onSaveCarga!}
                 saving={!!savingCarga}
-                active={isActive}
-                onActivate={onActivate}
+                onClose={() => onActivate!(null)}
               />
             )}
           </div>
@@ -456,116 +477,118 @@ function ExerciseList({
   );
 }
 
+function LogChip({
+  todayId,
+  last,
+  onOpen,
+}: {
+  todayId?: string;
+  last: LastEntry | null;
+  onOpen: () => void;
+}) {
+  const filled = !!todayId;
+  const load = last?.load?.trim() || "";
+  const reps = last?.reps?.trim() || "";
+  return (
+    <button
+      type="button"
+      className={`af-logchip${filled ? " filled" : ""}`}
+      onClick={onOpen}
+      aria-label={filled ? "Editar carga" : "Registrar carga"}
+    >
+      {filled ? (
+        <>
+          <Check className="w-3 h-3" />
+          <span className="n">{load || "—"}</span>
+          {reps && <span className="x">× {reps}</span>}
+        </>
+      ) : (
+        <>
+          <span>Registrar</span>
+        </>
+      )}
+    </button>
+  );
+}
+
 function formatBR(date: string) {
   if (!date) return "";
   const [, m, d] = date.split("-");
   return `${d}/${m}`;
 }
 
-function RegistrarCarga({
+function LogEdit({
   exercise,
-  exerciseKey,
   last,
   todayId,
   prescribedReps,
   onSave,
   saving,
-  active,
-  onActivate,
+  onClose,
 }: {
   exercise: string;
-  exerciseKey: string;
   last: LastEntry | null;
   todayId?: string;
   prescribedReps: string;
   onSave: SaveCarga;
   saving: boolean;
-  active: boolean;
-  onActivate: (key: string | null) => void;
+  onClose: () => void;
 }) {
-  const [load, setLoad] = useState("");
-  const [reps, setReps] = useState("");
+  const [load, setLoad] = useState(last?.load ?? "");
+  const [reps, setReps] = useState(last?.reps || prescribedReps);
+  const wrapRef = useRef<HTMLDivElement>(null);
 
-  // Quando o aluno ativa o registro, semeia os campos com o último valor
-  // (ou as reps prescritas) — mas só nesse momento, pra não sobrescrever
-  // o que ele está digitando.
+  // Fecha ao clicar fora — sem botão "Cancelar" desnecessário na UI.
   useEffect(() => {
-    if (active) {
-      setLoad(last?.load ?? "");
-      setReps(last?.reps || prescribedReps);
+    function onDown(e: MouseEvent | TouchEvent) {
+      if (!wrapRef.current) return;
+      if (!wrapRef.current.contains(e.target as Node)) onClose();
     }
-  }, [active]);
+    document.addEventListener("mousedown", onDown);
+    document.addEventListener("touchstart", onDown, { passive: true });
+    return () => {
+      document.removeEventListener("mousedown", onDown);
+      document.removeEventListener("touchstart", onDown);
+    };
+  }, [onClose]);
 
-  if (!active) {
-    return (
-      <button
-        type="button"
-        className="af-regbtn"
-        onClick={() => onActivate(exerciseKey)}
-      >
-        {todayId ? (
-          <>
-            <Pencil className="w-[12px] h-[12px]" />
-            Editar carga{last?.load ? ` · ${last.load}${last.reps ? ` × ${last.reps}` : ""}` : ""}
-          </>
-        ) : (
-          <>
-            <Check className="w-[12px] h-[12px]" />
-            Registrar carga
-            {last?.date ? ` · última ${last.load}${last.reps ? ` × ${last.reps}` : ""}` : ""}
-          </>
-        )}
-      </button>
-    );
+  function submit() {
+    if (!load.trim() || saving) return;
+    onSave({ id: todayId, exercise, load: load.trim(), reps: reps.trim() });
   }
 
   return (
-    <>
-      <div className="af-logrow">
-        <label className="af-field">
-          <span className="fl">Carga</span>
-          <input
-            inputMode="decimal"
-            value={load}
-            onChange={(e) => setLoad(e.target.value)}
-            placeholder="kg"
-            autoFocus
-          />
-        </label>
-        <label className="af-field">
-          <span className="fl">Reps</span>
-          <input
-            inputMode="numeric"
-            value={reps}
-            onChange={(e) => setReps(e.target.value)}
-            placeholder="—"
-          />
-        </label>
-        <button
-          type="button"
-          className="af-savebtn"
-          onClick={() =>
-            onSave({ id: todayId, exercise, load: load.trim(), reps: reps.trim() })
-          }
-          disabled={saving || !load.trim()}
-        >
-          <Check className="w-[13px] h-[13px]" />
-          {todayId ? "Atualizar" : "Registrar"}
-        </button>
-      </div>
+    <div ref={wrapRef} className="af-logedit">
+      <label className="fld">
+        <span className="fl">Carga</span>
+        <input
+          inputMode="decimal"
+          value={load}
+          onChange={(e) => setLoad(e.target.value)}
+          onKeyDown={(e) => e.key === "Enter" && submit()}
+          placeholder="kg"
+          autoFocus
+        />
+      </label>
+      <label className="fld">
+        <span className="fl">Reps</span>
+        <input
+          inputMode="numeric"
+          value={reps}
+          onChange={(e) => setReps(e.target.value)}
+          onKeyDown={(e) => e.key === "Enter" && submit()}
+          placeholder="—"
+        />
+      </label>
       <button
         type="button"
-        className="af-cancelbtn"
-        onClick={() => onActivate(null)}
+        className="save"
+        onClick={submit}
+        disabled={saving || !load.trim()}
+        aria-label={todayId ? "Atualizar carga" : "Registrar carga"}
       >
-        Cancelar
+        <Check className="w-4 h-4" />
       </button>
-      {last?.date && (
-        <div className="af-lastval">
-          Última: {last.load || "—"}
-          {last.reps ? ` × ${last.reps}` : ""} · {formatBR(last.date)}
-        </div>
-      )}
-    </>
+    </div>
   );
 }

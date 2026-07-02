@@ -6,34 +6,43 @@
 // puppeteer page. With no argument it falls back to the global `document`, so
 // `page.evaluate(autoFit)` keeps working serverside.
 export function autoFit(doc: Document = document): void {
+  const win = doc.defaultView;
   const pages = Array.from(doc.querySelectorAll<HTMLElement>(".page.autofit"));
   for (const pg of pages) {
     const body = pg.querySelector<HTMLElement>(".body");
     if (!body) continue;
-    // Intrinsic height of the body's content (independent of the flex centering).
+
+    // Extent from top of the first child to bottom of the last child, plus the
+    // margin-top of the first child and margin-bottom of the last child — those
+    // margins are outside the bounding box and would otherwise be ignored by
+    // getBoundingClientRect(), making the fit optimistic and clipping the last
+    // lines in print. In a flex column the sibling margins between children DO
+    // occupy real space (no collapsing), so they're already accounted for by
+    // (last.bottom - first.top).
     const contentHeight = (): number => {
       const kids = Array.from(body.children) as HTMLElement[];
       if (!kids.length) return 0;
-      let top = Infinity;
-      let bottom = -Infinity;
-      for (const k of kids) {
-        const r = k.getBoundingClientRect();
-        top = Math.min(top, r.top);
-        bottom = Math.max(bottom, r.bottom);
-      }
-      return bottom - top;
+      const first = kids[0];
+      const last = kids[kids.length - 1];
+      const top = first.getBoundingClientRect().top;
+      const bottom = last.getBoundingClientRect().bottom;
+      const cs = win?.getComputedStyle;
+      const mt = cs ? parseFloat(cs(first).marginTop) || 0 : 0;
+      const mb = cs ? parseFloat(cs(last).marginBottom) || 0 : 0;
+      return bottom - top + mt + mb;
     };
-    // Largest scale (within a tasteful range) that still fits the available band.
-    // Floor is low (0.42) so even the densest page (acompanhamento: intro + 5
-    // rules + disclaimer) shrinks enough to fit instead of overflowing. Combined
-    // with the top-aligned body, content is never clipped.
+
+    // 4% headroom for sub-pixel differences between screen and Chrome's print
+    // engine. Cap the upper bound so short pages don't inflate fonts.
+    const available = body.clientHeight * 0.96;
+
     let lo = 0.42;
-    let hi = 1.28;
+    let hi = 1.15;
     let best = lo;
     for (let i = 0; i < 24; i++) {
       const mid = (lo + hi) / 2;
       pg.style.setProperty("--s", String(mid));
-      if (contentHeight() <= body.clientHeight * 0.985) {
+      if (contentHeight() <= available) {
         best = mid;
         lo = mid;
       } else {
@@ -41,5 +50,12 @@ export function autoFit(doc: Document = document): void {
       }
     }
     pg.style.setProperty("--s", String(best));
+
+    if (best <= 0.43 && typeof console !== "undefined") {
+      console.warn(
+        "[autoFit] página muito densa, considere reduzir o texto:",
+        pg.querySelector(".badge")?.textContent?.trim() ?? "(sem badge)",
+      );
+    }
   }
 }
