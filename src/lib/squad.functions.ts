@@ -276,7 +276,7 @@ export const listStudents = createServerFn({ method: "POST" })
         new Set((staffRoles ?? []).map((r: any) => r.user_id)),
       );
       if (staffIds.length) {
-        q = q.not("id", "in", `(${staffIds.join(",")})`);
+        q = q.not("id", "in", `("${staffIds.join('","')}")`);
       }
     }
     const { data: rows, count } = await q.range(from, to);
