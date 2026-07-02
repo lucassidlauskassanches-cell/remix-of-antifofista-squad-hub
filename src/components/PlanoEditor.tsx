@@ -99,7 +99,7 @@ function downloadPdf(plan: PlanData) {
       });
     }
 
-    if (doc.fonts?.load) {
+    if (doc.fonts) {
       const specs = [
         '700 46px "Oswald"',
         '700 26px "Oswald"',
