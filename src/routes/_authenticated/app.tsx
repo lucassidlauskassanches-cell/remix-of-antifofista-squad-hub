@@ -13,7 +13,7 @@ function BearIcon({ isActive }: { isActive: boolean }) {
     <img
       src={bearIconAsset.url}
       alt=""
-      className="w-10 h-10 object-contain"
+      className="w-5 h-5 object-contain"
       style={{
         filter: isActive
           ? "invert(1) sepia(1) saturate(5) hue-rotate(10deg) brightness(1.2)"
