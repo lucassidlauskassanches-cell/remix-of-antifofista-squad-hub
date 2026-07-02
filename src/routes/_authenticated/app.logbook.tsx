@@ -100,11 +100,8 @@ function EvolucaoPage() {
 
   return (
     <div>
-      <div className="af-eyebrow">Sua evolução de carga</div>
+      <div className="af-eyebrow">Sua evolução</div>
       <div className="af-title">Evolução</div>
-      <p className="af-lead">
-        Cada exercício que você registra no treino vira progresso aqui.
-      </p>
 
       {rawRows.length > 0 && (
         <div className="relative mb-3">
