@@ -6,7 +6,22 @@ import { getMyContext } from "@/lib/squad.functions";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import logoAsset from "@/assets/logo-antifofista.png.asset.json";
-import bearIcon from "@/assets/icon-antifofista-v2.png.asset.json";
+import bearIconAsset from "@/assets/icon-antifofista-v2.png.asset.json";
+
+function BearIcon({ isActive }: { isActive: boolean }) {
+  return (
+    <img
+      src={bearIconAsset.url}
+      alt=""
+      className="w-5 h-5 object-contain"
+      style={{
+        filter: isActive
+          ? "invert(1) sepia(1) saturate(5) hue-rotate(10deg) brightness(1.2)"
+          : "invert(1)",
+      }}
+    />
+  );
+}
 
 export const Route = createFileRoute("/_authenticated/app")({
   component: AppShell,
