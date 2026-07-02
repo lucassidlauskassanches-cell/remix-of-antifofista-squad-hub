@@ -1,5 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import {
@@ -8,8 +8,10 @@ import {
   addWater,
   setWater,
   setTrained,
+  setRestDay,
   upsertMealCheck,
   upsertWeightEntry,
+  ackMilestone,
 } from "@/lib/registro.functions";
 import { getMyContext } from "@/lib/squad.functions";
 import { Button } from "@/components/ui/button";
@@ -27,6 +29,10 @@ import {
   Download,
   Star,
   Trophy,
+  Flame,
+  Shield,
+  Moon,
+  X,
 } from "lucide-react";
 import {
   LineChart,
@@ -37,7 +43,9 @@ import {
   ResponsiveContainer,
 } from "recharts";
 import { PatenteCard, getPatente } from "@/components/PatenteCard";
+import { StreakMilestoneCard } from "@/components/StreakMilestoneCard";
 import html2canvas from "html2canvas";
+
 
 export const Route = createFileRoute("/_authenticated/app/registro")({
   component: RegistroPage,
@@ -89,7 +97,9 @@ function RegistroPage() {
   const addWaterFn = useServerFn(addWater);
   const setWaterFn = useServerFn(setWater);
   const setTrainedFn = useServerFn(setTrained);
+  const setRestDayFn = useServerFn(setRestDay);
   const mealFn = useServerFn(upsertMealCheck);
+  const ackFn = useServerFn(ackMilestone);
 
   const mAddWater = useMutation({
     mutationFn: (deltaMl: number) => addWaterFn({ data: { deltaMl, date } }),
@@ -103,6 +113,11 @@ function RegistroPage() {
   });
   const mTrained = useMutation({
     mutationFn: (t: boolean) => setTrainedFn({ data: { trained: t, date } }),
+    onSuccess: invalidateAll,
+    onError: (e: any) => toast.error(e.message ?? "Erro"),
+  });
+  const mRest = useMutation({
+    mutationFn: (r: boolean) => setRestDayFn({ data: { restDay: r, date } }),
     onSuccess: invalidateAll,
     onError: (e: any) => toast.error(e.message ?? "Erro"),
   });
@@ -120,6 +135,10 @@ function RegistroPage() {
   const score = Number(d.log?.daily_score ?? 0);
   const readOnly = !d.isToday;
   const studentName = ctxQ.data?.profile?.full_name ?? "Soldado";
+  const streak = d.streak;
+  const patente = d.patente;
+  const isRestDay = !!(d.log as any)?.rest_day;
+
 
   return (
     <div className="space-y-4">
@@ -160,6 +179,18 @@ function RegistroPage() {
         </Button>
       </div>
 
+      {/* STREAK */}
+      {d.isToday && (
+        <StreakBanner
+          streak={streak}
+          patente={patente}
+          onAck={(m) => {
+            ackFn({ data: { milestone: m } }).finally(() => invalidateAll());
+          }}
+          studentName={studentName}
+        />
+      )}
+
       {/* SCORE */}
       <ScoreBanner score={score} readOnly={readOnly} onShare={() => {}} />
 
@@ -168,6 +199,11 @@ function RegistroPage() {
         <div className="flex items-center gap-2">
           <Droplet className="w-4 h-4 text-primary" />
           <h2 className="tactical-heading text-sm tracking-widest">ÁGUA</h2>
+          {isRestDay && (
+            <span className="ml-auto text-[10px] tracking-widest text-primary">
+              PESO 40%
+            </span>
+          )}
         </div>
         <WaterRing consumed={consumed} goal={goal} />
         <div className="text-center text-xs text-muted-foreground">
@@ -214,7 +250,7 @@ function RegistroPage() {
         )}
       </Card>
 
-      {/* TREINO */}
+      {/* TREINO / DESCANSO */}
       <Card className="p-4 space-y-3">
         <div className="flex items-center gap-2">
           <Dumbbell className="w-4 h-4 text-primary" />
@@ -222,15 +258,33 @@ function RegistroPage() {
             TREINO DE HOJE
           </h2>
         </div>
+        {isRestDay ? (
+          <p className="text-xs text-muted-foreground">
+            Dia de descanso ativo. Peso do treino redistribuído para água (40%)
+            e alimentação (60%).
+          </p>
+        ) : (
+          <Button
+            variant={d.log?.trained ? "default" : "outline"}
+            className="w-full"
+            onClick={() => mTrained.mutate(!d.log?.trained)}
+            disabled={readOnly || mTrained.isPending}
+          >
+            {d.log?.trained ? "✓ TREINEI HOJE" : "MARCAR: TREINEI HOJE"}
+          </Button>
+        )}
         <Button
-          variant={d.log?.trained ? "default" : "outline"}
+          variant={isRestDay ? "default" : "outline"}
+          size="sm"
           className="w-full"
-          onClick={() => mTrained.mutate(!d.log?.trained)}
-          disabled={readOnly || mTrained.isPending}
+          onClick={() => mRest.mutate(!isRestDay)}
+          disabled={readOnly || mRest.isPending}
         >
-          {d.log?.trained ? "✓ TREINEI HOJE" : "MARCAR: TREINEI HOJE"}
+          <Moon className="w-4 h-4 mr-2" />
+          {isRestDay ? "✓ DIA DE DESCANSO" : "MARCAR DIA DE DESCANSO"}
         </Button>
       </Card>
+
 
       {/* REFEIÇÕES */}
       <Card className="p-4 space-y-3">
@@ -634,4 +688,247 @@ function downloadBlob(blob: Blob, name: string) {
   a.click();
   a.remove();
   setTimeout(() => URL.revokeObjectURL(url), 5000);
+}
+
+// ---------- streak banner ----------
+type StreakData = {
+  current_streak: number;
+  longest_streak: number;
+  shields: number;
+  shield_progress: number;
+  total_completed_days: number;
+  last_completed_date: string | null;
+  new_milestone: number | null;
+};
+
+type PatenteData = {
+  current: string;
+  next: { rank: string; days: number } | null;
+  daysToNext: number;
+  progress: number;
+};
+
+function StreakBanner({
+  streak,
+  patente,
+  onAck,
+  studentName,
+}: {
+  streak: StreakData;
+  patente: PatenteData;
+  onAck: (m: number) => void;
+  studentName: string;
+}) {
+  const [showMilestone, setShowMilestone] = useState<number | null>(null);
+  useEffect(() => {
+    if (streak.new_milestone) setShowMilestone(streak.new_milestone);
+  }, [streak.new_milestone]);
+
+  const accent = "hsl(var(--primary))";
+  return (
+    <>
+      <Card className="p-4 space-y-3 border-primary/40">
+        <div className="flex items-center gap-3">
+          <Flame className="w-8 h-8" style={{ color: accent }} />
+          <div className="flex-1">
+            <div className="tactical-heading text-3xl leading-none" style={{ color: accent }}>
+              {streak.current_streak} DIAS
+            </div>
+            <div className="text-[10px] tracking-widest text-muted-foreground mt-1">
+              SEQUÊNCIA · RECORDE {streak.longest_streak}
+            </div>
+          </div>
+          <div className="flex items-center gap-1" title="Escudos disponíveis">
+            {Array.from({ length: 2 }).map((_, i) => (
+              <Shield
+                key={i}
+                className="w-5 h-5"
+                fill={i < streak.shields ? "currentColor" : "none"}
+                style={{
+                  color:
+                    i < streak.shields
+                      ? accent
+                      : "hsl(var(--muted-foreground))",
+                }}
+              />
+            ))}
+          </div>
+        </div>
+
+        <div>
+          <div className="flex items-center justify-between text-[10px] tracking-widest text-muted-foreground mb-1">
+            <span className="text-foreground tactical-heading">
+              {patente.current}
+            </span>
+            {patente.next && (
+              <span>
+                {patente.daysToNext}D → {patente.next.rank}
+              </span>
+            )}
+          </div>
+          <div className="h-2 bg-muted rounded overflow-hidden">
+            <div
+              className="h-full transition-all"
+              style={{
+                width: `${Math.round(patente.progress * 100)}%`,
+                background: accent,
+              }}
+            />
+          </div>
+        </div>
+
+        {streak.shield_progress > 0 && (
+          <div className="text-[10px] tracking-widest text-muted-foreground">
+            ESCUDO EM {streak.shield_progress}/7 dias a 100%
+          </div>
+        )}
+      </Card>
+
+      {showMilestone && (
+        <MilestoneModal
+          days={showMilestone}
+          rank={patente.current}
+          studentName={studentName}
+          onClose={() => {
+            const m = showMilestone;
+            setShowMilestone(null);
+            onAck(m);
+          }}
+        />
+      )}
+    </>
+  );
+}
+
+function MilestoneModal({
+  days,
+  rank,
+  studentName,
+  onClose,
+}: {
+  days: number;
+  rank: string;
+  studentName: string;
+  onClose: () => void;
+}) {
+  const cardRef = useRef<HTMLDivElement>(null);
+  const [format, setFormat] = useState<"story" | "square">("story");
+  const [busy, setBusy] = useState(false);
+
+  async function capture(): Promise<Blob | null> {
+    if (!cardRef.current) return null;
+    const canvas = await html2canvas(cardRef.current, {
+      backgroundColor: "#000",
+      scale: 1,
+      useCORS: true,
+      logging: false,
+    });
+    return await new Promise((res) =>
+      canvas.toBlob((b) => res(b), "image/png", 0.95),
+    );
+  }
+
+  async function handleShare() {
+    setBusy(true);
+    try {
+      const blob = await capture();
+      if (!blob) throw new Error("Falha ao gerar imagem");
+      const file = new File([blob], `antifofista-${days}dias.png`, {
+        type: "image/png",
+      });
+      const nav = navigator as any;
+      if (nav.canShare && nav.canShare({ files: [file] })) {
+        await nav.share({
+          files: [file],
+          title: "Antifofista Squad",
+          text: `${days} dias de guerra — ${rank}`,
+        });
+      } else {
+        downloadBlob(blob, `antifofista-${days}dias.png`);
+        toast.info("Compartilhamento nativo indisponível — imagem baixada.");
+      }
+    } catch (e: any) {
+      if (e?.name !== "AbortError") toast.error(e.message ?? "Erro");
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function handleDownload() {
+    setBusy(true);
+    try {
+      const blob = await capture();
+      if (blob) downloadBlob(blob, `antifofista-${days}dias.png`);
+    } catch (e: any) {
+      toast.error(e.message ?? "Erro");
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  return (
+    <div className="fixed inset-0 z-50 bg-black/80 flex items-center justify-center p-4">
+      <Card className="max-w-md w-full p-6 space-y-4 border-primary relative">
+        <button
+          onClick={onClose}
+          className="absolute top-3 right-3 text-muted-foreground hover:text-foreground"
+          aria-label="Fechar"
+        >
+          <X className="w-5 h-5" />
+        </button>
+        <div className="text-center space-y-2">
+          <Flame className="w-12 h-12 text-primary mx-auto" />
+          <div className="tactical-heading text-4xl text-primary">
+            {days} DIAS
+          </div>
+          <div className="tactical-heading text-xl">{rank}</div>
+          <p className="text-xs text-muted-foreground">
+            Marco atingido. Documenta e mostra pra squad.
+          </p>
+        </div>
+        <div className="grid grid-cols-2 gap-2">
+          <Button
+            variant={format === "story" ? "default" : "outline"}
+            size="sm"
+            onClick={() => setFormat("story")}
+          >
+            STORY 9:16
+          </Button>
+          <Button
+            variant={format === "square" ? "default" : "outline"}
+            size="sm"
+            onClick={() => setFormat("square")}
+          >
+            FEED 1:1
+          </Button>
+        </div>
+        <div className="grid grid-cols-2 gap-2">
+          <Button onClick={handleShare} disabled={busy}>
+            <Share2 className="w-4 h-4 mr-2" /> COMPARTILHAR
+          </Button>
+          <Button variant="outline" onClick={handleDownload} disabled={busy}>
+            <Download className="w-4 h-4 mr-2" /> SALVAR
+          </Button>
+        </div>
+        <div
+          style={{
+            position: "fixed",
+            top: 0,
+            left: -99999,
+            pointerEvents: "none",
+            opacity: 0,
+          }}
+          aria-hidden
+        >
+          <StreakMilestoneCard
+            ref={cardRef}
+            streakDays={days}
+            rank={rank}
+            studentName={studentName}
+            format={format}
+          />
+        </div>
+      </Card>
+    </div>
+  );
 }

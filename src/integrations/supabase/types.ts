@@ -53,6 +53,7 @@ export type Database = {
           daily_score: number
           id: string
           log_date: string
+          rest_day: boolean
           student_id: string
           trained: boolean
           updated_at: string
@@ -63,6 +64,7 @@ export type Database = {
           daily_score?: number
           id?: string
           log_date?: string
+          rest_day?: boolean
           student_id: string
           trained?: boolean
           updated_at?: string
@@ -73,6 +75,7 @@ export type Database = {
           daily_score?: number
           id?: string
           log_date?: string
+          rest_day?: boolean
           student_id?: string
           trained?: boolean
           updated_at?: string
@@ -381,6 +384,50 @@ export type Database = {
             foreignKeyName: "profiles_trainer_id_fkey"
             columns: ["trainer_id"]
             isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      streaks: {
+        Row: {
+          current_streak: number
+          last_completed_date: string | null
+          last_milestone: number
+          longest_streak: number
+          shield_progress: number
+          shields: number
+          student_id: string
+          total_completed_days: number
+          updated_at: string
+        }
+        Insert: {
+          current_streak?: number
+          last_completed_date?: string | null
+          last_milestone?: number
+          longest_streak?: number
+          shield_progress?: number
+          shields?: number
+          student_id: string
+          total_completed_days?: number
+          updated_at?: string
+        }
+        Update: {
+          current_streak?: number
+          last_completed_date?: string | null
+          last_milestone?: number
+          longest_streak?: number
+          shield_progress?: number
+          shields?: number
+          student_id?: string
+          total_completed_days?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "streaks_student_id_fkey"
+            columns: ["student_id"]
+            isOneToOne: true
             referencedRelation: "profiles"
             referencedColumns: ["id"]
           },
