@@ -599,7 +599,9 @@ export const saveStudentAnamnese = createServerFn({ method: "POST" })
       .parse(d),
   )
   .handler(async ({ data, context }) => {
-    // trainer/admin can update their own students; RLS on profiles enforces this
+    // Explicit role guard: only the assigned trainer or an admin can edit
+    // these scoring-relevant fields. Students must not self-serve here.
+    await assertCanManageStudent(context, data.studentId);
     const patch: any = {};
     if (data.birth_date !== undefined) patch.birth_date = data.birth_date;
     if (data.height_cm !== undefined) patch.height_cm = data.height_cm;
