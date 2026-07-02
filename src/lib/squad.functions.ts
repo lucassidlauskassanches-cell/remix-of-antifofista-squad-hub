@@ -314,7 +314,7 @@ export const getAdminOverview = createServerFn({ method: "GET" })
       .select("id,full_name,email,trainer_id,active")
       .order("full_name");
     if (staffIds.length) {
-      studentsQ = studentsQ.not("id", "in", `(${staffIds.join(",")})`);
+      studentsQ = studentsQ.not("id", "in", `("${staffIds.join('","')}")`);
     }
     const { data: students } = await studentsQ;
 
