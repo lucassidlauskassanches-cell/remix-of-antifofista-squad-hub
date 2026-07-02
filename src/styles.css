@@ -204,10 +204,18 @@
   }
 
   /* chips de semana / treino */
+  .af-wk-label {
+    font-family: var(--font-display);
+    text-transform: uppercase;
+    letter-spacing: 0.22em;
+    font-size: 9px;
+    color: var(--color-muted-foreground);
+    margin: 10px 1px 4px;
+  }
   .af-week {
     display: flex;
     gap: 7px;
-    margin: 13px 0;
+    margin: 6px 0 13px;
     overflow-x: auto;
     scrollbar-width: none;
   }
@@ -226,6 +234,8 @@
     color: var(--color-muted-foreground);
     background: transparent;
     cursor: pointer;
+    min-width: 32px;
+    text-align: center;
   }
   .af-wk.on {
     color: var(--color-foreground);
