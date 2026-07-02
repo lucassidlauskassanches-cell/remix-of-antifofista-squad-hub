@@ -1,5 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import {
@@ -8,8 +8,10 @@ import {
   addWater,
   setWater,
   setTrained,
+  setRestDay,
   upsertMealCheck,
   upsertWeightEntry,
+  ackMilestone,
 } from "@/lib/registro.functions";
 import { getMyContext } from "@/lib/squad.functions";
 import { Button } from "@/components/ui/button";
@@ -27,6 +29,10 @@ import {
   Download,
   Star,
   Trophy,
+  Flame,
+  Shield,
+  Moon,
+  X,
 } from "lucide-react";
 import {
   LineChart,
@@ -37,7 +43,9 @@ import {
   ResponsiveContainer,
 } from "recharts";
 import { PatenteCard, getPatente } from "@/components/PatenteCard";
+import { StreakMilestoneCard } from "@/components/StreakMilestoneCard";
 import html2canvas from "html2canvas";
+
 
 export const Route = createFileRoute("/_authenticated/app/registro")({
   component: RegistroPage,
