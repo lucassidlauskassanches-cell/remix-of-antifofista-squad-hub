@@ -25,7 +25,7 @@ export const Route = createFileRoute("/_authenticated/app/admin/alunos/$id")({
 function AlunoEditor() {
   const { id } = useParams({ from: "/_authenticated/app/admin/alunos/$id" });
   const getDetail = useServerFn(getStudentDetail);
-  const { data, refetch } = useQuery({
+  const { data } = useQuery({
     queryKey: ["student", id],
     queryFn: () => getDetail({ data: { studentId: id } }),
   });
