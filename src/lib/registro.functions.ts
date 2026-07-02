@@ -88,7 +88,7 @@ async function recomputeScore(
     await Promise.all([
       supabase
         .from("daily_logs")
-        .select("water_ml, trained")
+        .select("water_ml, trained, rest_day, log_date")
         .eq("id", logId)
         .single(),
       supabase
@@ -121,10 +121,183 @@ async function recomputeScore(
     waterGoalMl: goal,
     trained: !!log?.trained,
     mealRatings: ratings,
+    restDay: !!log?.rest_day,
   });
   await supabase.from("daily_logs").update({ daily_score: score }).eq("id", logId);
+  // Reconcile streak whenever a score changes.
+  await reconcileStreak(supabase, studentId);
   return { score, goal, weightKg };
 }
+
+// ---------- streak reconciliation ----------
+type StreakState = {
+  current_streak: number;
+  longest_streak: number;
+  last_completed_date: string | null;
+  shields: number;
+  shield_progress: number;
+  total_completed_days: number;
+  last_milestone: number;
+  new_milestone: number | null; // set when we just crossed a milestone
+  shield_consumed_today: boolean;
+};
+
+function daysBetween(a: string, b: string): number {
+  const [ay, am, ad] = a.split("-").map(Number);
+  const [by, bm, bd] = b.split("-").map(Number);
+  const t1 = Date.UTC(ay, am - 1, ad);
+  const t2 = Date.UTC(by, bm - 1, bd);
+  return Math.round((t2 - t1) / 86400000);
+}
+
+function addDaysIso(iso: string, delta: number): string {
+  const [y, m, d] = iso.split("-").map(Number);
+  const dt = new Date(Date.UTC(y, m - 1, d));
+  dt.setUTCDate(dt.getUTCDate() + delta);
+  return dt.toISOString().slice(0, 10);
+}
+
+async function reconcileStreak(
+  supabase: any,
+  studentId: string,
+): Promise<StreakState> {
+  // Pull last 400 daily logs, ascending. Walk day by day, applying rules.
+  const { data: logs } = await supabase
+    .from("daily_logs")
+    .select("log_date, daily_score")
+    .eq("student_id", studentId)
+    .order("log_date", { ascending: true })
+    .limit(400);
+
+  const byDate = new Map<string, number>();
+  (logs ?? []).forEach((l: any) =>
+    byDate.set(l.log_date, Number(l.daily_score) || 0),
+  );
+
+  // Load previous milestone from db so we can detect "just crossed"
+  const { data: prevStreak } = await supabase
+    .from("streaks")
+    .select("last_milestone")
+    .eq("student_id", studentId)
+    .maybeSingle();
+  const prevMilestone: number = prevStreak?.last_milestone ?? 0;
+
+  const today = todaySP();
+  const firstDate = logs?.[0]?.log_date ?? today;
+
+  let current = 0;
+  let longest = 0;
+  let lastCompleted: string | null = null;
+  let shields = 0;
+  let shieldProgress = 0;
+  let total = 0;
+
+  const start = firstDate;
+  const end = today;
+  const totalDays = daysBetween(start, end);
+  for (let i = 0; i <= totalDays; i++) {
+    const date = addDaysIso(start, i);
+    const score = byDate.get(date) ?? 0;
+
+    if (score >= STREAK_THRESHOLD) {
+      current += 1;
+      total += 1;
+      lastCompleted = date;
+      if (score >= 100) {
+        shieldProgress += 1;
+        if (shieldProgress >= 7) {
+          shields = Math.min(2, shields + 1);
+          shieldProgress = 0;
+        }
+      } else {
+        shieldProgress = 0;
+      }
+    } else {
+      // failed day
+      if (current > 0 && shields > 0) {
+        // consume shield, keep streak, no increment
+        shields -= 1;
+        shieldProgress = 0;
+      } else {
+        current = 0;
+        shieldProgress = 0;
+      }
+    }
+    if (current > longest) longest = current;
+  }
+
+  // Detect new milestone crossed since last save
+  let newMilestone: number | null = null;
+  for (const m of MILESTONES) {
+    if (current >= m && prevMilestone < m) {
+      newMilestone = m; // remember highest crossed
+    }
+  }
+  const nextLastMilestone = Math.max(
+    prevMilestone,
+    ...MILESTONES.filter((m) => current >= m),
+    0,
+  );
+
+  const state: StreakState = {
+    current_streak: current,
+    longest_streak: longest,
+    last_completed_date: lastCompleted,
+    shields,
+    shield_progress: shieldProgress,
+    total_completed_days: total,
+    last_milestone: nextLastMilestone,
+    new_milestone: newMilestone,
+    shield_consumed_today: false,
+  };
+
+  await supabase.from("streaks").upsert(
+    {
+      student_id: studentId,
+      current_streak: current,
+      longest_streak: longest,
+      last_completed_date: lastCompleted,
+      shields,
+      shield_progress: shieldProgress,
+      total_completed_days: total,
+      last_milestone: nextLastMilestone,
+    },
+    { onConflict: "student_id" },
+  );
+
+  return state;
+}
+
+export function getPatenteGuerra(streak: number): {
+  current: string;
+  next: { rank: string; days: number } | null;
+  daysToNext: number;
+  progress: number; // 0..1 to next
+} {
+  if (streak < 3) {
+    const next = PATENTES_GUERRA[0];
+    return {
+      current: "EM FORMAÇÃO",
+      next,
+      daysToNext: next.days - streak,
+      progress: streak / next.days,
+    };
+  }
+  let currentIdx = 0;
+  for (let i = 0; i < PATENTES_GUERRA.length; i++) {
+    if (streak >= PATENTES_GUERRA[i].days) currentIdx = i;
+  }
+  const current = PATENTES_GUERRA[currentIdx].rank;
+  const next = PATENTES_GUERRA[currentIdx + 1] ?? null;
+  if (!next) {
+    return { current, next: null, daysToNext: 0, progress: 1 };
+  }
+  const base = PATENTES_GUERRA[currentIdx].days;
+  const daysToNext = next.days - streak;
+  const progress = (streak - base) / (next.days - base);
+  return { current, next, daysToNext, progress: Math.max(0, Math.min(1, progress)) };
+}
+
 
 // ---------- reads ----------
 export const getMyDayRegistro = createServerFn({ method: "POST" })
