@@ -179,6 +179,18 @@ function RegistroPage() {
         </Button>
       </div>
 
+      {/* STREAK */}
+      {d.isToday && (
+        <StreakBanner
+          streak={streak}
+          patente={patente}
+          onAck={(m) => {
+            ackFn({ data: { milestone: m } }).finally(() => invalidateAll());
+          }}
+          studentName={studentName}
+        />
+      )}
+
       {/* SCORE */}
       <ScoreBanner score={score} readOnly={readOnly} onShare={() => {}} />
 
@@ -187,6 +199,11 @@ function RegistroPage() {
         <div className="flex items-center gap-2">
           <Droplet className="w-4 h-4 text-primary" />
           <h2 className="tactical-heading text-sm tracking-widest">ÁGUA</h2>
+          {isRestDay && (
+            <span className="ml-auto text-[10px] tracking-widest text-primary">
+              PESO 40%
+            </span>
+          )}
         </div>
         <WaterRing consumed={consumed} goal={goal} />
         <div className="text-center text-xs text-muted-foreground">
@@ -233,7 +250,7 @@ function RegistroPage() {
         )}
       </Card>
 
-      {/* TREINO */}
+      {/* TREINO / DESCANSO */}
       <Card className="p-4 space-y-3">
         <div className="flex items-center gap-2">
           <Dumbbell className="w-4 h-4 text-primary" />
@@ -241,15 +258,33 @@ function RegistroPage() {
             TREINO DE HOJE
           </h2>
         </div>
+        {isRestDay ? (
+          <p className="text-xs text-muted-foreground">
+            Dia de descanso ativo. Peso do treino redistribuído para água (40%)
+            e alimentação (60%).
+          </p>
+        ) : (
+          <Button
+            variant={d.log?.trained ? "default" : "outline"}
+            className="w-full"
+            onClick={() => mTrained.mutate(!d.log?.trained)}
+            disabled={readOnly || mTrained.isPending}
+          >
+            {d.log?.trained ? "✓ TREINEI HOJE" : "MARCAR: TREINEI HOJE"}
+          </Button>
+        )}
         <Button
-          variant={d.log?.trained ? "default" : "outline"}
+          variant={isRestDay ? "default" : "outline"}
+          size="sm"
           className="w-full"
-          onClick={() => mTrained.mutate(!d.log?.trained)}
-          disabled={readOnly || mTrained.isPending}
+          onClick={() => mRest.mutate(!isRestDay)}
+          disabled={readOnly || mRest.isPending}
         >
-          {d.log?.trained ? "✓ TREINEI HOJE" : "MARCAR: TREINEI HOJE"}
+          <Moon className="w-4 h-4 mr-2" />
+          {isRestDay ? "✓ DIA DE DESCANSO" : "MARCAR DIA DE DESCANSO"}
         </Button>
       </Card>
+
 
       {/* REFEIÇÕES */}
       <Card className="p-4 space-y-3">
