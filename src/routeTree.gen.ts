@@ -16,6 +16,7 @@ import { Route as IndexRouteImport } from './routes/index'
 import { Route as AuthenticatedAppRouteImport } from './routes/_authenticated/app'
 import { Route as AuthenticatedAppIndexRouteImport } from './routes/_authenticated/app.index'
 import { Route as AuthenticatedAppTreinoRouteImport } from './routes/_authenticated/app.treino'
+import { Route as AuthenticatedAppRegistroRouteImport } from './routes/_authenticated/app.registro'
 import { Route as AuthenticatedAppNutricionalRouteImport } from './routes/_authenticated/app.nutricional'
 import { Route as AuthenticatedAppLogbookRouteImport } from './routes/_authenticated/app.logbook'
 import { Route as AuthenticatedAppGaleriaRouteImport } from './routes/_authenticated/app.galeria'
@@ -65,6 +66,12 @@ const AuthenticatedAppTreinoRoute = AuthenticatedAppTreinoRouteImport.update({
   path: '/treino',
   getParentRoute: () => AuthenticatedAppRoute,
 } as any)
+const AuthenticatedAppRegistroRoute =
+  AuthenticatedAppRegistroRouteImport.update({
+    id: '/registro',
+    path: '/registro',
+    getParentRoute: () => AuthenticatedAppRoute,
+  } as any)
 const AuthenticatedAppNutricionalRoute =
   AuthenticatedAppNutricionalRouteImport.update({
     id: '/nutricional',
@@ -156,6 +163,7 @@ export interface FileRoutesByFullPath {
   '/app/galeria': typeof AuthenticatedAppGaleriaRoute
   '/app/logbook': typeof AuthenticatedAppLogbookRoute
   '/app/nutricional': typeof AuthenticatedAppNutricionalRouteWithChildren
+  '/app/registro': typeof AuthenticatedAppRegistroRoute
   '/app/treino': typeof AuthenticatedAppTreinoRouteWithChildren
   '/app/': typeof AuthenticatedAppIndexRoute
   '/app/admin/alunos': typeof AuthenticatedAppAdminAlunosRouteWithChildren
@@ -176,6 +184,7 @@ export interface FileRoutesByTo {
   '/app/acao': typeof AuthenticatedAppAcaoRoute
   '/app/galeria': typeof AuthenticatedAppGaleriaRoute
   '/app/logbook': typeof AuthenticatedAppLogbookRoute
+  '/app/registro': typeof AuthenticatedAppRegistroRoute
   '/app': typeof AuthenticatedAppIndexRoute
   '/app/admin/galeria': typeof AuthenticatedAppAdminGaleriaRoute
   '/app/admin/treinadores': typeof AuthenticatedAppAdminTreinadoresRoute
@@ -198,6 +207,7 @@ export interface FileRoutesById {
   '/_authenticated/app/galeria': typeof AuthenticatedAppGaleriaRoute
   '/_authenticated/app/logbook': typeof AuthenticatedAppLogbookRoute
   '/_authenticated/app/nutricional': typeof AuthenticatedAppNutricionalRouteWithChildren
+  '/_authenticated/app/registro': typeof AuthenticatedAppRegistroRoute
   '/_authenticated/app/treino': typeof AuthenticatedAppTreinoRouteWithChildren
   '/_authenticated/app/': typeof AuthenticatedAppIndexRoute
   '/_authenticated/app/admin/alunos': typeof AuthenticatedAppAdminAlunosRouteWithChildren
@@ -222,6 +232,7 @@ export interface FileRouteTypes {
     | '/app/galeria'
     | '/app/logbook'
     | '/app/nutricional'
+    | '/app/registro'
     | '/app/treino'
     | '/app/'
     | '/app/admin/alunos'
@@ -242,6 +253,7 @@ export interface FileRouteTypes {
     | '/app/acao'
     | '/app/galeria'
     | '/app/logbook'
+    | '/app/registro'
     | '/app'
     | '/app/admin/galeria'
     | '/app/admin/treinadores'
@@ -263,6 +275,7 @@ export interface FileRouteTypes {
     | '/_authenticated/app/galeria'
     | '/_authenticated/app/logbook'
     | '/_authenticated/app/nutricional'
+    | '/_authenticated/app/registro'
     | '/_authenticated/app/treino'
     | '/_authenticated/app/'
     | '/_authenticated/app/admin/alunos'
@@ -333,6 +346,13 @@ declare module '@tanstack/react-router' {
       path: '/treino'
       fullPath: '/app/treino'
       preLoaderRoute: typeof AuthenticatedAppTreinoRouteImport
+      parentRoute: typeof AuthenticatedAppRoute
+    }
+    '/_authenticated/app/registro': {
+      id: '/_authenticated/app/registro'
+      path: '/registro'
+      fullPath: '/app/registro'
+      preLoaderRoute: typeof AuthenticatedAppRegistroRouteImport
       parentRoute: typeof AuthenticatedAppRoute
     }
     '/_authenticated/app/nutricional': {
@@ -492,6 +512,7 @@ interface AuthenticatedAppRouteChildren {
   AuthenticatedAppGaleriaRoute: typeof AuthenticatedAppGaleriaRoute
   AuthenticatedAppLogbookRoute: typeof AuthenticatedAppLogbookRoute
   AuthenticatedAppNutricionalRoute: typeof AuthenticatedAppNutricionalRouteWithChildren
+  AuthenticatedAppRegistroRoute: typeof AuthenticatedAppRegistroRoute
   AuthenticatedAppTreinoRoute: typeof AuthenticatedAppTreinoRouteWithChildren
   AuthenticatedAppIndexRoute: typeof AuthenticatedAppIndexRoute
   AuthenticatedAppAdminAlunosRoute: typeof AuthenticatedAppAdminAlunosRouteWithChildren
@@ -506,6 +527,7 @@ const AuthenticatedAppRouteChildren: AuthenticatedAppRouteChildren = {
   AuthenticatedAppLogbookRoute: AuthenticatedAppLogbookRoute,
   AuthenticatedAppNutricionalRoute:
     AuthenticatedAppNutricionalRouteWithChildren,
+  AuthenticatedAppRegistroRoute: AuthenticatedAppRegistroRoute,
   AuthenticatedAppTreinoRoute: AuthenticatedAppTreinoRouteWithChildren,
   AuthenticatedAppIndexRoute: AuthenticatedAppIndexRoute,
   AuthenticatedAppAdminAlunosRoute:
