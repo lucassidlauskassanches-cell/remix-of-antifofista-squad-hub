@@ -32,9 +32,9 @@ export function autoFit(doc: Document = document): void {
       return bottom - top + mt + mb;
     };
 
-    // 4% headroom for sub-pixel differences between screen and Chrome's print
-    // engine. Cap the upper bound so short pages don't inflate fonts.
-    const available = body.clientHeight * 0.96;
+    // 6% headroom para diferenças sub-pixel entre tela e motor de impressão do
+    // Chrome + variação de métrica quando as webfonts substituem o fallback.
+    const available = body.clientHeight * 0.94;
 
     let lo = 0.42;
     let hi = 1.15;
