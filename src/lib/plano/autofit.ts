@@ -10,30 +10,23 @@ export function autoFit(doc: Document = document): void {
   for (const pg of pages) {
     const body = pg.querySelector<HTMLElement>(".body");
     if (!body) continue;
-    // Intrinsic height of the body's content (independent of the flex centering).
-    const contentHeight = (): number => {
-      const kids = Array.from(body.children) as HTMLElement[];
-      if (!kids.length) return 0;
-      let top = Infinity;
-      let bottom = -Infinity;
-      for (const k of kids) {
-        const r = k.getBoundingClientRect();
-        top = Math.min(top, r.top);
-        bottom = Math.max(bottom, r.bottom);
-      }
-      return bottom - top;
-    };
-    // Largest scale (within a tasteful range) that still fits the available band.
-    // Floor is low (0.42) so even the densest page (acompanhamento: intro + 5
-    // rules + disclaimer) shrinks enough to fit instead of overflowing. Combined
-    // with the top-aligned body, content is never clipped.
+
+    // Real layout height including collapsed vertical margins on first/last
+    // children (which getBoundingClientRect would drop, causing autofit to
+    // pick a scale that overflows on print and clips the last lines).
+    const contentHeight = (): number => body.scrollHeight;
+
+    // 4% headroom for sub-pixel differences between screen and Chrome's
+    // print engine. Cap the upper bound so short pages don't inflate fonts.
+    const available = body.clientHeight * 0.96;
+
     let lo = 0.42;
-    let hi = 1.28;
+    let hi = 1.15;
     let best = lo;
     for (let i = 0; i < 24; i++) {
       const mid = (lo + hi) / 2;
       pg.style.setProperty("--s", String(mid));
-      if (contentHeight() <= body.clientHeight * 0.985) {
+      if (contentHeight() <= available) {
         best = mid;
         lo = mid;
       } else {
@@ -41,5 +34,14 @@ export function autoFit(doc: Document = document): void {
       }
     }
     pg.style.setProperty("--s", String(best));
+
+    // Sinal para dev: se a página bateu no piso, ainda tem risco de estourar
+    // — vale editar o conteúdo pra encurtar.
+    if (best <= 0.43 && typeof console !== "undefined") {
+      console.warn(
+        "[autoFit] página muito densa, considere reduzir o texto:",
+        pg.querySelector(".badge")?.textContent?.trim() ?? "(sem badge)",
+      );
+    }
   }
 }

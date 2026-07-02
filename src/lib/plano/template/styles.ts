@@ -24,11 +24,13 @@ export const LAYOUT_CSS = `
   .page{
     width: var(--pageW); height: var(--pageH);
     background: var(--bg); color: var(--ink);
-    position: relative; overflow: hidden;
+    position: relative; overflow: clip;
     page-break-after: always; break-after: page;
   }
   .page:last-child{ page-break-after: auto; break-after: auto; }
   @media screen{ .page{ box-shadow: 0 8px 40px rgba(0,0,0,0.55); } }
+  /* Se sobrar 1-2 linhas por sub-pixel no print, deixa vazar em vez de sumir. */
+  @media print{ .page{ overflow: visible; } }
 
   .frame{ position:absolute; inset:0; padding: 150px 80px 124px 80px; display:flex; flex-direction:column; justify-content:flex-start; }
   /* Auto-fit: pages marked .autofit get a per-page --s scale set at render time so
@@ -82,7 +84,7 @@ export const LAYOUT_CSS = `
   /* Type */
   .eyebrow{ font-family:'JetBrains Mono', monospace; font-size:13px; letter-spacing:0.28em; text-transform:uppercase; color:var(--ink-dim); display:block; }
   h2.ttl{ font-family:'Oswald', sans-serif; font-weight:700; text-transform:uppercase; letter-spacing:0.02em; line-height:0.98; font-size:46px; margin:0 0 18px 0; color:var(--ink); }
-  p.tx{ font-family:'Inter', sans-serif; font-size:calc(16.5px * var(--s)); line-height:1.62; color:#cfcfca; margin:0 0 calc(16px * var(--s)) 0; max-width:680px; }
+  p.tx{ font-family:'Inter', sans-serif; font-size:calc(16.5px * var(--s)); line-height:1.58; color:#cfcfca; margin:0 0 calc(14px * var(--s)) 0; max-width:680px; }
   p.tx strong{ color:var(--ink); font-weight:600; }
   .lead{ font-size:calc(18px * var(--s)); color:#e2e2dd; }
 
