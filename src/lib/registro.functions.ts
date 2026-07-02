@@ -608,3 +608,41 @@ export const saveStudentAnamnese = createServerFn({ method: "POST" })
     if (error) throw new Error(error.message);
     return { ok: true };
   });
+
+// ---------- rest day toggle ----------
+export const setRestDay = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: unknown) =>
+    z
+      .object({
+        restDay: z.boolean(),
+        date: dateSchema.optional(),
+      })
+      .parse(d),
+  )
+  .handler(async ({ data, context }) => {
+    const { supabase, userId } = context;
+    const logDate = data.date ?? todaySP();
+    const logId = await ensureDailyLog(supabase, userId, logDate);
+    await supabase
+      .from("daily_logs")
+      .update({ rest_day: data.restDay })
+      .eq("id", logId);
+    const s = await recomputeScore(supabase, userId, logId);
+    return { rest_day: data.restDay, ...s };
+  });
+
+// Mark a milestone card as seen (so it stops popping up).
+export const ackMilestone = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: unknown) =>
+    z.object({ milestone: z.number().int().min(1).max(3650) }).parse(d),
+  )
+  .handler(async ({ data, context }) => {
+    const { supabase, userId } = context;
+    await supabase
+      .from("streaks")
+      .update({ last_milestone: data.milestone })
+      .eq("student_id", userId);
+    return { ok: true };
+  });
