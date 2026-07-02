@@ -60,23 +60,9 @@ function AlunoEditor() {
           <TabsTrigger value="logbook" className="tactical-heading">LOGBOOK</TabsTrigger>
         </TabsList>
         <TabsContent value="treino" className="mt-4 space-y-4">
-          <PdfUploader
-            studentId={id}
-            kind="training"
-            currentName={data.trainingPlan?.pdf_name ?? null}
-            hasFile={!!data.trainingPlan?.pdf_path}
-            onChanged={() => refetch()}
-          />
           <StructuredPlanSection studentId={id} />
         </TabsContent>
         <TabsContent value="nutricao" className="mt-4 space-y-4">
-          <PdfUploader
-            studentId={id}
-            kind="nutrition"
-            currentName={data.nutritionPlan?.pdf_name ?? null}
-            hasFile={!!data.nutritionPlan?.pdf_path}
-            onChanged={() => refetch()}
-          />
           <DietSection studentId={id} />
         </TabsContent>
         <TabsContent value="acao" className="mt-4">
