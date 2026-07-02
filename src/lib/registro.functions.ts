@@ -335,7 +335,7 @@ export const upsertMealCheck = createServerFn({ method: "POST" })
   )
   .handler(async ({ data, context }) => {
     const { supabase, userId } = context;
-    const patch: Record<string, any> = {};
+    const patch: any = {};
     if (data.done !== undefined) patch.done = data.done;
     if (data.rating !== undefined) patch.rating = data.rating;
     if (!Object.keys(patch).length) return { ok: true };
@@ -394,7 +394,7 @@ export const saveStudentAnamnese = createServerFn({ method: "POST" })
   )
   .handler(async ({ data, context }) => {
     // trainer/admin can update their own students; RLS on profiles enforces this
-    const patch: Record<string, any> = {};
+    const patch: any = {};
     if (data.birth_date !== undefined) patch.birth_date = data.birth_date;
     if (data.height_cm !== undefined) patch.height_cm = data.height_cm;
     if (data.initial_weight_kg !== undefined)
