@@ -143,9 +143,7 @@ function AppShell() {
             <TabLink
               to="/app/registro"
               isActive={loc.pathname.startsWith("/app/registro")}
-              icon={
-                <BearIcon isActive={loc.pathname.startsWith("/app/registro")} />
-              }
+              icon={<BearIcon className="w-5 h-5" />}
               label="ANTIFOFISTA"
             />
             <TabLink to="/app/treino" isActive={loc.pathname.startsWith("/app/treino")} icon={<Dumbbell className="w-5 h-5" />} label="TREINO" />
