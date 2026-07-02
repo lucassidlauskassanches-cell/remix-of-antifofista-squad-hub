@@ -6,18 +6,34 @@
 // puppeteer page. With no argument it falls back to the global `document`, so
 // `page.evaluate(autoFit)` keeps working serverside.
 export function autoFit(doc: Document = document): void {
+  const win = doc.defaultView;
   const pages = Array.from(doc.querySelectorAll<HTMLElement>(".page.autofit"));
   for (const pg of pages) {
     const body = pg.querySelector<HTMLElement>(".body");
     if (!body) continue;
 
-    // Real layout height including collapsed vertical margins on first/last
-    // children (which getBoundingClientRect would drop, causing autofit to
-    // pick a scale that overflows on print and clips the last lines).
-    const contentHeight = (): number => body.scrollHeight;
+    // Extent from top of the first child to bottom of the last child, plus the
+    // margin-top of the first child and margin-bottom of the last child — those
+    // margins are outside the bounding box and would otherwise be ignored by
+    // getBoundingClientRect(), making the fit optimistic and clipping the last
+    // lines in print. In a flex column the sibling margins between children DO
+    // occupy real space (no collapsing), so they're already accounted for by
+    // (last.bottom - first.top).
+    const contentHeight = (): number => {
+      const kids = Array.from(body.children) as HTMLElement[];
+      if (!kids.length) return 0;
+      const first = kids[0];
+      const last = kids[kids.length - 1];
+      const top = first.getBoundingClientRect().top;
+      const bottom = last.getBoundingClientRect().bottom;
+      const cs = win?.getComputedStyle;
+      const mt = cs ? parseFloat(cs(first).marginTop) || 0 : 0;
+      const mb = cs ? parseFloat(cs(last).marginBottom) || 0 : 0;
+      return bottom - top + mt + mb;
+    };
 
-    // 4% headroom for sub-pixel differences between screen and Chrome's
-    // print engine. Cap the upper bound so short pages don't inflate fonts.
+    // 4% headroom for sub-pixel differences between screen and Chrome's print
+    // engine. Cap the upper bound so short pages don't inflate fonts.
     const available = body.clientHeight * 0.96;
 
     let lo = 0.42;
@@ -35,8 +51,6 @@ export function autoFit(doc: Document = document): void {
     }
     pg.style.setProperty("--s", String(best));
 
-    // Sinal para dev: se a página bateu no piso, ainda tem risco de estourar
-    // — vale editar o conteúdo pra encurtar.
     if (best <= 0.43 && typeof console !== "undefined") {
       console.warn(
         "[autoFit] página muito densa, considere reduzir o texto:",
