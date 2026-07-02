@@ -19,11 +19,27 @@ function todaySP(): string {
   return fmt.format(new Date());
 }
 
+export const STREAK_THRESHOLD = 80;
+
+export const PATENTES_GUERRA: Array<{ days: number; rank: string }> = [
+  { days: 3, rank: "RECRUTA" },
+  { days: 7, rank: "SOLDADO" },
+  { days: 14, rank: "CABO" },
+  { days: 30, rank: "SARGENTO" },
+  { days: 60, rank: "TENENTE" },
+  { days: 90, rank: "CAPITÃO" },
+  { days: 180, rank: "MAJOR" },
+  { days: 365, rank: "COMANDANTE ANTIFOFISTA" },
+];
+
+export const MILESTONES = [7, 30, 90, 180, 365];
+
 function calcScore(input: {
   waterMl: number;
   waterGoalMl: number;
   trained: boolean;
   mealRatings: number[]; // 0..5 for meals marked done
+  restDay?: boolean;
 }) {
   const waterPct =
     input.waterGoalMl > 0
@@ -34,9 +50,13 @@ function calcScore(input: {
     ? input.mealRatings.reduce((a, b) => a + b, 0) /
       (input.mealRatings.length * 5)
     : 0;
-  const score = waterPct * 30 + trainingPct * 25 + mealPct * 45;
+  // On rest days the training weight is redistributed: water 40 / meals 60.
+  const score = input.restDay
+    ? waterPct * 40 + mealPct * 60
+    : waterPct * 30 + trainingPct * 25 + mealPct * 45;
   return Math.round(Math.max(0, Math.min(100, score)) * 10) / 10;
 }
+
 
 async function ensureDailyLog(
   supabase: any,
