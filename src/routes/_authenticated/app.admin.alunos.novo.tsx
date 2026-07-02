@@ -1,5 +1,5 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { useState } from "react";
 import {
@@ -28,6 +28,7 @@ function NovoAluno() {
   const fetchCtx = useServerFn(getMyContext);
   const fetchTrainers = useServerFn(listTrainers);
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
 
   const { data: ctx } = useQuery({
     queryKey: ["my-context"],
@@ -63,6 +64,8 @@ function NovoAluno() {
         },
       });
       toast.success("Aluno cadastrado");
+      await queryClient.invalidateQueries({ queryKey: ["students"] });
+      await queryClient.invalidateQueries({ queryKey: ["admin-overview"] });
       navigate({ to: "/app/admin/alunos" });
     } catch (err: any) {
       toast.error(err.message ?? "Erro");

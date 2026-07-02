@@ -1,33 +1,41 @@
-## Diagnóstico
+## Problema principal
 
-O PDF é gerado via `window.open` + `window.print()` (Chrome "Salvar como PDF") em `src/components/PlanoEditor.tsx`. Dois problemas encontrados:
+Ao criar um novo aluno (ou treinador), o toast diz "Aluno cadastrado" mas ele nunca aparece na lista. Causa: o trigger `on_auth_user_created` que deveria chamar `handle_new_user()` **não está instalado** no banco (a função existe, mas não há trigger em `auth.users`).
 
-**1. Fonte diferente do preview**
-O código chama `document.fonts.ready` na nova aba, mas quando esse Promise é lido a folha do Google Fonts (`<link>`) muitas vezes ainda nem foi parseada — então `fonts.ready` resolve *antes* de Oswald/Inter/JetBrains Mono começarem a baixar. `autoFit()` mede com a fonte fallback (Times/Arial) e a impressão sai com a fonte fallback também, o que muda todo o visual.
+Consequência: `supabaseAdmin.auth.admin.createUser(...)` cria o usuário em `auth.users`, mas nenhuma linha é criada em `public.profiles` nem em `public.user_roles`. O `UPDATE profiles ... WHERE id = novo_id` que seta `trainer_id` vira no-op silencioso, e o aluno fica invisível para o treinador (que filtra por `trainer_id = auth.uid()`).
 
-**2. Texto cortado no final das páginas**
-Como `autoFit` mede com a fonte errada (mais estreita/curta), calcula uma escala `--s` otimista. Quando o Chrome finalmente aplica Oswald/Inter na hora do print, o conteúdo cresce ~5–8% e estoura o `.page { overflow: clip }`, cortando as últimas linhas. O plano antigo cabia porque tinha menos texto — o novo não.
+Hoje há 3 usuários órfãos em `auth.users` sem profile: `lucas@gmail.com`, `michelfrancisluz@gmail.com`, `lulu@gmail.com`.
 
-## Correções
+## Plano
 
-### `src/components/PlanoEditor.tsx` — `downloadPdf`
-1. Trocar a espera "cega" por `document.fonts.ready` por:
-   - aguardar o `<link>` do Google Fonts disparar `load` (Promise resolvida no `onload` do link);
-   - chamar `document.fonts.load(...)` explicitamente para cada família/peso realmente usado (`700 16px Oswald`, `600 16px Oswald`, `400 16px Inter`, `600 16px Inter`, `700 16px Inter`, `500 12px "JetBrains Mono"`);
-   - só depois disso rodar `autoFit(w.document)` e `w.print()`.
-2. Fallback com timeout de 3s caso a rede falhe, para não travar o botão.
+### 1. Migração de banco
 
-### `src/lib/plano/template/render.ts` — `FONTS_HEAD`
-- Adicionar `&text=` não é viável (conteúdo dinâmico). Em vez disso, injetar um pequeno bloco `@font-face` de pré-aquecimento via CSS inline no `<head>` só para forçar o navegador a começar o download imediatamente ao abrir o documento (evita o gap entre `document.write` e o parse do `<link>`).
-- Manter o `<link>` do Google Fonts como está para o preview no iframe.
+- Recriar o trigger `on_auth_user_created AFTER INSERT ON auth.users` chamando `public.handle_new_user()`, para futuras criações via signup direto.
+- Backfill: para cada usuário em `auth.users` sem linha em `profiles`, inserir profile (id, email, full_name do `raw_user_meta_data`) e user_role `aluno`.
 
-### `src/lib/plano/autofit.ts`
-- Guard extra: se `document.fonts?.status !== "loaded"`, esperar `document.fonts.ready` antes da primeira medição. Assim, mesmo que alguém chame `autoFit` cedo, ele não mede com fallback.
-- Reduzir o teto de `hi` de `1.15` para `1.08` e o `available` de `0.96` para `0.94`, dando mais folga para a variação sub-pixel do motor de impressão do Chrome, que é a origem real do "corte" quando as fontes finalmente carregam.
+### 2. Blindar `createStudent` e `createTrainer` (`src/lib/squad.functions.ts`)
 
-### QA
-Depois do fix, gerar um plano com um bloco de texto propositalmente longo (a página "Como executar o treino", que é a mais densa e fixa) e imprimir para PDF via Chrome headless local para checar visualmente: (a) tipografia Oswald/Inter presente em todas as páginas, (b) nenhuma linha cortada no rodapé de nenhuma seção, (c) capa e closer inalterados.
+Não confiar no trigger — fazer o insert de profile + role explicitamente com `supabaseAdmin` (idempotente via `upsert` / `insert ... on conflict do nothing`). Assim funciona mesmo se o trigger falhar novamente no futuro:
 
-## Fora do escopo
+- `createStudent`: após `admin.createUser`, `upsert` em `profiles` com `{id, email, full_name, phone, trainer_id}`; garantir role `aluno` em `user_roles`.
+- `createTrainer`: mesma coisa, com role `treinador` e sem `aluno`.
 
-Não vou mexer em: logbook, mudança S1→Semana, remoção de "marcar refeição feita", troca vermelho→dourado, upload de PDF pelo treinador. Esses continuam pendentes como você definiu no turno anterior — quando quiser retomar, é só pedir.
+### 3. Outros bugs encontrados na varredura admin/treinador
+
+- **`/app/admin/alunos/$id` mostra aba "AÇÃO" para treinadores comuns**, mas o gerador de plano roda com `ANTHROPIC_API_KEY` (recurso do admin/dono). Manter a aba, mas confirmar que o `GerarPlanoAcao` só aparece para treinador do aluno ou admin — hoje já é gated pela RLS do server fn, então ok visualmente. Sem mudança.
+- **Filtro `q.not("id", "in", "(uuid1,uuid2)")`** em `listStudents` (branch admin sem `trainerId`) e em `getAdminOverview`: com UUIDs sem aspas, PostgREST às vezes retorna erro. Trocar para excluir staff em JS após buscar todos os profiles, ou usar `.filter("id", "not.in", "(...)")` com uuids quotados. Corrigir nos dois lugares para o admin não ver linha em branco quando houver muitos staff.
+- **Invalidação de cache pós-criação**: `NovoAluno` só navega para `/app/admin/alunos`, mas a query `["students", search, page]` pode servir cache antigo. Adicionar `queryClient.invalidateQueries({ queryKey: ["students"] })` e `["admin-overview"]` no sucesso.
+- **`getMyContext` cache**: em `AlunosList`, se o admin acabou de criar aluno e volta, o total exibido no `admin/visao` fica desatualizado até refetch. Coberto pela invalidação acima.
+
+### 4. Verificação
+
+Após aplicar: criar um novo aluno de teste pelo painel do treinador e conferir via `supabase--read_query` que profile + user_role foram gerados e que ele aparece na lista.
+
+## Detalhes técnicos
+
+Arquivos tocados:
+- `supabase/migrations/<new>.sql` — recria trigger + backfill.
+- `src/lib/squad.functions.ts` — `createStudent`, `createTrainer`, `listStudents`, `getAdminOverview`.
+- `src/routes/_authenticated/app.admin.alunos.novo.tsx` — invalidateQueries no sucesso.
+
+Sem mudança em UI/estilo. Mudança de dados: backfill de 3 profiles órfãos + role `aluno` default (o admin pode reatribuir/promover depois via painel).

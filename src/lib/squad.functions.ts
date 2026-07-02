@@ -87,18 +87,25 @@ export const createTrainer = createServerFn({ method: "POST" })
       userId = found.id;
     }
     if (!userId) throw new Error("Falha ao criar treinador");
+    // Idempotent: ensure profile row exists even if trigger didn't fire
     await supabaseAdmin
       .from("profiles")
-      .update({
-        full_name: data.full_name,
-        phone: data.phone ?? null,
-      })
-      .eq("id", userId);
+      .upsert(
+        {
+          id: userId,
+          email: data.email,
+          full_name: data.full_name,
+          phone: data.phone ?? null,
+        },
+        { onConflict: "id" },
+      );
     // Grant treinador role; remove aluno default to keep panel clean
     await supabaseAdmin
       .from("user_roles")
-      .insert({ user_id: userId, role: "treinador" as any })
-      .select();
+      .upsert(
+        { user_id: userId, role: "treinador" as any },
+        { onConflict: "user_id,role", ignoreDuplicates: true },
+      );
     await supabaseAdmin
       .from("user_roles")
       .delete()
@@ -269,7 +276,7 @@ export const listStudents = createServerFn({ method: "POST" })
         new Set((staffRoles ?? []).map((r: any) => r.user_id)),
       );
       if (staffIds.length) {
-        q = q.not("id", "in", `(${staffIds.join(",")})`);
+        q = q.not("id", "in", `("${staffIds.join('","')}")`);
       }
     }
     const { data: rows, count } = await q.range(from, to);
@@ -307,7 +314,7 @@ export const getAdminOverview = createServerFn({ method: "GET" })
       .select("id,full_name,email,trainer_id,active")
       .order("full_name");
     if (staffIds.length) {
-      studentsQ = studentsQ.not("id", "in", `(${staffIds.join(",")})`);
+      studentsQ = studentsQ.not("id", "in", `("${staffIds.join('","')}")`);
     }
     const { data: students } = await studentsQ;
 
@@ -346,19 +353,31 @@ export const createStudent = createServerFn({ method: "POST" })
       user_metadata: { full_name: data.full_name },
     });
     if (error || !created.user) throw new Error(error?.message ?? "Falha ao criar aluno");
+    const newId = created.user.id;
     // Admin may assign to any trainer; trainer always owns own students
     const trainerId = isAdmin
       ? (data.trainer_id ?? null)
       : context.userId;
+    // Idempotent: ensure profile + aluno role exist even if trigger didn't fire
     await supabaseAdmin
       .from("profiles")
-      .update({
-        full_name: data.full_name,
-        phone: data.phone ?? null,
-        trainer_id: trainerId,
-      })
-      .eq("id", created.user.id);
-    return { id: created.user.id };
+      .upsert(
+        {
+          id: newId,
+          email: data.email,
+          full_name: data.full_name,
+          phone: data.phone ?? null,
+          trainer_id: trainerId,
+        },
+        { onConflict: "id" },
+      );
+    await supabaseAdmin
+      .from("user_roles")
+      .upsert(
+        { user_id: newId, role: "aluno" as any },
+        { onConflict: "user_id,role", ignoreDuplicates: true },
+      );
+    return { id: newId };
   });
 
 // ===== Admin: reassign a student to a trainer =====
