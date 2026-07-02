@@ -1,15 +1,21 @@
 import { createFileRoute, Link, useParams } from "@tanstack/react-router";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useMutation } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
+import { useState } from "react";
 import {
   getStudentDetail,
   getStudentStructuredTrainingPlan,
   getStudentDiet,
 } from "@/lib/squad.functions";
+import { saveStudentAnamnese } from "@/lib/registro.functions";
 import { StructuredTrainingUploader } from "@/components/StructuredTrainingUploader";
 import { DietUploader } from "@/components/DietUploader";
 import { GerarPlanoAcao } from "@/components/GerarPlanoAcao";
 import { Card } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { toast } from "sonner";
 import {
   Tabs,
   TabsList,
@@ -17,6 +23,7 @@ import {
   TabsContent,
 } from "@/components/ui/tabs";
 import { ArrowLeft } from "lucide-react";
+
 
 export const Route = createFileRoute("/_authenticated/app/admin/alunos/$id")({
   component: AlunoEditor,
@@ -44,6 +51,16 @@ function AlunoEditor() {
         <h1 className="tactical-heading text-2xl">{data.profile?.full_name}</h1>
         <p className="text-sm text-muted-foreground">{data.profile?.email}</p>
       </div>
+
+      <AnamneseCard
+        studentId={id}
+        initial={{
+          birth_date: (data.profile as any)?.birth_date ?? null,
+          height_cm: (data.profile as any)?.height_cm ?? null,
+          initial_weight_kg: (data.profile as any)?.initial_weight_kg ?? null,
+          water_ml_per_kg: (data.profile as any)?.water_ml_per_kg ?? 50,
+        }}
+      />
 
       <Tabs defaultValue="treino">
         <TabsList className="grid grid-cols-4 w-full">
@@ -153,3 +170,106 @@ function DietSection({ studentId }: { studentId: string }) {
     />
   );
 }
+
+function AnamneseCard({
+  studentId,
+  initial,
+}: {
+  studentId: string;
+  initial: {
+    birth_date: string | null;
+    height_cm: number | null;
+    initial_weight_kg: number | null;
+    water_ml_per_kg: number;
+  };
+}) {
+  const [form, setForm] = useState(initial);
+  const saveFn = useServerFn(saveStudentAnamnese);
+  const mSave = useMutation({
+    mutationFn: () =>
+      saveFn({
+        data: {
+          studentId,
+          birth_date: form.birth_date || null,
+          height_cm: form.height_cm ? Number(form.height_cm) : null,
+          initial_weight_kg: form.initial_weight_kg
+            ? Number(form.initial_weight_kg)
+            : null,
+          water_ml_per_kg: Number(form.water_ml_per_kg) || 50,
+        },
+      }),
+    onSuccess: () => toast.success("Anamnese salva"),
+    onError: (e: any) => toast.error(e.message ?? "Erro"),
+  });
+
+  return (
+    <Card className="p-4 space-y-3">
+      <h3 className="tactical-heading text-sm tracking-widest">ANAMNESE</h3>
+      <div className="grid grid-cols-2 gap-3">
+        <div>
+          <Label className="text-xs">Nascimento</Label>
+          <Input
+            type="date"
+            value={form.birth_date ?? ""}
+            onChange={(e) =>
+              setForm({ ...form, birth_date: e.target.value || null })
+            }
+          />
+        </div>
+        <div>
+          <Label className="text-xs">Altura (cm)</Label>
+          <Input
+            type="number"
+            step="0.1"
+            value={form.height_cm ?? ""}
+            onChange={(e) =>
+              setForm({
+                ...form,
+                height_cm: e.target.value ? Number(e.target.value) : null,
+              })
+            }
+          />
+        </div>
+        <div>
+          <Label className="text-xs">Peso inicial (kg)</Label>
+          <Input
+            type="number"
+            step="0.1"
+            value={form.initial_weight_kg ?? ""}
+            onChange={(e) =>
+              setForm({
+                ...form,
+                initial_weight_kg: e.target.value
+                  ? Number(e.target.value)
+                  : null,
+              })
+            }
+          />
+        </div>
+        <div>
+          <Label className="text-xs">Água (ml por kg)</Label>
+          <Input
+            type="number"
+            min={20}
+            max={80}
+            value={form.water_ml_per_kg ?? 50}
+            onChange={(e) =>
+              setForm({
+                ...form,
+                water_ml_per_kg: Number(e.target.value) || 50,
+              })
+            }
+          />
+        </div>
+      </div>
+      <Button
+        onClick={() => mSave.mutate()}
+        disabled={mSave.isPending}
+        size="sm"
+      >
+        SALVAR
+      </Button>
+    </Card>
+  );
+}
+

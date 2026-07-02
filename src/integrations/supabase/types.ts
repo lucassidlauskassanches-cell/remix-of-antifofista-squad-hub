@@ -47,6 +47,47 @@ export type Database = {
         }
         Relationships: []
       }
+      daily_logs: {
+        Row: {
+          created_at: string
+          daily_score: number
+          id: string
+          log_date: string
+          student_id: string
+          trained: boolean
+          updated_at: string
+          water_ml: number
+        }
+        Insert: {
+          created_at?: string
+          daily_score?: number
+          id?: string
+          log_date?: string
+          student_id: string
+          trained?: boolean
+          updated_at?: string
+          water_ml?: number
+        }
+        Update: {
+          created_at?: string
+          daily_score?: number
+          id?: string
+          log_date?: string
+          student_id?: string
+          trained?: boolean
+          updated_at?: string
+          water_ml?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "daily_logs_student_id_fkey"
+            columns: ["student_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       diet_prescriptions: {
         Row: {
           created_at: string
@@ -136,6 +177,41 @@ export type Database = {
           updated_at?: string
         }
         Relationships: []
+      }
+      meal_checks: {
+        Row: {
+          daily_log_id: string
+          done: boolean
+          id: string
+          meal_name: string
+          order_index: number
+          rating: number
+        }
+        Insert: {
+          daily_log_id: string
+          done?: boolean
+          id?: string
+          meal_name: string
+          order_index?: number
+          rating?: number
+        }
+        Update: {
+          daily_log_id?: string
+          done?: boolean
+          id?: string
+          meal_name?: string
+          order_index?: number
+          rating?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "meal_checks_daily_log_id_fkey"
+            columns: ["daily_log_id"]
+            isOneToOne: false
+            referencedRelation: "daily_logs"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       meal_items: {
         Row: {
@@ -261,32 +337,44 @@ export type Database = {
         Row: {
           active: boolean
           avatar_url: string | null
+          birth_date: string | null
           created_at: string
           email: string
           full_name: string
+          height_cm: number | null
           id: string
+          initial_weight_kg: number | null
           phone: string | null
           trainer_id: string | null
+          water_ml_per_kg: number
         }
         Insert: {
           active?: boolean
           avatar_url?: string | null
+          birth_date?: string | null
           created_at?: string
           email: string
           full_name?: string
+          height_cm?: number | null
           id: string
+          initial_weight_kg?: number | null
           phone?: string | null
           trainer_id?: string | null
+          water_ml_per_kg?: number
         }
         Update: {
           active?: boolean
           avatar_url?: string | null
+          birth_date?: string | null
           created_at?: string
           email?: string
           full_name?: string
+          height_cm?: number | null
           id?: string
+          initial_weight_kg?: number | null
           phone?: string | null
           trainer_id?: string | null
+          water_ml_per_kg?: number
         }
         Relationships: [
           {
@@ -442,6 +530,38 @@ export type Database = {
           user_id?: string
         }
         Relationships: []
+      }
+      weight_entries: {
+        Row: {
+          created_at: string
+          entry_date: string
+          id: string
+          student_id: string
+          weight_kg: number
+        }
+        Insert: {
+          created_at?: string
+          entry_date?: string
+          id?: string
+          student_id: string
+          weight_kg: number
+        }
+        Update: {
+          created_at?: string
+          entry_date?: string
+          id?: string
+          student_id?: string
+          weight_kg?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "weight_entries_student_id_fkey"
+            columns: ["student_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
       }
     }
     Views: {
