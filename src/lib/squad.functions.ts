@@ -87,18 +87,25 @@ export const createTrainer = createServerFn({ method: "POST" })
       userId = found.id;
     }
     if (!userId) throw new Error("Falha ao criar treinador");
+    // Idempotent: ensure profile row exists even if trigger didn't fire
     await supabaseAdmin
       .from("profiles")
-      .update({
-        full_name: data.full_name,
-        phone: data.phone ?? null,
-      })
-      .eq("id", userId);
+      .upsert(
+        {
+          id: userId,
+          email: data.email,
+          full_name: data.full_name,
+          phone: data.phone ?? null,
+        },
+        { onConflict: "id" },
+      );
     // Grant treinador role; remove aluno default to keep panel clean
     await supabaseAdmin
       .from("user_roles")
-      .insert({ user_id: userId, role: "treinador" as any })
-      .select();
+      .upsert(
+        { user_id: userId, role: "treinador" as any },
+        { onConflict: "user_id,role", ignoreDuplicates: true },
+      );
     await supabaseAdmin
       .from("user_roles")
       .delete()
