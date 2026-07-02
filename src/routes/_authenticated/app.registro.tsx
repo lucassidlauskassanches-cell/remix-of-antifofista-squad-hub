@@ -97,7 +97,9 @@ function RegistroPage() {
   const addWaterFn = useServerFn(addWater);
   const setWaterFn = useServerFn(setWater);
   const setTrainedFn = useServerFn(setTrained);
+  const setRestDayFn = useServerFn(setRestDay);
   const mealFn = useServerFn(upsertMealCheck);
+  const ackFn = useServerFn(ackMilestone);
 
   const mAddWater = useMutation({
     mutationFn: (deltaMl: number) => addWaterFn({ data: { deltaMl, date } }),
@@ -111,6 +113,11 @@ function RegistroPage() {
   });
   const mTrained = useMutation({
     mutationFn: (t: boolean) => setTrainedFn({ data: { trained: t, date } }),
+    onSuccess: invalidateAll,
+    onError: (e: any) => toast.error(e.message ?? "Erro"),
+  });
+  const mRest = useMutation({
+    mutationFn: (r: boolean) => setRestDayFn({ data: { restDay: r, date } }),
     onSuccess: invalidateAll,
     onError: (e: any) => toast.error(e.message ?? "Erro"),
   });
@@ -128,6 +135,10 @@ function RegistroPage() {
   const score = Number(d.log?.daily_score ?? 0);
   const readOnly = !d.isToday;
   const studentName = ctxQ.data?.profile?.full_name ?? "Soldado";
+  const streak = d.streak;
+  const patente = d.patente;
+  const isRestDay = !!(d.log as any)?.rest_day;
+
 
   return (
     <div className="space-y-4">
