@@ -219,7 +219,7 @@ async function assertTrainerOrAdmin(ctx: {
 const assertTrainer = assertTrainerOrAdmin;
 
 // Ensure caller is admin, or the trainer assigned to this student.
-async function assertCanManageStudent(
+export async function assertCanManageStudent(
   ctx: { supabase: any; userId: string },
   studentId: string,
 ) {
