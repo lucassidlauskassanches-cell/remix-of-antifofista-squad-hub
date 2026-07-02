@@ -174,7 +174,7 @@ export function PlanoEditor({
     const doc = iframeRef.current?.contentDocument;
     let next = planRef.current;
     if (doc) {
-      doc.querySelectorAll<HTMLElement>("[data-path]").forEach((el) => {
+      doc.querySelectorAll<HTMLElement>("[data-path]:not([data-action])").forEach((el) => {
         next = setByPath(next, el.dataset.path as string, readEl(el));
       });
     }
@@ -194,7 +194,7 @@ export function PlanoEditor({
 
     const onInput = (e: Event) => {
       const el = (e.target as HTMLElement)?.closest?.<HTMLElement>("[data-path]");
-      if (!el) return;
+      if (!el || el.dataset.action) return;
       const next = setByPath(planRef.current, el.dataset.path as string, readEl(el));
       planRef.current = next;
       onChangeRef.current(next);
