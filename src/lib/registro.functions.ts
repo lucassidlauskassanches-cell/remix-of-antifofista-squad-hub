@@ -397,6 +397,9 @@ export const getMyDayRegistro = createServerFn({ method: "POST" })
           .order("order_index")
       : { data: [] };
 
+    // Reconcile streak on every open. Reads the freshly written log.
+    const streak = await reconcileStreak(supabase, userId);
+
     return {
       logDate,
       isToday: logDate === todaySP(),
@@ -407,6 +410,7 @@ export const getMyDayRegistro = createServerFn({ method: "POST" })
       log: log ?? {
         water_ml: 0,
         trained: false,
+        rest_day: false,
         daily_score: 0,
       },
       meals: (meals ?? []) as Array<{
@@ -417,7 +421,10 @@ export const getMyDayRegistro = createServerFn({ method: "POST" })
         order_index: number;
       }>,
       dietMealNames: mealNames,
+      streak,
+      patente: getPatenteGuerra(streak.current_streak),
     };
+
   });
 
 export const getMyWeightHistory = createServerFn({ method: "GET" })
