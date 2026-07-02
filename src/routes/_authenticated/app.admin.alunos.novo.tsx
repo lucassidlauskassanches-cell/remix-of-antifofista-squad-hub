@@ -64,6 +64,8 @@ function NovoAluno() {
         },
       });
       toast.success("Aluno cadastrado");
+      await queryClient.invalidateQueries({ queryKey: ["students"] });
+      await queryClient.invalidateQueries({ queryKey: ["admin-overview"] });
       navigate({ to: "/app/admin/alunos" });
     } catch (err: any) {
       toast.error(err.message ?? "Erro");
