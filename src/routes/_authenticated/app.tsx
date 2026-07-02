@@ -6,7 +6,22 @@ import { getMyContext } from "@/lib/squad.functions";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import logoAsset from "@/assets/logo-antifofista.png.asset.json";
-import bearIcon from "@/assets/icon-antifofista.png.asset.json";
+import bearIconAsset from "@/assets/icon-antifofista-v2.png.asset.json";
+
+function BearIcon({ isActive }: { isActive: boolean }) {
+  return (
+    <img
+      src={bearIconAsset.url}
+      alt=""
+      className="w-5 h-5 object-contain"
+      style={{
+        filter: isActive
+          ? "invert(1) sepia(1) saturate(5) hue-rotate(10deg) brightness(1.2)"
+          : "invert(1)",
+      }}
+    />
+  );
+}
 
 export const Route = createFileRoute("/_authenticated/app")({
   component: AppShell,
@@ -112,19 +127,16 @@ function AppShell() {
           <div className="max-w-3xl mx-auto grid grid-cols-5">
             <TabLink
               to="/app/registro"
+              isActive={loc.pathname.startsWith("/app/registro")}
               icon={
-                <img
-                  src={bearIcon.url}
-                  alt=""
-                  className="w-5 h-5 object-contain"
-                />
+                <BearIcon isActive={loc.pathname.startsWith("/app/registro")} />
               }
               label="ANTIFOFISTA"
             />
-            <TabLink to="/app/treino" icon={<Dumbbell className="w-5 h-5" />} label="TREINO" />
-            <TabLink to="/app/nutricional" icon={<Apple className="w-5 h-5" />} label="NUTRIÇÃO" />
-            <TabLink to="/app/logbook" icon={<TrendingUp className="w-5 h-5" />} label="PROGRESSÃO" />
-            <TabLink to="/app/galeria" icon={<Video className="w-5 h-5" />} label="GALERIA" />
+            <TabLink to="/app/treino" isActive={loc.pathname.startsWith("/app/treino")} icon={<Dumbbell className="w-5 h-5" />} label="TREINO" />
+            <TabLink to="/app/nutricional" isActive={loc.pathname.startsWith("/app/nutricional")} icon={<Apple className="w-5 h-5" />} label="NUTRIÇÃO" />
+            <TabLink to="/app/logbook" isActive={loc.pathname.startsWith("/app/logbook")} icon={<TrendingUp className="w-5 h-5" />} label="PROGRESSÃO" />
+            <TabLink to="/app/galeria" isActive={loc.pathname.startsWith("/app/galeria")} icon={<Video className="w-5 h-5" />} label="GALERIA" />
           </div>
         </nav>
       )}
@@ -136,16 +148,19 @@ function TabLink({
   to,
   icon,
   label,
+  isActive,
 }: {
   to: string;
   icon: React.ReactNode;
   label: string;
+  isActive: boolean;
 }) {
   return (
     <Link
       to={to}
-      className="flex flex-col items-center gap-1 py-3 text-muted-foreground hover:text-primary"
-      activeProps={{ className: "flex flex-col items-center gap-1 py-3 text-primary" }}
+      className={`flex flex-col items-center gap-1 py-3 transition-colors ${
+        isActive ? "text-primary" : "text-white hover:text-white/80"
+      }`}
     >
       {icon}
       <span className="tactical-heading text-[10px] tracking-widest">{label}</span>
