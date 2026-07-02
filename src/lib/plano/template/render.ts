@@ -9,6 +9,21 @@ function esc(s: string): string {
     .replace(/>/g, "&gt;");
 }
 
+function stripEditorChrome(html: string): string {
+  return html
+    .replace(/<button\b[^>]*data-action=["']del["'][\s\S]*?<\/button>/gi, "")
+    .replace(/<button\b[^>]*class=["'][^"']*ed-x[^"']*["'][\s\S]*?<\/button>/gi, "")
+    .trim();
+}
+
+function isOnlyEditorMarker(html: string): boolean {
+  const text = stripEditorChrome(html)
+    .replace(/<[^>]*>/g, "")
+    .replace(/&nbsp;/gi, " ")
+    .trim();
+  return text === "" || text === "✕" || text === "×";
+}
+
 // Render options. `editable` turns the document into an in-place WYSIWYG editor:
 // each authored text node gets contenteditable + a data-path that maps it back to
 // the PlanData field, plus a tiny "remove paragraph" affordance. None of this is
@@ -31,11 +46,15 @@ function ed(opts: RenderOpts, path: string, rich = false): string {
 // or the PDF layout).
 function paras(items: string[], basePath: string, opts: RenderOpts, cls = "tx"): string {
   return items
-    .map((p, i) => {
+    .flatMap((p, i) => {
       const path = `${basePath}.${i}`;
-      if (!opts.editable) return `<p class="${cls}">${p}</p>`;
+      const clean = stripEditorChrome(p);
+      if (!opts.editable) {
+        if (isOnlyEditorMarker(clean)) return [];
+        return [`<p class="${cls}">${clean}</p>`];
+      }
       const x = `<button class="ed-x" type="button" contenteditable="false" data-action="del" data-path="${path}" title="Remover parágrafo">✕</button>`;
-      return `<p class="${cls} ed-p"${ed(opts, path, true)}>${p}${x}</p>`;
+      return [`<p class="${cls} ed-p"${ed(opts, path, true)}>${clean}${x}</p>`];
     })
     .join("\n");
 }
