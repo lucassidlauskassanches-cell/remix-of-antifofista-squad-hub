@@ -1,20 +1,14 @@
 import { createFileRoute, Link, useParams } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
-import { useRef, useState } from "react";
 import {
   getStudentDetail,
-  getStudentPlanPdfUrl,
-  savePlanPdf,
-  deletePlanPdf,
   getStudentStructuredTrainingPlan,
   getStudentDiet,
 } from "@/lib/squad.functions";
 import { StructuredTrainingUploader } from "@/components/StructuredTrainingUploader";
 import { DietUploader } from "@/components/DietUploader";
 import { GerarPlanoAcao } from "@/components/GerarPlanoAcao";
-import { supabase } from "@/integrations/supabase/client";
-import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import {
   Tabs,
@@ -22,8 +16,7 @@ import {
   TabsTrigger,
   TabsContent,
 } from "@/components/ui/tabs";
-import { ArrowLeft, Upload, FileText, Trash2, ExternalLink } from "lucide-react";
-import { toast } from "sonner";
+import { ArrowLeft } from "lucide-react";
 
 export const Route = createFileRoute("/_authenticated/app/admin/alunos/$id")({
   component: AlunoEditor,
