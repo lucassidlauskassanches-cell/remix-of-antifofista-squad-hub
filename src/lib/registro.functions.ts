@@ -233,11 +233,15 @@ async function reconcileStreak(
       newMilestone = m; // remember highest crossed
     }
   }
-  const nextLastMilestone = Math.max(
-    prevMilestone,
-    ...MILESTONES.filter((m) => current >= m),
-    0,
-  );
+  // Keep last_milestone as-is when a new one was crossed, so the client can
+  // show the celebration card until the user acknowledges via ackMilestone.
+  const nextLastMilestone = newMilestone === null
+    ? Math.max(
+        prevMilestone,
+        ...MILESTONES.filter((m) => current >= m),
+        0,
+      )
+    : prevMilestone;
 
   const state: StreakState = {
     current_streak: current,
@@ -267,6 +271,7 @@ async function reconcileStreak(
 
   return state;
 }
+
 
 export function getPatenteGuerra(streak: number): {
   current: string;
