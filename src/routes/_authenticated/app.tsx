@@ -6,20 +6,35 @@ import { getMyContext } from "@/lib/squad.functions";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import logoAsset from "@/assets/logo-antifofista.png.asset.json";
-import bearIconAsset from "@/assets/icon-antifofista-v2.png.asset.json";
 
-function BearIcon({ isActive }: { isActive: boolean }) {
+function BearIcon({ className }: { className?: string }) {
   return (
-    <img
-      src={bearIconAsset.url}
-      alt=""
-      className="w-5 h-5 object-contain"
-      style={{
-        filter: isActive
-          ? "invert(1) sepia(1) saturate(5) hue-rotate(10deg) brightness(1.2)"
-          : "invert(1)",
-      }}
-    />
+    <svg
+      xmlns="http://www.w3.org/2000/svg"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth={2}
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      className={className}
+      aria-hidden="true"
+    >
+      {/* Orelhas */}
+      <circle cx="7" cy="6" r="2.2" />
+      <circle cx="17" cy="6" r="2.2" />
+      {/* Cabeça */}
+      <path d="M5.5 11c0-3.5 2.8-6.5 6.5-6.5s6.5 3 6.5 6.5c0 1.5-.5 3-1.5 4" />
+      <path d="M5.5 11c-1.8 0-3.3 1.2-3.8 3-.2.8-.2 1.7 0 2.5.5 1.8 2 3 3.8 3" />
+      <path d="M18.5 11c1.8 0 3.3 1.2 3.8 3 .2.8.2 1.7 0 2.5-.5 1.8-2 3-3.8 3" />
+      {/* Focinho */}
+      <ellipse cx="12" cy="14.5" rx="3" ry="2.2" />
+      {/* Olhos */}
+      <circle cx="9.5" cy="11" r=".9" fill="currentColor" stroke="none" />
+      <circle cx="14.5" cy="11" r=".9" fill="currentColor" stroke="none" />
+      {/* Nariz */}
+      <path d="M11 15.5h2" />
+    </svg>
   );
 }
 
@@ -128,9 +143,7 @@ function AppShell() {
             <TabLink
               to="/app/registro"
               isActive={loc.pathname.startsWith("/app/registro")}
-              icon={
-                <BearIcon isActive={loc.pathname.startsWith("/app/registro")} />
-              }
+              icon={<BearIcon className="w-5 h-5" />}
               label="ANTIFOFISTA"
             />
             <TabLink to="/app/treino" isActive={loc.pathname.startsWith("/app/treino")} icon={<Dumbbell className="w-5 h-5" />} label="TREINO" />
