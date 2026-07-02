@@ -1,20 +1,15 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { getMyDiet } from "@/lib/squad.functions";
 import { Card } from "@/components/ui/card";
-import { Checkbox } from "@/components/ui/checkbox";
 import { Table2, LayoutList } from "lucide-react";
 import type { DietPlan } from "@/lib/diet-xlsx-parser";
 
 export const Route = createFileRoute("/_authenticated/app/nutricional/")({
   component: DietaPage,
 });
-
-function todayStr() {
-  return new Date().toISOString().split("T")[0];
-}
 
 function DietaPage() {
   const fetchDiet = useServerFn(getMyDiet);
@@ -23,35 +18,6 @@ function DietaPage() {
     queryKey: ["my-diet"],
     queryFn: () => fetchDiet(),
   });
-
-  const today = todayStr();
-  const storageKey = `dieta:checked:${today}`;
-  const [checked, setChecked] = useState<Set<string>>(new Set());
-  const [hydrated, setHydrated] = useState(false);
-
-  useEffect(() => {
-    try {
-      const raw = localStorage.getItem(storageKey);
-      if (raw) setChecked(new Set(JSON.parse(raw)));
-    } catch {
-      /* ignore */
-    }
-    setHydrated(true);
-  }, [storageKey]);
-
-  useEffect(() => {
-    if (!hydrated) return;
-    localStorage.setItem(storageKey, JSON.stringify([...checked]));
-  }, [checked, hydrated, storageKey]);
-
-  function toggle(name: string) {
-    setChecked((prev) => {
-      const next = new Set(prev);
-      if (next.has(name)) next.delete(name);
-      else next.add(name);
-      return next;
-    });
-  }
 
   if (isLoading) {
     return (
@@ -70,18 +36,20 @@ function DietaPage() {
 
   return (
     <div>
-      <button
-        type="button"
-        className="af-planilha"
-        onClick={() => setPlanilha((v) => !v)}
-      >
-        {planilha ? (
-          <LayoutList className="w-3.5 h-3.5" />
-        ) : (
-          <Table2 className="w-3.5 h-3.5" />
-        )}
-        {planilha ? "Ver dieta em cards" : "Ver dieta em planilha"}
-      </button>
+      {plan.refeicoes.length > 0 && (
+        <button
+          type="button"
+          className="af-planilha"
+          onClick={() => setPlanilha((v) => !v)}
+        >
+          {planilha ? (
+            <LayoutList className="w-3.5 h-3.5" />
+          ) : (
+            <Table2 className="w-3.5 h-3.5" />
+          )}
+          {planilha ? "Ver dieta em cards" : "Ver dieta em planilha"}
+        </button>
+      )}
 
       <div className="mt-3" />
 
@@ -120,42 +88,28 @@ function DietaPage() {
             </table>
           </Card>
         ) : (
-          plan.refeicoes.map((m, i) => {
-            const isDone = checked.has(m.nome);
-            return (
-              <div key={i} className={isDone ? "opacity-60" : ""}>
-                <div className="af-sec flex items-center gap-3">
-                  <Checkbox
-                    id={`meal-${i}`}
-                    checked={isDone}
-                    onCheckedChange={() => toggle(m.nome)}
-                    aria-label={`Marcar ${m.nome}`}
-                  />
-                  <label
-                    htmlFor={`meal-${i}`}
-                    className={`cursor-pointer ${isDone ? "line-through" : ""}`}
-                  >
-                    {m.nome}
-                  </label>
-                  <div className="ln" />
-                </div>
-                <div className="af-meal">
-                  <ul>
-                    {m.itens.map((it, j) => (
-                      <li key={j}>
-                        <span>{it.alimento}</span>
-                        <span className="q">
-                          {it.quantidade}
-                          {it.quantidade && it.medida ? " " : ""}
-                          {it.medida}
-                        </span>
-                      </li>
-                    ))}
-                  </ul>
-                </div>
+          plan.refeicoes.map((m, i) => (
+            <div key={i}>
+              <div className="af-sec">
+                <span>{m.nome}</span>
+                <div className="ln" />
               </div>
-            );
-          })
+              <div className="af-meal">
+                <ul>
+                  {m.itens.map((it, j) => (
+                    <li key={j}>
+                      <span>{it.alimento}</span>
+                      <span className="q">
+                        {it.quantidade}
+                        {it.quantidade && it.medida ? " " : ""}
+                        {it.medida}
+                      </span>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            </div>
+          ))
         ))}
 
       {plan.observacoes && (
