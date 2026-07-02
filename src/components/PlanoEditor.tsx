@@ -63,7 +63,11 @@ function downloadPdf(plan: PlanData) {
   w.document.open();
   w.document.write(html);
   w.document.close();
+
+  let printed = false;
   const run = () => {
+    if (printed) return;
+    printed = true;
     try {
       const style = w.document.createElement("style");
       style.textContent =
@@ -71,14 +75,58 @@ function downloadPdf(plan: PlanData) {
       w.document.head.appendChild(style);
       autoFit(w.document);
     } catch {
-      /* ignora: segue pra impressão mesmo assim */
+      /* segue pra impressão mesmo assim */
     }
     w.focus();
     w.print();
   };
-  const fonts = (w.document as Document & { fonts?: FontFaceSet }).fonts;
-  if (fonts?.ready) fonts.ready.then(run).catch(() => setTimeout(run, 400));
-  else setTimeout(run, 400);
+
+  // Sem esperar as fontes reais, o Chrome mede com Times/Arial (fallback);
+  // autoFit calcula uma escala otimista e, quando Oswald/Inter aplicam no
+  // print, o conteúdo cresce e é cortado no rodapé.
+  const waitFonts = async () => {
+    const doc = w.document as Document & { fonts?: FontFaceSet };
+
+    const link = doc.querySelector<HTMLLinkElement>(
+      'link[rel="stylesheet"][href*="fonts.googleapis.com"]',
+    );
+    if (link && !link.sheet) {
+      await new Promise<void>((res) => {
+        const done = () => res();
+        link.addEventListener("load", done, { once: true });
+        link.addEventListener("error", done, { once: true });
+        setTimeout(done, 2500);
+      });
+    }
+
+    if (doc.fonts) {
+      const specs = [
+        '700 46px "Oswald"',
+        '700 26px "Oswald"',
+        '600 18px "Oswald"',
+        '400 16px "Inter"',
+        '600 16px "Inter"',
+        '700 16px "Inter"',
+        '500 12px "JetBrains Mono"',
+      ];
+      await Promise.all(
+        specs.map((s) => doc.fonts!.load(s).catch(() => null)),
+      );
+    }
+
+    if (doc.fonts?.ready) {
+      await Promise.race([
+        doc.fonts.ready,
+        new Promise((res) => setTimeout(res, 1500)),
+      ]);
+    }
+  };
+
+  const hardTimeout = setTimeout(run, 4000);
+  waitFonts().finally(() => {
+    clearTimeout(hardTimeout);
+    run();
+  });
 }
 
 export function PlanoEditor({
