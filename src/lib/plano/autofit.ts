@@ -37,7 +37,7 @@ export function autoFit(doc: Document = document): void {
     const available = body.clientHeight * 0.94;
 
     let lo = 0.42;
-    let hi = 1.15;
+    let hi = 1.08;
     let best = lo;
     for (let i = 0; i < 24; i++) {
       const mid = (lo + hi) / 2;
