@@ -38,7 +38,7 @@
 :root {
   --radius: 0.5rem;
 
-  /* Antifofista Squad — preto, branco & sangue (alinhado ao folder) */
+  /* Antifofista Squad — preto, branco & dourado */
   --background: oklch(0.10 0.004 50);          /* preto quente quase puro */
   --foreground: oklch(0.93 0.006 80);          /* branco "sujo" de tinta */
   --card: oklch(0.16 0.005 45);                /* painel */
@@ -46,21 +46,21 @@
   --popover: oklch(0.16 0.005 45);
   --popover-foreground: oklch(0.93 0.006 80);
 
-  /* Primary = vermelho sangue/escarlate (acento, usado com escassez) */
-  --primary: oklch(0.575 0.215 25);
-  --primary-foreground: oklch(0.99 0 0);
+  /* Primary = dourado quente (acento, usado com escassez) */
+  --primary: oklch(0.78 0.16 82);
+  --primary-foreground: oklch(0.14 0.006 50);
 
-  /* Secondary = painel neutro escuro (sem verde militar) */
+  /* Secondary = painel neutro escuro */
   --secondary: oklch(0.20 0.005 45);
   --secondary-foreground: oklch(0.93 0.006 80);
 
   --muted: oklch(0.19 0.005 45);
   --muted-foreground: oklch(0.63 0.008 70);
 
-  --accent: oklch(0.24 0.04 25);
+  --accent: oklch(0.26 0.05 82);
   --accent-foreground: oklch(0.93 0.006 80);
 
-  /* Destrutivo / urgente = mesmo vermelho */
+  /* Destrutivo / urgente permanecem vermelhos — alerta é alerta */
   --destructive: oklch(0.575 0.215 25);
   --destructive-foreground: oklch(0.99 0 0);
   --urgent: oklch(0.575 0.215 25);
@@ -68,11 +68,11 @@
 
   --border: oklch(0.255 0.006 45);
   --input: oklch(0.20 0.005 45);
-  --ring: oklch(0.575 0.18 25);
+  --ring: oklch(0.78 0.14 82);
 
-  /* acento vivo + degradê de sangue (iguais ao mockup) */
-  --red-2: #e11d2a;
-  --grad: linear-gradient(135deg, #7a0911 0%, #c20015 100%);
+  /* acento vivo + degradê dourado (nome --red-2 mantido por churn; valor dourado) */
+  --red-2: #e6b64c;      /* dourado */
+  --grad: linear-gradient(135deg, #8a6a1a 0%, #e6b64c 100%);
   --field-bg: #0c0908;
 
   color-scheme: dark;
