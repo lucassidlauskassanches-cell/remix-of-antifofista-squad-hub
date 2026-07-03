@@ -77,6 +77,27 @@ function addDays(iso: string, delta: number): string {
   return dt.toISOString().slice(0, 10);
 }
 
+type DayData = any;
+
+function computeScoreLocal(day: DayData): number {
+  const goal = day.waterGoalMl;
+  const waterMl = (day.log as any)?.water_ml ?? 0;
+  const trained = !!(day.log as any)?.trained;
+  const rest = !!(day.log as any)?.rest_day;
+  const waterPct = goal > 0 ? Math.min(waterMl / goal, 1) : 0;
+  const trainingPct = trained ? 1 : 0;
+  const ratings = (day.meals ?? [])
+    .filter((m: any) => m.done)
+    .map((m: any) => Number(m.rating) || 0);
+  const mealPct = ratings.length
+    ? ratings.reduce((a: number, b: number) => a + b, 0) / (ratings.length * 5)
+    : 0;
+  const s = rest
+    ? waterPct * 40 + mealPct * 60
+    : waterPct * 30 + trainingPct * 25 + mealPct * 45;
+  return Math.round(Math.max(0, Math.min(100, s)) * 10) / 10;
+}
+
 function RegistroPage() {
   const qc = useQueryClient();
   const [date, setDate] = useState<string>(todaySP());
@@ -84,15 +105,41 @@ function RegistroPage() {
   const fetchCtx = useServerFn(getMyContext);
 
   const ctxQ = useQuery({ queryKey: ["my-context"], queryFn: () => fetchCtx() });
+  const dayKey = ["registro", date] as const;
   const dayQ = useQuery({
-    queryKey: ["registro", date],
+    queryKey: dayKey,
     queryFn: () => fetchDay({ data: { date } }),
+    staleTime: 15_000,
   });
 
   const invalidateAll = () => {
     qc.invalidateQueries({ queryKey: ["registro"] });
     qc.invalidateQueries({ queryKey: ["weight-history"] });
   };
+
+  // Optimistic patch: mutate a clone of the cached day, recompute score
+  // locally so UI updates instantly without waiting for the server.
+  function optimisticPatch(mutator: (d: any) => void) {
+    const prev = qc.getQueryData<DayData>(dayKey);
+    if (!prev) return { prev: undefined as DayData | undefined };
+    const next: any = JSON.parse(JSON.stringify(prev));
+    if (!next.log) next.log = { water_ml: 0, trained: false, rest_day: false, daily_score: 0 };
+    mutator(next);
+    next.log.daily_score = computeScoreLocal(next);
+    qc.setQueryData(dayKey, next);
+    return { prev };
+  }
+  function rollback(ctx: { prev?: DayData } | undefined) {
+    if (ctx?.prev) qc.setQueryData(dayKey, ctx.prev);
+  }
+  // Debounced background reconcile so streak/score sync with server.
+  const reconcileRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  function scheduleReconcile() {
+    if (reconcileRef.current) clearTimeout(reconcileRef.current);
+    reconcileRef.current = setTimeout(() => {
+      qc.invalidateQueries({ queryKey: dayKey });
+    }, 800);
+  }
 
   const addWaterFn = useServerFn(addWater);
   const setWaterFn = useServerFn(setWater);
@@ -103,29 +150,71 @@ function RegistroPage() {
 
   const mAddWater = useMutation({
     mutationFn: (deltaMl: number) => addWaterFn({ data: { deltaMl, date } }),
-    onSuccess: invalidateAll,
-    onError: (e: any) => toast.error(e.message ?? "Erro"),
+    onMutate: (deltaMl: number) =>
+      optimisticPatch((d) => {
+        const cur = d.log.water_ml ?? 0;
+        d.log.water_ml = Math.max(0, Math.min(20000, cur + deltaMl));
+      }),
+    onError: (e: any, _v, ctx) => {
+      rollback(ctx);
+      toast.error(e.message ?? "Erro");
+    },
+    onSettled: scheduleReconcile,
   });
   const mSetWater = useMutation({
     mutationFn: (waterMl: number) => setWaterFn({ data: { waterMl, date } }),
-    onSuccess: invalidateAll,
-    onError: (e: any) => toast.error(e.message ?? "Erro"),
+    onMutate: (waterMl: number) =>
+      optimisticPatch((d) => {
+        d.log.water_ml = Math.max(0, Math.min(20000, waterMl));
+      }),
+    onError: (e: any, _v, ctx) => {
+      rollback(ctx);
+      toast.error(e.message ?? "Erro");
+    },
+    onSettled: scheduleReconcile,
   });
   const mTrained = useMutation({
     mutationFn: (t: boolean) => setTrainedFn({ data: { trained: t, date } }),
-    onSuccess: invalidateAll,
-    onError: (e: any) => toast.error(e.message ?? "Erro"),
+    onMutate: (t: boolean) =>
+      optimisticPatch((d) => {
+        d.log.trained = t;
+      }),
+    onError: (e: any, _v, ctx) => {
+      rollback(ctx);
+      toast.error(e.message ?? "Erro");
+    },
+    onSettled: scheduleReconcile,
   });
   const mRest = useMutation({
     mutationFn: (r: boolean) => setRestDayFn({ data: { restDay: r, date } }),
-    onSuccess: invalidateAll,
-    onError: (e: any) => toast.error(e.message ?? "Erro"),
+    onMutate: (r: boolean) =>
+      optimisticPatch((d) => {
+        d.log.rest_day = r;
+      }),
+    onError: (e: any, _v, ctx) => {
+      rollback(ctx);
+      toast.error(e.message ?? "Erro");
+    },
+    onSettled: scheduleReconcile,
   });
   const mMeal = useMutation({
     mutationFn: (v: { mealCheckId: string; done?: boolean; rating?: number }) =>
       mealFn({ data: { ...v, date } }),
-    onSuccess: invalidateAll,
-    onError: (e: any) => toast.error(e.message ?? "Erro"),
+    onMutate: (v) =>
+      optimisticPatch((d) => {
+        const m = (d.meals ?? []).find((x: any) => x.id === v.mealCheckId);
+        if (!m) return;
+        if (v.done !== undefined) m.done = v.done;
+        if (v.rating !== undefined) {
+          m.rating = v.rating;
+          m.done = true;
+        }
+      }),
+    onError: (e: any, _v, ctx) => {
+      rollback(ctx);
+      toast.error(e.message ?? "Erro");
+    },
+    onSettled: scheduleReconcile,
   });
 
   if (!dayQ.data) return <p className="p-4">Carregando...</p>;
@@ -218,7 +307,7 @@ function RegistroPage() {
                   key={v}
                   variant="outline"
                   onClick={() => mAddWater.mutate(v)}
-                  disabled={mAddWater.isPending || !goal}
+                  disabled={!goal}
                 >
                   +{v >= 1000 ? `${v / 1000}L` : `${v}ml`}
                 </Button>
@@ -226,7 +315,7 @@ function RegistroPage() {
               <Button
                 variant="outline"
                 onClick={() => mAddWater.mutate(-250)}
-                disabled={mAddWater.isPending || consumed <= 0}
+                disabled={consumed <= 0}
               >
                 −250
               </Button>
@@ -268,7 +357,7 @@ function RegistroPage() {
             variant={d.log?.trained ? "default" : "outline"}
             className="w-full"
             onClick={() => mTrained.mutate(!d.log?.trained)}
-            disabled={readOnly || mTrained.isPending}
+            disabled={readOnly}
           >
             {d.log?.trained ? "✓ TREINEI HOJE" : "MARCAR: TREINEI HOJE"}
           </Button>
@@ -278,7 +367,7 @@ function RegistroPage() {
           size="sm"
           className="w-full"
           onClick={() => mRest.mutate(!isRestDay)}
-          disabled={readOnly || mRest.isPending}
+          disabled={readOnly}
         >
           <Moon className="w-4 h-4 mr-2" />
           {isRestDay ? "✓ DIA DE DESCANSO" : "MARCAR DIA DE DESCANSO"}
