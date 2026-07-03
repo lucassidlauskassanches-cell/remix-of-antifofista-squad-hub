@@ -7,7 +7,7 @@ import {
   getStudentStructuredTrainingPlan,
   getStudentDiet,
 } from "@/lib/squad.functions";
-import { saveStudentAnamnese } from "@/lib/registro.functions";
+import { saveStudentAnamnese, getStudentAdherence } from "@/lib/registro.functions";
 import { StructuredTrainingUploader } from "@/components/StructuredTrainingUploader";
 import { DietUploader } from "@/components/DietUploader";
 import { GerarPlanoAcao } from "@/components/GerarPlanoAcao";
