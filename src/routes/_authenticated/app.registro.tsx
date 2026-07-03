@@ -307,7 +307,7 @@ function RegistroPage() {
                   key={v}
                   variant="outline"
                   onClick={() => mAddWater.mutate(v)}
-                  disabled={mAddWater.isPending || !goal}
+                  disabled={!goal}
                 >
                   +{v >= 1000 ? `${v / 1000}L` : `${v}ml`}
                 </Button>
@@ -315,7 +315,7 @@ function RegistroPage() {
               <Button
                 variant="outline"
                 onClick={() => mAddWater.mutate(-250)}
-                disabled={mAddWater.isPending || consumed <= 0}
+                disabled={consumed <= 0}
               >
                 −250
               </Button>
