@@ -1,18 +1,28 @@
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
+import { useQuery } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { generateActionPlan } from "@/lib/squad.functions";
+import {
+  getActionPlanInputs,
+  saveActionPlanInputs,
+} from "@/lib/registro.functions";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import { FileText, ImageIcon, Sparkles, CheckCircle2 } from "lucide-react";
+import {
+  FileText,
+  ImageIcon,
+  Sparkles,
+  CheckCircle2,
+  ExternalLink,
+} from "lucide-react";
 import type { PlanData } from "@/lib/plano/template/types";
 import { PlanoEditor } from "@/components/PlanoEditor";
 
-// Painel da aba AÇÃO: o treinador sobe anamnese (PDF) + 3 fotos, escolhe o
-// ciclo e o dia do acompanhamento, e a IA gera o Plano de Ação reaproveitando
-// o treino/dieta já cadastrados. O plano NÃO é salvo nem aparece pro aluno:
-// o treinador revisa, edita e baixa o PDF. Tudo acontece nesta tela.
+// Painel da aba AÇÃO. Os arquivos (anamnese PDF + 3 fotos) ficam PERSISTIDOS,
+// então o treinador pode regerar o plano sem re-enviar. Substituir um arquivo
+// é opcional (basta clicar e escolher outro).
 
 const DIAS = [
   "segunda-feira",
@@ -31,6 +41,8 @@ function FilePicker({
   hint,
   accept,
   file,
+  savedName,
+  savedUrl,
   onPick,
   icon,
 }: {
@@ -38,27 +50,50 @@ function FilePicker({
   hint: string;
   accept: string;
   file: File | null;
+  savedName?: string | null;
+  savedUrl?: string | null;
   onPick: (f: File | null) => void;
   icon: React.ReactNode;
 }) {
   const ref = useRef<HTMLInputElement>(null);
+  const hasFile = !!file;
+  const hasSaved = !!savedUrl;
+  const displayName = file
+    ? file.name
+    : savedName
+      ? savedName
+      : hasSaved
+        ? "Arquivo salvo"
+        : hint;
   return (
-    <button
-      type="button"
-      onClick={() => ref.current?.click()}
-      className="flex items-center gap-3 w-full text-left p-3 rounded-md border border-border bg-secondary/30 hover:border-primary transition-colors"
-    >
+    <div className="flex items-center gap-2 w-full p-3 rounded-md border border-border bg-secondary/30">
       <span className="shrink-0 text-primary">
-        {file ? <CheckCircle2 className="w-5 h-5" /> : icon}
+        {hasFile || hasSaved ? <CheckCircle2 className="w-5 h-5" /> : icon}
       </span>
-      <span className="min-w-0 flex-1">
+      <button
+        type="button"
+        onClick={() => ref.current?.click()}
+        className="min-w-0 flex-1 text-left hover:opacity-80 transition-opacity"
+      >
         <span className="block tactical-heading text-xs tracking-widest text-primary">
           {label}
         </span>
         <span className="block text-xs text-muted-foreground truncate">
-          {file ? file.name : hint}
+          {displayName}
         </span>
-      </span>
+      </button>
+      {hasSaved && !hasFile && (
+        <a
+          href={savedUrl!}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="shrink-0 text-muted-foreground hover:text-primary"
+          title="Abrir arquivo salvo"
+          aria-label="Abrir arquivo salvo"
+        >
+          <ExternalLink className="w-4 h-4" />
+        </a>
+      )}
       <input
         ref={ref}
         type="file"
@@ -66,7 +101,7 @@ function FilePicker({
         className="hidden"
         onChange={(e) => onPick(e.target.files?.[0] ?? null)}
       />
-    </button>
+    </div>
   );
 }
 
@@ -78,6 +113,13 @@ export function GerarPlanoAcao({
   alunoNome: string;
 }) {
   const generate = useServerFn(generateActionPlan);
+  const fetchInputs = useServerFn(getActionPlanInputs);
+  const saveInputs = useServerFn(saveActionPlanInputs);
+
+  const inputsQ = useQuery({
+    queryKey: ["action-plan-inputs", studentId],
+    queryFn: () => fetchInputs({ data: { studentId } }),
+  });
 
   const [anamnese, setAnamnese] = useState<File | null>(null);
   const [frente, setFrente] = useState<File | null>(null);
@@ -87,8 +129,22 @@ export function GerarPlanoAcao({
   const [ciclo, setCiclo] = useState(12);
   const [dia, setDia] = useState("");
   const [loading, setLoading] = useState(false);
-
   const [plan, setPlan] = useState<PlanData | null>(null);
+  const hydrated = useRef(false);
+
+  // Hydrate ciclo/dia/telefone from persisted inputs.
+  useEffect(() => {
+    if (hydrated.current) return;
+    const inputs = inputsQ.data?.inputs;
+    if (!inputs) return;
+    setCiclo(Number(inputs.ciclo_meses) || 12);
+    setDia(inputs.dia_feedback ?? "");
+    setTelefone(inputs.telefone ?? "");
+    hydrated.current = true;
+  }, [inputsQ.data]);
+
+  const savedInputs = inputsQ.data?.inputs ?? null;
+  const savedSigned = inputsQ.data?.signed ?? null;
 
   async function uploadInput(slot: Slot, file: File): Promise<string> {
     const ext = slot === "anamnese" ? "pdf" : "jpg";
@@ -101,21 +157,47 @@ export function GerarPlanoAcao({
   }
 
   async function handleGenerate() {
-    if (!anamnese) return toast.error("Envie a anamnese em PDF.");
-    if (!frente || !lado || !costas)
-      return toast.error("Envie as 3 fotos (frente, lado e costas).");
-    if (anamnese.type !== "application/pdf")
+    if (anamnese && anamnese.type !== "application/pdf")
       return toast.error("A anamnese precisa ser um PDF.");
+
+    // For each slot: use newly picked file, else fall back to persisted path.
+    const missing: string[] = [];
+    if (!anamnese && !savedInputs?.anamnese_path) missing.push("anamnese (PDF)");
+    if (!frente && !savedInputs?.foto_frente_path) missing.push("foto frente");
+    if (!lado && !savedInputs?.foto_lado_path) missing.push("foto lado");
+    if (!costas && !savedInputs?.foto_costas_path) missing.push("foto costas");
+    if (missing.length) {
+      return toast.error(`Faltam: ${missing.join(", ")}.`);
+    }
 
     setLoading(true);
     try {
-      const [anamnesePath, fotoFrentePath, fotoLadoPath, fotoCostasPath] =
-        await Promise.all([
-          uploadInput("anamnese", anamnese),
-          uploadInput("frente", frente),
-          uploadInput("lado", lado),
-          uploadInput("costas", costas),
-        ]);
+      const [
+        anamnesePathNew,
+        fotoFrentePathNew,
+        fotoLadoPathNew,
+        fotoCostasPathNew,
+      ] = await Promise.all([
+        anamnese ? uploadInput("anamnese", anamnese) : Promise.resolve(null),
+        frente ? uploadInput("frente", frente) : Promise.resolve(null),
+        lado ? uploadInput("lado", lado) : Promise.resolve(null),
+        costas ? uploadInput("costas", costas) : Promise.resolve(null),
+      ]);
+
+      const anamnesePath = anamnesePathNew ?? savedInputs!.anamnese_path!;
+      const fotoFrentePath = fotoFrentePathNew ?? savedInputs!.foto_frente_path!;
+      const fotoLadoPath = fotoLadoPathNew ?? savedInputs!.foto_lado_path!;
+      const fotoCostasPath = fotoCostasPathNew ?? savedInputs!.foto_costas_path!;
+
+      // Persist any tweaks to ciclo/dia/telefone even if we don't regenerate.
+      await saveInputs({
+        data: {
+          studentId,
+          ciclo_meses: ciclo,
+          dia_feedback: dia || null,
+          telefone: telefone.trim() || null,
+        },
+      });
 
       const res = await generate({
         data: {
@@ -131,6 +213,12 @@ export function GerarPlanoAcao({
         },
       });
       setPlan(res.plan);
+      // Reset picked files so labels show the newly persisted names.
+      setAnamnese(null);
+      setFrente(null);
+      setLado(null);
+      setCostas(null);
+      inputsQ.refetch();
       toast.success("Plano gerado. Revise e baixe o PDF.");
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : "Falha ao gerar o plano.";
@@ -157,9 +245,8 @@ export function GerarPlanoAcao({
           GERAR PLANO DE AÇÃO
         </p>
         <p className="text-xs text-muted-foreground mt-1">
-          A IA escreve o plano personalizado usando a anamnese, as fotos e o
-          treino/dieta já cadastrados deste aluno. O plano não é salvo nem
-          aparece pro aluno: você revisa, edita e baixa o PDF.
+          Arquivos ficam salvos. Regere o plano quando quiser — só substitua um
+          arquivo se precisar atualizar.
         </p>
       </div>
 
@@ -169,6 +256,8 @@ export function GerarPlanoAcao({
           hint="Toque pra escolher o PDF"
           accept="application/pdf"
           file={anamnese}
+          savedName={savedInputs?.anamnese_name ?? null}
+          savedUrl={savedSigned?.anamnese ?? null}
           onPick={setAnamnese}
           icon={<FileText className="w-5 h-5" />}
         />
@@ -177,6 +266,7 @@ export function GerarPlanoAcao({
           hint="Toque pra escolher a foto"
           accept="image/*"
           file={frente}
+          savedUrl={savedSigned?.frente ?? null}
           onPick={setFrente}
           icon={<ImageIcon className="w-5 h-5" />}
         />
@@ -185,6 +275,7 @@ export function GerarPlanoAcao({
           hint="Toque pra escolher a foto"
           accept="image/*"
           file={lado}
+          savedUrl={savedSigned?.lado ?? null}
           onPick={setLado}
           icon={<ImageIcon className="w-5 h-5" />}
         />
@@ -193,6 +284,7 @@ export function GerarPlanoAcao({
           hint="Toque pra escolher a foto"
           accept="image/*"
           file={costas}
+          savedUrl={savedSigned?.costas ?? null}
           onPick={setCostas}
           icon={<ImageIcon className="w-5 h-5" />}
         />
@@ -249,7 +341,11 @@ export function GerarPlanoAcao({
         className="w-full tactical-heading bg-primary text-primary-foreground"
       >
         <Sparkles className="w-4 h-4 mr-2" />
-        {loading ? "GERANDO PLANO..." : "GERAR PLANO DE AÇÃO"}
+        {loading
+          ? "GERANDO PLANO..."
+          : savedInputs
+            ? "REGERAR PLANO DE AÇÃO"
+            : "GERAR PLANO DE AÇÃO"}
       </Button>
     </Card>
   );
