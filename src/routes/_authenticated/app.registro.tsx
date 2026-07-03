@@ -77,7 +77,7 @@ function addDays(iso: string, delta: number): string {
   return dt.toISOString().slice(0, 10);
 }
 
-type DayData = Awaited<ReturnType<typeof import("@/lib/registro.functions").getMyDayRegistro>>;
+type DayData = any;
 
 function computeScoreLocal(day: DayData): number {
   const goal = day.waterGoalMl;
