@@ -189,13 +189,14 @@ export function GerarPlanoAcao({
       const fotoLadoPath = fotoLadoPathNew ?? savedInputs!.foto_lado_path!;
       const fotoCostasPath = fotoCostasPathNew ?? savedInputs!.foto_costas_path!;
 
-      // Persist any tweaks to ciclo/dia/telefone even if we don't regenerate.
+      // Persist any tweaks to ciclo/dia/telefone (and file name) before generating.
       await saveInputs({
         data: {
           studentId,
           ciclo_meses: ciclo,
           dia_feedback: dia || null,
           telefone: telefone.trim() || null,
+          ...(anamnese ? { anamnese_name: anamnese.name } : {}),
         },
       });
 
