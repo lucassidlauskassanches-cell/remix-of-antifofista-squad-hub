@@ -357,7 +357,7 @@ function RegistroPage() {
             variant={d.log?.trained ? "default" : "outline"}
             className="w-full"
             onClick={() => mTrained.mutate(!d.log?.trained)}
-            disabled={readOnly || mTrained.isPending}
+            disabled={readOnly}
           >
             {d.log?.trained ? "✓ TREINEI HOJE" : "MARCAR: TREINEI HOJE"}
           </Button>
@@ -367,7 +367,7 @@ function RegistroPage() {
           size="sm"
           className="w-full"
           onClick={() => mRest.mutate(!isRestDay)}
-          disabled={readOnly || mRest.isPending}
+          disabled={readOnly}
         >
           <Moon className="w-4 h-4 mr-2" />
           {isRestDay ? "✓ DIA DE DESCANSO" : "MARCAR DIA DE DESCANSO"}
