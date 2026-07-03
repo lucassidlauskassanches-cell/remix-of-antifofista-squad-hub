@@ -1188,11 +1188,24 @@ export const generateActionPlan = createServerFn({ method: "POST" })
     const copy = await generateCopy(inputs);
     const plan = buildPlanData(copy, inputs);
 
-    // Limpa os arquivos temporários: já viraram bytes/data-uri no PlanData.
-    await supabaseAdmin.storage
-      .from("plans")
-      .remove(paths)
-      .catch(() => {});
+    // Persist inputs so the trainer can regenerate without re-uploading.
+    // (Ciclo/dia/telefone are persisted via saveActionPlanInputs on the client.)
+    await context.supabase
+      .from("action_plan_inputs")
+      .upsert(
+        {
+          student_id: data.studentId,
+          anamnese_path: data.anamnesePath,
+          foto_frente_path: data.fotoFrentePath,
+          foto_lado_path: data.fotoLadoPath,
+          foto_costas_path: data.fotoCostasPath,
+          ciclo_meses: data.cicloMeses,
+          dia_feedback: data.diaFeedback ?? null,
+          telefone: data.telefone ?? null,
+          updated_at: new Date().toISOString(),
+        },
+        { onConflict: "student_id" },
+      );
 
     return { plan };
   });

@@ -1,5 +1,5 @@
 import { createFileRoute, Link, useParams } from "@tanstack/react-router";
-import { useQuery, useMutation } from "@tanstack/react-query";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { useState } from "react";
 import {
@@ -7,7 +7,7 @@ import {
   getStudentStructuredTrainingPlan,
   getStudentDiet,
 } from "@/lib/squad.functions";
-import { saveStudentAnamnese } from "@/lib/registro.functions";
+import { saveStudentAnamnese, getStudentAdherence } from "@/lib/registro.functions";
 import { StructuredTrainingUploader } from "@/components/StructuredTrainingUploader";
 import { DietUploader } from "@/components/DietUploader";
 import { GerarPlanoAcao } from "@/components/GerarPlanoAcao";
@@ -55,20 +55,22 @@ function AlunoEditor() {
       <AnamneseCard
         studentId={id}
         initial={{
-          birth_date: (data.profile as any)?.birth_date ?? null,
-          height_cm: (data.profile as any)?.height_cm ?? null,
           initial_weight_kg: (data.profile as any)?.initial_weight_kg ?? null,
           water_ml_per_kg: (data.profile as any)?.water_ml_per_kg ?? 50,
         }}
       />
 
       <Tabs defaultValue="treino">
-        <TabsList className="grid grid-cols-4 w-full">
+        <TabsList className="grid grid-cols-5 w-full">
+          <TabsTrigger value="aderencia" className="tactical-heading">ADERÊNCIA</TabsTrigger>
           <TabsTrigger value="treino" className="tactical-heading">TREINO</TabsTrigger>
           <TabsTrigger value="nutricao" className="tactical-heading">NUTRIÇÃO</TabsTrigger>
           <TabsTrigger value="acao" className="tactical-heading">AÇÃO</TabsTrigger>
           <TabsTrigger value="logbook" className="tactical-heading">LOGBOOK</TabsTrigger>
         </TabsList>
+        <TabsContent value="aderencia" className="mt-4">
+          <AderenciaSection studentId={id} />
+        </TabsContent>
         <TabsContent value="treino" className="mt-4 space-y-4">
           <StructuredPlanSection studentId={id} />
         </TabsContent>
@@ -177,59 +179,40 @@ function AnamneseCard({
 }: {
   studentId: string;
   initial: {
-    birth_date: string | null;
-    height_cm: number | null;
     initial_weight_kg: number | null;
     water_ml_per_kg: number;
   };
 }) {
   const [form, setForm] = useState(initial);
   const saveFn = useServerFn(saveStudentAnamnese);
+  const qc = useQueryClient();
   const mSave = useMutation({
     mutationFn: () =>
       saveFn({
         data: {
           studentId,
-          birth_date: form.birth_date || null,
-          height_cm: form.height_cm ? Number(form.height_cm) : null,
           initial_weight_kg: form.initial_weight_kg
             ? Number(form.initial_weight_kg)
             : null,
           water_ml_per_kg: Number(form.water_ml_per_kg) || 50,
         },
       }),
-    onSuccess: () => toast.success("Anamnese salva"),
+    onSuccess: () => {
+      toast.success("Anamnese salva — meta de água atualizada pro aluno");
+      qc.invalidateQueries({ queryKey: ["student", studentId] });
+      qc.invalidateQueries({ queryKey: ["student-adherence", studentId] });
+    },
     onError: (e: any) => toast.error(e.message ?? "Erro"),
   });
+
+  const goalMl =
+    Number(form.initial_weight_kg ?? 0) *
+    (Number(form.water_ml_per_kg) || 50);
 
   return (
     <Card className="p-4 space-y-3">
       <h3 className="tactical-heading text-sm tracking-widest">ANAMNESE</h3>
       <div className="grid grid-cols-2 gap-3">
-        <div>
-          <Label className="text-xs">Nascimento</Label>
-          <Input
-            type="date"
-            value={form.birth_date ?? ""}
-            onChange={(e) =>
-              setForm({ ...form, birth_date: e.target.value || null })
-            }
-          />
-        </div>
-        <div>
-          <Label className="text-xs">Altura (cm)</Label>
-          <Input
-            type="number"
-            step="0.1"
-            value={form.height_cm ?? ""}
-            onChange={(e) =>
-              setForm({
-                ...form,
-                height_cm: e.target.value ? Number(e.target.value) : null,
-              })
-            }
-          />
-        </div>
         <div>
           <Label className="text-xs">Peso inicial (kg)</Label>
           <Input
@@ -262,6 +245,14 @@ function AnamneseCard({
           />
         </div>
       </div>
+      {goalMl > 0 && (
+        <p className="text-xs text-muted-foreground">
+          Meta diária de água do aluno:{" "}
+          <span className="text-primary tactical-heading">
+            {(goalMl / 1000).toFixed(2)} L
+          </span>
+        </p>
+      )}
       <Button
         onClick={() => mSave.mutate()}
         disabled={mSave.isPending}
@@ -272,4 +263,246 @@ function AnamneseCard({
     </Card>
   );
 }
+
+// ---------------- Aderência (read-only snapshot da aba antifofista) ----------------
+function AderenciaSection({ studentId }: { studentId: string }) {
+  const fetchAdh = useServerFn(getStudentAdherence);
+  const { data, isLoading } = useQuery({
+    queryKey: ["student-adherence", studentId],
+    queryFn: () => fetchAdh({ data: { studentId } }),
+  });
+
+  if (isLoading || !data) {
+    return <p className="text-sm text-muted-foreground">Carregando aderência...</p>;
+  }
+
+  const goalL = data.waterGoalMl ? (data.waterGoalMl / 1000).toFixed(2) : "—";
+  const today = data.today;
+  const avg = data.averages;
+
+  return (
+    <div className="space-y-4">
+      {/* Snapshot de hoje */}
+      <Card className="p-4 space-y-3">
+        <div className="flex items-center justify-between">
+          <h3 className="tactical-heading text-sm tracking-widest">HOJE</h3>
+          <span className="text-[10px] text-muted-foreground tracking-widest">
+            META ÁGUA {goalL} L · {data.waterMlPerKg} ml/kg
+          </span>
+        </div>
+        {today ? (
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+            <Stat
+              label="SCORE"
+              value={`${Math.round(today.score)}%`}
+              color={colorForPct(today.score / 100)}
+            />
+            <Stat
+              label="ÁGUA"
+              value={`${(today.water_ml / 1000).toFixed(2)}L`}
+              hint={`${Math.round(today.water_pct * 100)}% da meta`}
+              color={colorForPct(today.water_pct)}
+            />
+            <Stat
+              label="TREINO"
+              value={today.rest_day ? "DESCANSO" : today.trained ? "✓ FEITO" : "PENDENTE"}
+              color={
+                today.rest_day
+                  ? "hsl(var(--muted-foreground))"
+                  : today.trained
+                    ? "hsl(var(--primary))"
+                    : "hsl(var(--destructive))"
+              }
+            />
+            <Stat
+              label="REFEIÇÕES"
+              value={`${today.meals_done}/${today.meals_total || data.dietMealCount || 0}`}
+              hint={
+                today.meal_avg_rating > 0
+                  ? `⭐ ${today.meal_avg_rating.toFixed(1)}`
+                  : undefined
+              }
+              color={colorForPct(
+                today.meals_total
+                  ? today.meals_done / today.meals_total
+                  : 0,
+              )}
+            />
+          </div>
+        ) : (
+          <p className="text-xs text-muted-foreground">
+            Ainda não há registro do aluno hoje.
+          </p>
+        )}
+      </Card>
+
+      {/* Médias 30 dias */}
+      <Card className="p-4 space-y-3">
+        <h3 className="tactical-heading text-sm tracking-widest">
+          ÚLTIMOS 30 DIAS
+        </h3>
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+          <Stat
+            label="SCORE MÉDIO"
+            value={`${Math.round(avg.score)}%`}
+            color={colorForPct(avg.score / 100)}
+          />
+          <Stat
+            label="ÁGUA"
+            value={`${Math.round(avg.waterPct * 100)}%`}
+            hint="da meta"
+            color={colorForPct(avg.waterPct)}
+          />
+          <Stat
+            label="TREINO"
+            value={`${Math.round(avg.trainingPct * 100)}%`}
+            hint="dos dias úteis"
+            color={colorForPct(avg.trainingPct)}
+          />
+          <Stat
+            label="DIETA"
+            value={`${Math.round(avg.mealAdherence * 100)}%`}
+            hint={avg.mealRating > 0 ? `⭐ ${avg.mealRating.toFixed(1)}` : undefined}
+            color={colorForPct(avg.mealAdherence)}
+          />
+        </div>
+        <div className="grid grid-cols-3 gap-3 pt-2 border-t border-border">
+          <Stat
+            label="STREAK ATUAL"
+            value={`${data.streak.current}d`}
+            color="hsl(var(--primary))"
+          />
+          <Stat
+            label="RECORDE"
+            value={`${data.streak.longest}d`}
+            color="hsl(var(--muted-foreground))"
+          />
+          <Stat
+            label="TOTAL COMPLETOS"
+            value={`${data.streak.total}d`}
+            color="hsl(var(--muted-foreground))"
+          />
+        </div>
+      </Card>
+
+      {/* Barras diárias */}
+      <Card className="p-4 space-y-3">
+        <h3 className="tactical-heading text-sm tracking-widest">
+          SCORE DIÁRIO
+        </h3>
+        {data.days.length === 0 ? (
+          <p className="text-xs text-muted-foreground">Sem registros no período.</p>
+        ) : (
+          <div className="space-y-1">
+            <div className="flex items-end gap-[3px] h-32">
+              {data.days.map((d) => (
+                <div
+                  key={d.date}
+                  className="flex-1 rounded-t"
+                  style={{
+                    height: `${Math.max(2, d.score)}%`,
+                    background: colorForPct(d.score / 100),
+                    opacity: d.rest_day ? 0.55 : 1,
+                  }}
+                  title={`${d.date} — ${Math.round(d.score)}%${d.rest_day ? " (descanso)" : ""}`}
+                />
+              ))}
+            </div>
+            <div className="flex justify-between text-[10px] text-muted-foreground">
+              <span>{data.days[0]?.date}</span>
+              <span>{data.days[data.days.length - 1]?.date}</span>
+            </div>
+          </div>
+        )}
+      </Card>
+
+      {/* Tabela detalhada */}
+      <Card className="overflow-hidden">
+        <div className="grid grid-cols-[0.9fr_0.6fr_0.9fr_0.7fr_0.7fr] gap-2 px-3 py-2 bg-secondary/40 border-b border-border">
+          <span className="tactical-heading text-[10px] tracking-widest text-primary">DATA</span>
+          <span className="tactical-heading text-[10px] tracking-widest text-primary">SCORE</span>
+          <span className="tactical-heading text-[10px] tracking-widest text-primary">ÁGUA</span>
+          <span className="tactical-heading text-[10px] tracking-widest text-primary">TREINO</span>
+          <span className="tactical-heading text-[10px] tracking-widest text-primary">REFEIÇÕES</span>
+        </div>
+        {data.days.length === 0 ? (
+          <p className="p-4 text-sm text-muted-foreground">Sem registros ainda.</p>
+        ) : (
+          <ul className="divide-y divide-border max-h-80 overflow-auto">
+            {[...data.days].reverse().map((d) => (
+              <li
+                key={d.date}
+                className="grid grid-cols-[0.9fr_0.6fr_0.9fr_0.7fr_0.7fr] gap-2 px-3 py-2 text-xs items-center"
+              >
+                <span>{formatDate(d.date)}</span>
+                <span
+                  className="tactical-heading"
+                  style={{ color: colorForPct(d.score / 100) }}
+                >
+                  {Math.round(d.score)}%
+                </span>
+                <span>
+                  {(d.water_ml / 1000).toFixed(2)}L
+                  <span className="text-muted-foreground">
+                    {" · "}
+                    {Math.round(d.water_pct * 100)}%
+                  </span>
+                </span>
+                <span>
+                  {d.rest_day ? "😴" : d.trained ? "✓" : "—"}
+                </span>
+                <span>
+                  {d.meals_total > 0
+                    ? `${d.meals_done}/${d.meals_total}`
+                    : "—"}
+                  {d.meal_avg_rating > 0 && (
+                    <span className="text-muted-foreground">
+                      {" ⭐"}
+                      {d.meal_avg_rating.toFixed(1)}
+                    </span>
+                  )}
+                </span>
+              </li>
+            ))}
+          </ul>
+        )}
+      </Card>
+    </div>
+  );
+}
+
+function Stat({
+  label,
+  value,
+  hint,
+  color,
+}: {
+  label: string;
+  value: string;
+  hint?: string;
+  color?: string;
+}) {
+  return (
+    <div className="space-y-1">
+      <div className="text-[10px] tracking-widest text-muted-foreground">
+        {label}
+      </div>
+      <div
+        className="tactical-heading text-xl leading-none"
+        style={color ? { color } : undefined}
+      >
+        {value}
+      </div>
+      {hint && <div className="text-[10px] text-muted-foreground">{hint}</div>}
+    </div>
+  );
+}
+
+function colorForPct(pct: number): string {
+  if (pct >= 0.8) return "hsl(var(--primary))";
+  if (pct >= 0.5) return "hsl(45 90% 55%)";
+  return "hsl(var(--destructive))";
+}
+
+
 

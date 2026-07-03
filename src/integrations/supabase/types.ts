@@ -14,6 +14,56 @@ export type Database = {
   }
   public: {
     Tables: {
+      action_plan_inputs: {
+        Row: {
+          anamnese_name: string | null
+          anamnese_path: string | null
+          ciclo_meses: number
+          created_at: string
+          dia_feedback: string | null
+          foto_costas_path: string | null
+          foto_frente_path: string | null
+          foto_lado_path: string | null
+          student_id: string
+          telefone: string | null
+          updated_at: string
+        }
+        Insert: {
+          anamnese_name?: string | null
+          anamnese_path?: string | null
+          ciclo_meses?: number
+          created_at?: string
+          dia_feedback?: string | null
+          foto_costas_path?: string | null
+          foto_frente_path?: string | null
+          foto_lado_path?: string | null
+          student_id: string
+          telefone?: string | null
+          updated_at?: string
+        }
+        Update: {
+          anamnese_name?: string | null
+          anamnese_path?: string | null
+          ciclo_meses?: number
+          created_at?: string
+          dia_feedback?: string | null
+          foto_costas_path?: string | null
+          foto_frente_path?: string | null
+          foto_lado_path?: string | null
+          student_id?: string
+          telefone?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "action_plan_inputs_student_id_fkey"
+            columns: ["student_id"]
+            isOneToOne: true
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       action_plans: {
         Row: {
           active: boolean
