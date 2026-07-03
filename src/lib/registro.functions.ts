@@ -654,3 +654,229 @@ export const ackMilestone = createServerFn({ method: "POST" })
       .eq("student_id", userId);
     return { ok: true };
   });
+
+// ---------- trainer view: student adherence snapshot ----------
+export const getStudentAdherence = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: unknown) =>
+    z.object({ studentId: z.string().uuid() }).parse(d),
+  )
+  .handler(async ({ data, context }) => {
+    await assertCanManageStudent(context, data.studentId);
+    const { supabase } = context;
+    const studentId = data.studentId;
+    const today = todaySP();
+    const since = addDaysIso(today, -29);
+
+    const [
+      { data: profile },
+      { data: latestWeight },
+      { data: logs },
+      { data: streakRow },
+      { data: diet },
+    ] = await Promise.all([
+      supabase
+        .from("profiles")
+        .select("initial_weight_kg,water_ml_per_kg")
+        .eq("id", studentId)
+        .maybeSingle(),
+      supabase
+        .from("weight_entries")
+        .select("weight_kg,entry_date")
+        .eq("student_id", studentId)
+        .order("entry_date", { ascending: false })
+        .limit(1)
+        .maybeSingle(),
+      supabase
+        .from("daily_logs")
+        .select("id,log_date,water_ml,trained,rest_day,daily_score")
+        .eq("student_id", studentId)
+        .gte("log_date", since)
+        .lte("log_date", today)
+        .order("log_date", { ascending: true }),
+      supabase
+        .from("streaks")
+        .select("current_streak,longest_streak,shields,total_completed_days")
+        .eq("student_id", studentId)
+        .maybeSingle(),
+      supabase
+        .from("diet_prescriptions")
+        .select("data")
+        .eq("student_id", studentId)
+        .maybeSingle(),
+    ]);
+
+    const weightKg =
+      Number(latestWeight?.weight_kg ?? profile?.initial_weight_kg ?? 0) || 0;
+    const coef = Number(profile?.water_ml_per_kg ?? 50) || 50;
+    const waterGoalMl = Math.round(weightKg * coef);
+
+    const logIds = (logs ?? []).map((l: any) => l.id);
+    const { data: mealChecks } = logIds.length
+      ? await supabase
+          .from("meal_checks")
+          .select("daily_log_id,done,rating")
+          .in("daily_log_id", logIds)
+      : { data: [] as any[] };
+
+    // Aggregate per-day meal stats.
+    const mealsByLog = new Map<string, { done: number; total: number; ratingSum: number; ratingCount: number }>();
+    for (const mc of mealChecks ?? []) {
+      const cur = mealsByLog.get(mc.daily_log_id) ?? {
+        done: 0,
+        total: 0,
+        ratingSum: 0,
+        ratingCount: 0,
+      };
+      cur.total += 1;
+      if (mc.done) {
+        cur.done += 1;
+        if (mc.rating && mc.rating > 0) {
+          cur.ratingSum += Number(mc.rating);
+          cur.ratingCount += 1;
+        }
+      }
+      mealsByLog.set(mc.daily_log_id, cur);
+    }
+
+    const days = (logs ?? []).map((l: any) => {
+      const meals = mealsByLog.get(l.id) ?? {
+        done: 0,
+        total: 0,
+        ratingSum: 0,
+        ratingCount: 0,
+      };
+      return {
+        date: l.log_date as string,
+        water_ml: Number(l.water_ml) || 0,
+        water_pct:
+          waterGoalMl > 0
+            ? Math.min(1, (Number(l.water_ml) || 0) / waterGoalMl)
+            : 0,
+        trained: !!l.trained,
+        rest_day: !!l.rest_day,
+        score: Number(l.daily_score) || 0,
+        meals_done: meals.done,
+        meals_total: meals.total,
+        meal_avg_rating: meals.ratingCount
+          ? meals.ratingSum / meals.ratingCount
+          : 0,
+      };
+    });
+
+    // 30-day averages (only over days with logs).
+    const n = days.length || 1;
+    const avgScore = days.reduce((a, d) => a + d.score, 0) / n;
+    const avgWaterPct = days.reduce((a, d) => a + d.water_pct, 0) / n;
+    const trainingDays = days.filter((d) => !d.rest_day).length || 1;
+    const trainedCount = days.filter((d) => d.trained && !d.rest_day).length;
+    const trainingPct = trainedCount / trainingDays;
+    const mealDoneTotal = days.reduce((a, d) => a + d.meals_done, 0);
+    const mealTotalTotal = days.reduce((a, d) => a + d.meals_total, 0);
+    const mealAdherence = mealTotalTotal ? mealDoneTotal / mealTotalTotal : 0;
+    const ratingDays = days.filter((d) => d.meal_avg_rating > 0);
+    const avgMealRating = ratingDays.length
+      ? ratingDays.reduce((a, d) => a + d.meal_avg_rating, 0) / ratingDays.length
+      : 0;
+
+    const todayEntry = days.find((d) => d.date === today) ?? null;
+    const dietMealCount = Array.isArray((diet?.data as any)?.refeicoes)
+      ? ((diet!.data as any).refeicoes as any[]).length
+      : 0;
+
+    return {
+      profile,
+      weightKg,
+      waterGoalMl,
+      waterMlPerKg: coef,
+      dietMealCount,
+      today: todayEntry,
+      days,
+      averages: {
+        score: Math.round(avgScore * 10) / 10,
+        waterPct: Math.round(avgWaterPct * 100) / 100,
+        trainingPct: Math.round(trainingPct * 100) / 100,
+        mealAdherence: Math.round(mealAdherence * 100) / 100,
+        mealRating: Math.round(avgMealRating * 10) / 10,
+      },
+      streak: {
+        current: streakRow?.current_streak ?? 0,
+        longest: streakRow?.longest_streak ?? 0,
+        shields: streakRow?.shields ?? 0,
+        total: streakRow?.total_completed_days ?? 0,
+      },
+    };
+  });
+
+// ---------- trainer: action plan inputs (files persistence) ----------
+export const getActionPlanInputs = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: unknown) =>
+    z.object({ studentId: z.string().uuid() }).parse(d),
+  )
+  .handler(async ({ data, context }) => {
+    await assertCanManageStudent(context, data.studentId);
+    const { data: row } = await context.supabase
+      .from("action_plan_inputs")
+      .select("*")
+      .eq("student_id", data.studentId)
+      .maybeSingle();
+    if (!row) return { inputs: null, signed: null };
+    const { supabaseAdmin } = await import(
+      "@/integrations/supabase/client.server"
+    );
+    async function sign(path: string | null) {
+      if (!path) return null;
+      const { data: s } = await supabaseAdmin.storage
+        .from("plans")
+        .createSignedUrl(path, 3600);
+      return s?.signedUrl ?? null;
+    }
+    const signed = {
+      anamnese: await sign(row.anamnese_path),
+      frente: await sign(row.foto_frente_path),
+      lado: await sign(row.foto_lado_path),
+      costas: await sign(row.foto_costas_path),
+    };
+    return { inputs: row, signed };
+  });
+
+export const saveActionPlanInputs = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: unknown) =>
+    z
+      .object({
+        studentId: z.string().uuid(),
+        anamnese_path: z.string().max(300).nullable().optional(),
+        anamnese_name: z.string().max(255).nullable().optional(),
+        foto_frente_path: z.string().max(300).nullable().optional(),
+        foto_lado_path: z.string().max(300).nullable().optional(),
+        foto_costas_path: z.string().max(300).nullable().optional(),
+        ciclo_meses: z.number().int().min(1).max(36).optional(),
+        dia_feedback: z.string().max(40).nullable().optional(),
+        telefone: z.string().max(40).nullable().optional(),
+      })
+      .parse(d),
+  )
+  .handler(async ({ data, context }) => {
+    await assertCanManageStudent(context, data.studentId);
+    const patch: any = { student_id: data.studentId };
+    for (const k of [
+      "anamnese_path",
+      "anamnese_name",
+      "foto_frente_path",
+      "foto_lado_path",
+      "foto_costas_path",
+      "ciclo_meses",
+      "dia_feedback",
+      "telefone",
+    ] as const) {
+      if ((data as any)[k] !== undefined) patch[k] = (data as any)[k];
+    }
+    patch.updated_at = new Date().toISOString();
+    const { error } = await context.supabase
+      .from("action_plan_inputs")
+      .upsert(patch, { onConflict: "student_id" });
+    if (error) throw new Error(error.message);
+    return { ok: true };
+  });
