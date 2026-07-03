@@ -44,7 +44,7 @@ import {
 } from "recharts";
 import { PatenteCard, getPatente } from "@/components/PatenteCard";
 import { StreakMilestoneCard } from "@/components/StreakMilestoneCard";
-import html2canvas from "html2canvas";
+import html2canvas from "html2canvas-pro";
 
 
 export const Route = createFileRoute("/_authenticated/app/registro")({
