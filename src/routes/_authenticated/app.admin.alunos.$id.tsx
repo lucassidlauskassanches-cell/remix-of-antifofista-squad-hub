@@ -179,59 +179,40 @@ function AnamneseCard({
 }: {
   studentId: string;
   initial: {
-    birth_date: string | null;
-    height_cm: number | null;
     initial_weight_kg: number | null;
     water_ml_per_kg: number;
   };
 }) {
   const [form, setForm] = useState(initial);
   const saveFn = useServerFn(saveStudentAnamnese);
+  const qc = useQueryClient();
   const mSave = useMutation({
     mutationFn: () =>
       saveFn({
         data: {
           studentId,
-          birth_date: form.birth_date || null,
-          height_cm: form.height_cm ? Number(form.height_cm) : null,
           initial_weight_kg: form.initial_weight_kg
             ? Number(form.initial_weight_kg)
             : null,
           water_ml_per_kg: Number(form.water_ml_per_kg) || 50,
         },
       }),
-    onSuccess: () => toast.success("Anamnese salva"),
+    onSuccess: () => {
+      toast.success("Anamnese salva — meta de água atualizada pro aluno");
+      qc.invalidateQueries({ queryKey: ["student", studentId] });
+      qc.invalidateQueries({ queryKey: ["student-adherence", studentId] });
+    },
     onError: (e: any) => toast.error(e.message ?? "Erro"),
   });
+
+  const goalMl =
+    Number(form.initial_weight_kg ?? 0) *
+    (Number(form.water_ml_per_kg) || 50);
 
   return (
     <Card className="p-4 space-y-3">
       <h3 className="tactical-heading text-sm tracking-widest">ANAMNESE</h3>
       <div className="grid grid-cols-2 gap-3">
-        <div>
-          <Label className="text-xs">Nascimento</Label>
-          <Input
-            type="date"
-            value={form.birth_date ?? ""}
-            onChange={(e) =>
-              setForm({ ...form, birth_date: e.target.value || null })
-            }
-          />
-        </div>
-        <div>
-          <Label className="text-xs">Altura (cm)</Label>
-          <Input
-            type="number"
-            step="0.1"
-            value={form.height_cm ?? ""}
-            onChange={(e) =>
-              setForm({
-                ...form,
-                height_cm: e.target.value ? Number(e.target.value) : null,
-              })
-            }
-          />
-        </div>
         <div>
           <Label className="text-xs">Peso inicial (kg)</Label>
           <Input
@@ -264,6 +245,14 @@ function AnamneseCard({
           />
         </div>
       </div>
+      {goalMl > 0 && (
+        <p className="text-xs text-muted-foreground">
+          Meta diária de água do aluno:{" "}
+          <span className="text-primary tactical-heading">
+            {(goalMl / 1000).toFixed(2)} L
+          </span>
+        </p>
+      )}
       <Button
         onClick={() => mSave.mutate()}
         disabled={mSave.isPending}
@@ -274,4 +263,5 @@ function AnamneseCard({
     </Card>
   );
 }
+
 
