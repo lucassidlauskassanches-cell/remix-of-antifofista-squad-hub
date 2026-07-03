@@ -55,8 +55,6 @@ function AlunoEditor() {
       <AnamneseCard
         studentId={id}
         initial={{
-          birth_date: (data.profile as any)?.birth_date ?? null,
-          height_cm: (data.profile as any)?.height_cm ?? null,
           initial_weight_kg: (data.profile as any)?.initial_weight_kg ?? null,
           water_ml_per_kg: (data.profile as any)?.water_ml_per_kg ?? 50,
         }}
