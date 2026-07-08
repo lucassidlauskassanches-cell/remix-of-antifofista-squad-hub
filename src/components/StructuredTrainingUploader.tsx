@@ -147,7 +147,7 @@ export function StructuredTrainingUploader({
 
               {plan!.abdomen.length > 0 && (
                 <div>
-                  <p className="tactical-heading text-[10px] tracking-widest text-muted-foreground mb-1">ABDOMÊN</p>
+                  <p className="tactical-heading text-[10px] tracking-widest text-muted-foreground mb-1">ABDOMINAL</p>
                   <ul className="space-y-1">
                     {plan!.abdomen.map((ex, i) => (
                       <li key={i}>
