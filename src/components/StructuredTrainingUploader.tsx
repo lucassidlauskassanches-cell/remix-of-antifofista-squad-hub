@@ -71,7 +71,7 @@ export function StructuredTrainingUploader({
         </p>
         <p className="text-xs text-muted-foreground mt-1">
           Envie o Excel para o aluno ver na subaba ESTRUTURADO (semanas,
-          treinos A-E, ABDOMÊN, Cardio e Dicas).
+          treinos A-E, ABDOMINAL, Cardio e Dicas).
         </p>
       </div>
 
