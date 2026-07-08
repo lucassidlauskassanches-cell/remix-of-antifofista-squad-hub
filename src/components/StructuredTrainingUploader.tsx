@@ -3,7 +3,7 @@ import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import { Upload, FileSpreadsheet, Trash2 } from "lucide-react";
+import { Upload, FileSpreadsheet, Trash2, Pencil } from "lucide-react";
 import {
   parseTrainingXlsx,
   type StructuredPlan,
@@ -12,6 +12,7 @@ import {
   saveStructuredTrainingPlan,
   deleteStructuredTrainingPlan,
 } from "@/lib/squad.functions";
+import { TrainingEditor } from "@/components/TrainingEditor";
 
 export function StructuredTrainingUploader({
   studentId,
