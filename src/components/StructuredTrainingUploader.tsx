@@ -74,19 +74,101 @@ export function StructuredTrainingUploader({
       </div>
 
       {has ? (
-        <div className="flex items-center gap-2 p-3 rounded-md bg-secondary/30 border border-border">
-          <FileSpreadsheet className="w-5 h-5 text-primary shrink-0" />
-          <div className="flex-1 min-w-0">
-            <p className="text-sm truncate">{current?.source_name ?? "planilha.xlsx"}</p>
-            <p className="text-[11px] text-muted-foreground">
-              {plan!.blocks.length} treino(s) · {plan!.weeks.length} semana(s)
-              {plan!.abdomen.length > 0 ? " · ABDOMÊN" : ""}
-              {plan!.cardio.length > 0 ? " · Cardio" : ""}
-            </p>
+        <div className="space-y-2">
+          <div className="flex items-center gap-2 p-3 rounded-md bg-secondary/30 border border-border">
+            <FileSpreadsheet className="w-5 h-5 text-primary shrink-0" />
+            <div className="flex-1 min-w-0">
+              <p className="text-sm truncate">{current?.source_name ?? "planilha.xlsx"}</p>
+              <p className="text-[11px] text-muted-foreground">
+                {plan!.blocks.length} treino(s) · {plan!.weeks.length} semana(s)
+                {plan!.abdomen.length > 0 ? " · ABDOMÊN" : ""}
+                {plan!.cardio.length > 0 ? " · Cardio" : ""}
+              </p>
+            </div>
+            <Button size="sm" variant="ghost" onClick={handleDelete} className="text-destructive">
+              <Trash2 className="w-4 h-4" />
+            </Button>
           </div>
-          <Button size="sm" variant="ghost" onClick={handleDelete} className="text-destructive">
-            <Trash2 className="w-4 h-4" />
-          </Button>
+
+          <details className="rounded-md border border-border bg-background/40">
+            <summary className="cursor-pointer px-3 py-2 text-xs tactical-heading tracking-widest text-primary">
+              VISUALIZAR LEITURA
+            </summary>
+            <div className="p-3 space-y-4 text-sm">
+              {plan!.blocks.map((b, i) => (
+                <div key={i}>
+                  <p className="tactical-heading text-[10px] tracking-widest text-muted-foreground mb-1">
+                    {b.name.toUpperCase()}{b.day ? ` · ${b.day}` : ""}
+                  </p>
+                  <div className="overflow-x-auto">
+                    <table className="w-full text-xs border border-border">
+                      <thead>
+                        <tr className="bg-secondary/40">
+                          <th className="text-left px-2 py-1 border-b border-border">Exercício</th>
+                          {plan!.weeks.map((w, k) => (
+                            <th key={k} className="text-left px-2 py-1 border-b border-border whitespace-nowrap">{w}</th>
+                          ))}
+                          <th className="text-left px-2 py-1 border-b border-border">Obs.</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {b.exercises.map((ex, j) => (
+                          <tr key={j} className="border-b border-border/60">
+                            <td className="px-2 py-1 font-medium">{ex.name}</td>
+                            {ex.weeks.map((v, k) => (
+                              <td key={k} className="px-2 py-1 whitespace-nowrap">{v}</td>
+                            ))}
+                            <td className="px-2 py-1 text-muted-foreground">{ex.note}</td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+              ))}
+
+              {plan!.abdomen.length > 0 && (
+                <div>
+                  <p className="tactical-heading text-[10px] tracking-widest text-muted-foreground mb-1">ABDOMÊN</p>
+                  <ul className="space-y-1">
+                    {plan!.abdomen.map((ex, i) => (
+                      <li key={i}>
+                        <span className="font-medium">{ex.name}</span>
+                        {ex.weeks.filter(Boolean).length > 0 ? ` · ${ex.weeks.filter(Boolean).join(" | ")}` : ""}
+                        {ex.note ? ` · ${ex.note}` : ""}
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+
+              {plan!.cardio.length > 0 && (
+                <div>
+                  <p className="tactical-heading text-[10px] tracking-widest text-muted-foreground mb-1">CARDIO</p>
+                  <ul className="space-y-1">
+                    {plan!.cardio.map((ex, i) => (
+                      <li key={i}>
+                        <span className="font-medium">{ex.name}</span>
+                        {ex.weeks.filter(Boolean).length > 0 ? ` · ${ex.weeks.filter(Boolean).join(" | ")}` : ""}
+                        {ex.note ? ` · ${ex.note}` : ""}
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+
+              {plan!.tips.length > 0 && (
+                <div>
+                  <p className="tactical-heading text-[10px] tracking-widest text-muted-foreground mb-1">DICAS E CONSIDERAÇÕES</p>
+                  <ul className="list-disc pl-5 space-y-1">
+                    {plan!.tips.map((t, i) => (
+                      <li key={i}>{t}</li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+            </div>
+          </details>
         </div>
       ) : (
         <p className="text-sm text-muted-foreground">Nenhuma planilha enviada ainda.</p>
