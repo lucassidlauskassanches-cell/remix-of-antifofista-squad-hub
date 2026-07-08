@@ -3,7 +3,7 @@ import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import { Upload, FileSpreadsheet, Trash2 } from "lucide-react";
+import { Upload, FileSpreadsheet, Trash2, Pencil } from "lucide-react";
 import {
   parseTrainingXlsx,
   type StructuredPlan,
@@ -12,6 +12,7 @@ import {
   saveStructuredTrainingPlan,
   deleteStructuredTrainingPlan,
 } from "@/lib/squad.functions";
+import { TrainingEditor } from "@/components/TrainingEditor";
 
 export function StructuredTrainingUploader({
   studentId,
@@ -26,6 +27,7 @@ export function StructuredTrainingUploader({
   const del = useServerFn(deleteStructuredTrainingPlan);
   const inputRef = useRef<HTMLInputElement>(null);
   const [busy, setBusy] = useState(false);
+  const [editing, setEditing] = useState(false);
 
   async function handleFile(file: File) {
     setBusy(true);
@@ -69,7 +71,7 @@ export function StructuredTrainingUploader({
         </p>
         <p className="text-xs text-muted-foreground mt-1">
           Envie o Excel para o aluno ver na subaba ESTRUTURADO (semanas,
-          treinos A-E, ABDOMÊN, Cardio e Dicas).
+          treinos A-E, ABDOMINAL, Cardio e Dicas).
         </p>
       </div>
 
@@ -81,14 +83,30 @@ export function StructuredTrainingUploader({
               <p className="text-sm truncate">{current?.source_name ?? "planilha.xlsx"}</p>
               <p className="text-[11px] text-muted-foreground">
                 {plan!.blocks.length} treino(s) · {plan!.weeks.length} semana(s)
-                {plan!.abdomen.length > 0 ? " · ABDOMÊN" : ""}
+                {plan!.abdomen.length > 0 ? " · ABDOMINAL" : ""}
                 {plan!.cardio.length > 0 ? " · Cardio" : ""}
               </p>
             </div>
-            <Button size="sm" variant="ghost" onClick={handleDelete} className="text-destructive">
+            <Button size="sm" variant="ghost" onClick={() => setEditing(true)} title="Editar">
+              <Pencil className="w-4 h-4" />
+            </Button>
+            <Button size="sm" variant="ghost" onClick={handleDelete} className="text-destructive" title="Remover">
               <Trash2 className="w-4 h-4" />
             </Button>
           </div>
+
+          {editing && (
+            <TrainingEditor
+              studentId={studentId}
+              sourceName={current?.source_name ?? "treino.xlsx"}
+              initial={plan!}
+              onSaved={() => {
+                setEditing(false);
+                onChanged();
+              }}
+              onCancel={() => setEditing(false)}
+            />
+          )}
 
           <details className="rounded-md border border-border bg-background/40">
             <summary className="cursor-pointer px-3 py-2 text-xs tactical-heading tracking-widest text-primary">
@@ -129,7 +147,7 @@ export function StructuredTrainingUploader({
 
               {plan!.abdomen.length > 0 && (
                 <div>
-                  <p className="tactical-heading text-[10px] tracking-widest text-muted-foreground mb-1">ABDOMÊN</p>
+                  <p className="tactical-heading text-[10px] tracking-widest text-muted-foreground mb-1">ABDOMINAL</p>
                   <ul className="space-y-1">
                     {plan!.abdomen.map((ex, i) => (
                       <li key={i}>

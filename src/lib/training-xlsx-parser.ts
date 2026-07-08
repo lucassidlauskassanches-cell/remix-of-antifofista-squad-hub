@@ -119,7 +119,7 @@ export async function parseTrainingXlsx(file: File): Promise<StructuredPlan> {
         mode = "block";
         continue;
       }
-      if (lower.startsWith("abdom")) {
+      if (lower.startsWith("abd")) {
         mode = "abdomen";
         currentBlock = null;
         continue;
