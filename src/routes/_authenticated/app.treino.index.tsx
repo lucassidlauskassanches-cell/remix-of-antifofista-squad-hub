@@ -268,7 +268,7 @@ function EstruturadoPage() {
           {plan.abdomen?.length > 0 && (
             <>
               <div className="af-sec">
-                <span>Abdômen</span>
+                <span>Abdominal</span>
                 <div className="ln" />
               </div>
               <ExerciseList
