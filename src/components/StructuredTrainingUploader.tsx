@@ -27,6 +27,7 @@ export function StructuredTrainingUploader({
   const del = useServerFn(deleteStructuredTrainingPlan);
   const inputRef = useRef<HTMLInputElement>(null);
   const [busy, setBusy] = useState(false);
+  const [editing, setEditing] = useState(false);
 
   async function handleFile(file: File) {
     setBusy(true);
