@@ -20,6 +20,23 @@ function todaySP(): string {
   return fmt.format(new Date());
 }
 
+function addDaysIsoLocal(iso: string, delta: number): string {
+  const [y, m, d] = iso.split("-").map(Number);
+  const dt = new Date(Date.UTC(y, m - 1, d));
+  dt.setUTCDate(dt.getUTCDate() + delta);
+  return dt.toISOString().slice(0, 10);
+}
+
+function yesterdaySP(): string {
+  return addDaysIsoLocal(todaySP(), -1);
+}
+
+// Aluno pode preencher hoje ou o dia anterior (ex.: esqueceu de marcar ontem).
+function isEditableDate(logDate: string): boolean {
+  const today = todaySP();
+  return logDate === today || logDate === addDaysIsoLocal(today, -1);
+}
+
 export const STREAK_THRESHOLD = 80;
 
 export const PATENTES_GUERRA: Array<{ days: number; rank: string }> = [
