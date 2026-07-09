@@ -20,6 +20,23 @@ function todaySP(): string {
   return fmt.format(new Date());
 }
 
+function addDaysIsoLocal(iso: string, delta: number): string {
+  const [y, m, d] = iso.split("-").map(Number);
+  const dt = new Date(Date.UTC(y, m - 1, d));
+  dt.setUTCDate(dt.getUTCDate() + delta);
+  return dt.toISOString().slice(0, 10);
+}
+
+function yesterdaySP(): string {
+  return addDaysIsoLocal(todaySP(), -1);
+}
+
+// Aluno pode preencher hoje ou o dia anterior (ex.: esqueceu de marcar ontem).
+function isEditableDate(logDate: string): boolean {
+  const today = todaySP();
+  return logDate === today || logDate === addDaysIsoLocal(today, -1);
+}
+
 export const STREAK_THRESHOLD = 80;
 
 export const PATENTES_GUERRA: Array<{ days: number; rank: string }> = [
@@ -353,10 +370,10 @@ export const getMyDayRegistro = createServerFn({ method: "POST" })
           .filter((n) => n.length > 0)
       : [];
 
-    // ensure daily log exists for the date (only for TODAY, not for history browsing)
+    // ensure daily log exists for the date (only for editable dates: today or yesterday)
     let logId: string | null = null;
     let log: any = null;
-    if (logDate === todaySP()) {
+    if (isEditableDate(logDate)) {
       logId = await ensureDailyLog(supabase, userId, logDate);
       const { data: l } = await supabase
         .from("daily_logs")
@@ -409,6 +426,8 @@ export const getMyDayRegistro = createServerFn({ method: "POST" })
     return {
       logDate,
       isToday: logDate === todaySP(),
+      isYesterday: logDate === yesterdaySP(),
+      isEditable: isEditableDate(logDate),
       profile,
       weightKg,
       waterGoalMl,
