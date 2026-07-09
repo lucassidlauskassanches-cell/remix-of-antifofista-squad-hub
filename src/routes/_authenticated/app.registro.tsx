@@ -244,11 +244,18 @@ function RegistroPage() {
           <div className="tactical-heading text-xl">
             {d.isToday
               ? "HOJE"
-              : new Date(date + "T12:00:00").toLocaleDateString("pt-BR", {
-                  day: "2-digit",
-                  month: "long",
-                })}
+              : d.isYesterday
+                ? "ONTEM"
+                : new Date(date + "T12:00:00").toLocaleDateString("pt-BR", {
+                    day: "2-digit",
+                    month: "long",
+                  })}
           </div>
+          {d.isYesterday && (
+            <div className="text-[10px] tracking-widest text-primary">
+              VOCÊ AINDA PODE PREENCHER
+            </div>
+          )}
           {!d.isToday && (
             <button
               onClick={() => setDate(todaySP())}
