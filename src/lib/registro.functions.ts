@@ -370,10 +370,10 @@ export const getMyDayRegistro = createServerFn({ method: "POST" })
           .filter((n) => n.length > 0)
       : [];
 
-    // ensure daily log exists for the date (only for TODAY, not for history browsing)
+    // ensure daily log exists for the date (only for editable dates: today or yesterday)
     let logId: string | null = null;
     let log: any = null;
-    if (logDate === todaySP()) {
+    if (isEditableDate(logDate)) {
       logId = await ensureDailyLog(supabase, userId, logDate);
       const { data: l } = await supabase
         .from("daily_logs")
@@ -426,6 +426,8 @@ export const getMyDayRegistro = createServerFn({ method: "POST" })
     return {
       logDate,
       isToday: logDate === todaySP(),
+      isYesterday: logDate === yesterdaySP(),
+      isEditable: isEditableDate(logDate),
       profile,
       weightKg,
       waterGoalMl,
