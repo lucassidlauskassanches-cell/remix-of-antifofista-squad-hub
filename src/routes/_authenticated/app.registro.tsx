@@ -222,7 +222,7 @@ function RegistroPage() {
   const goal = d.waterGoalMl;
   const consumed = d.log?.water_ml ?? 0;
   const score = Number(d.log?.daily_score ?? 0);
-  const readOnly = !d.isToday;
+  const readOnly = !d.isEditable;
   const studentName = ctxQ.data?.profile?.full_name ?? "Soldado";
   const streak = d.streak;
   const patente = d.patente;
