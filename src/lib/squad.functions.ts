@@ -260,8 +260,12 @@ export const listStudents = createServerFn({ method: "POST" })
       })
       .order("full_name");
     if (data.search) {
-      const s = `%${data.search}%`;
-      q = q.or(`full_name.ilike.${s},email.ilike.${s}`);
+      // Strip PostgREST filter delimiters to prevent injection into .or()
+      const sanitized = data.search.replace(/[,()*.\\"']/g, " ").trim();
+      if (sanitized) {
+        const s = `%${sanitized}%`;
+        q = q.or(`full_name.ilike.${s},email.ilike.${s}`);
+      }
     }
     if (isAdmin && data.trainerId) {
       q = q.eq("trainer_id", data.trainerId);
