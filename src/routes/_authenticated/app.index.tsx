@@ -1,7 +1,7 @@
 import { createFileRoute, Navigate } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
-import { getMyContext } from "@/lib/squad.functions";
+import { getMyContext } from "@/lib/access.functions";
 
 export const Route = createFileRoute("/_authenticated/app/")({
   component: AppIndex,

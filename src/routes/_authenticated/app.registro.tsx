@@ -13,7 +13,7 @@ import {
   upsertWeightEntry,
   ackMilestone,
 } from "@/lib/registro.functions";
-import { getMyContext } from "@/lib/squad.functions";
+import { getMyContext } from "@/lib/access.functions";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
