@@ -180,20 +180,25 @@ function RootComponent() {
     if (typeof window === "undefined") return;
     if (window.location.pathname === "/reset-password") return;
     let cancelled = false;
+    let unsubscribe: (() => void) | undefined;
     import("@/integrations/supabase/client").then(({ supabase }) => {
       if (cancelled) return;
       const { data } = supabase.auth.onAuthStateChange((event) => {
-        if (event !== "SIGNED_IN" && event !== "SIGNED_OUT" && event !== "USER_UPDATED") return;
-        if (event === "SIGNED_IN" || event === "SIGNED_OUT") {
+        if (event === "SIGNED_OUT") {
           queryClient.clear();
+          router.invalidate();
+          return;
         }
-        router.invalidate();
-        if (event === "USER_UPDATED") queryClient.invalidateQueries();
+        if (event === "USER_UPDATED") {
+          router.invalidate();
+          queryClient.invalidateQueries();
+        }
       });
-      return () => data.subscription.unsubscribe();
+      unsubscribe = () => data.subscription.unsubscribe();
     });
     return () => {
       cancelled = true;
+      unsubscribe?.();
     };
   }, [queryClient, router]);
 
