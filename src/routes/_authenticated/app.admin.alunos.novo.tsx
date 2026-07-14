@@ -3,10 +3,10 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { useState } from "react";
 import {
-  createStudent,
+  createStudentAccount,
   getMyContext,
-  listTrainers,
-} from "@/lib/squad.functions";
+  listTrainersForStudentForm,
+} from "@/lib/access.functions";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
@@ -24,9 +24,9 @@ export const Route = createFileRoute("/_authenticated/app/admin/alunos/novo")({
 });
 
 function NovoAluno() {
-  const create = useServerFn(createStudent);
+  const create = useServerFn(createStudentAccount);
   const fetchCtx = useServerFn(getMyContext);
-  const fetchTrainers = useServerFn(listTrainers);
+  const fetchTrainers = useServerFn(listTrainersForStudentForm);
   const navigate = useNavigate();
   const queryClient = useQueryClient();
 

@@ -4,7 +4,7 @@ import { useServerFn } from "@tanstack/react-start";
 import { createClient } from "@supabase/supabase-js";
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
-import { getMyContext } from "@/lib/squad.functions";
+import { getMyContext } from "@/lib/access.functions";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";

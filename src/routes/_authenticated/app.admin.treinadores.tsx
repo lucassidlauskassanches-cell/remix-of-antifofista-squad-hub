@@ -6,8 +6,8 @@ import {
   listTrainers,
   createTrainer,
   removeTrainer,
-  getMyContext,
 } from "@/lib/squad.functions";
+import { getMyContext } from "@/lib/access.functions";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
