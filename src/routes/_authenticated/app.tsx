@@ -1,5 +1,5 @@
 import { createFileRoute, Outlet, Link, useNavigate, useLocation } from "@tanstack/react-router";
-import { useQueryClient, useSuspenseQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { Dumbbell, Apple, Video, LogOut, ShieldCheck, Users, TrendingUp } from "lucide-react";
 import { getMyContext } from "@/lib/squad.functions";
@@ -44,13 +44,43 @@ export const Route = createFileRoute("/_authenticated/app")({
 
 function AppShell() {
   const fetchCtx = useServerFn(getMyContext);
-  const { data: ctx } = useSuspenseQuery({
+  const {
+    data: ctx,
+    error: contextError,
+    isPending: isContextPending,
+    refetch: refetchContext,
+  } = useQuery({
     queryKey: ["my-context"],
     queryFn: () => fetchCtx(),
+    retry: 2,
   });
   const navigate = useNavigate();
   const loc = useLocation();
   const queryClient = useQueryClient();
+
+  if (isContextPending) {
+    return (
+      <div className="min-h-screen grid place-items-center bg-background px-4">
+        <p className="text-sm text-muted-foreground">Carregando seu acesso...</p>
+      </div>
+    );
+  }
+
+  if (contextError || !ctx) {
+    return (
+      <div className="min-h-screen grid place-items-center bg-background px-4">
+        <div className="max-w-sm text-center">
+          <h1 className="text-xl font-semibold text-foreground">Não foi possível carregar seu acesso</h1>
+          <p className="mt-2 text-sm text-muted-foreground">
+            Verifique sua conexão e tente novamente.
+          </p>
+          <Button className="mt-6" onClick={() => void refetchContext()}>
+            Tentar novamente
+          </Button>
+        </div>
+      </div>
+    );
+  }
 
   async function signOut() {
     if (!confirm("Sair da sua conta?")) return;
