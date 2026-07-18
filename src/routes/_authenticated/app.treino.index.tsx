@@ -214,41 +214,46 @@ function EstruturadoPage() {
 
   return (
     <div>
-      <RestTimer />
       <button type="button" className="af-planilha" onClick={() => setPlanilha((v) => !v)}>
         {planilha ? <LayoutList className="w-3.5 h-3.5" /> : <Table2 className="w-3.5 h-3.5" />}
         {planilha ? "Ver treino em cards" : "Ver treino em planilha"}
       </button>
 
-      {plan.blocks.length > 1 && (
-        <div className="af-week">
-          {plan.blocks.map((b, i) => (
-            <button
-              key={i}
-              type="button"
-              className={`af-wk${i === safeBlockIdx ? " on" : ""}`}
-              onClick={() => setBlockIdx(i)}
-            >
-              {b.name}
-            </button>
-          ))}
-        </div>
-      )}
+      <div className="af-controls">
+        <div className="af-controls-left">
+          {plan.blocks.length > 1 && (
+            <div className="af-week">
+              {plan.blocks.map((b, i) => (
+                <button
+                  key={i}
+                  type="button"
+                  className={`af-wk${i === safeBlockIdx ? " on" : ""}`}
+                  onClick={() => setBlockIdx(i)}
+                >
+                  {b.name}
+                </button>
+              ))}
+            </div>
+          )}
 
-      <div className="af-wk-label">Semana</div>
-      <div className="af-week">
-        {plan.weeks.map((w, i) => (
-          <button
-            key={i}
-            type="button"
-            className={`af-wk${i === safeWeekIdx ? " on" : ""}`}
-            onClick={() => setWeekIdx(i)}
-            aria-label={weekLabel(w, i)}
-          >
-            {i === safeWeekIdx ? weekLabel(w, i) : weekNumber(w, i)}
-          </button>
-        ))}
+          <div className="af-wk-label">Semana</div>
+          <div className="af-week">
+            {plan.weeks.map((w, i) => (
+              <button
+                key={i}
+                type="button"
+                className={`af-wk${i === safeWeekIdx ? " on" : ""}`}
+                onClick={() => setWeekIdx(i)}
+                aria-label={weekLabel(w, i)}
+              >
+                {i === safeWeekIdx ? weekLabel(w, i) : weekNumber(w, i)}
+              </button>
+            ))}
+          </div>
+        </div>
+        <RestTimer />
       </div>
+
 
       {planilha ? (
         <PlanilhaTable block={block} weeks={plan.weeks} />
