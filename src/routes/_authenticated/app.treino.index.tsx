@@ -214,6 +214,7 @@ function EstruturadoPage() {
 
   return (
     <div>
+      <RestTimer />
       <button type="button" className="af-planilha" onClick={() => setPlanilha((v) => !v)}>
         {planilha ? <LayoutList className="w-3.5 h-3.5" /> : <Table2 className="w-3.5 h-3.5" />}
         {planilha ? "Ver treino em cards" : "Ver treino em planilha"}
