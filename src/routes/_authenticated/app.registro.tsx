@@ -232,6 +232,7 @@ function RegistroPage() {
 
   return (
     <div className="space-y-4">
+      <PushNotificationsCard />
       {/* header: date nav */}
       <div className="flex items-center justify-between">
         <Button
