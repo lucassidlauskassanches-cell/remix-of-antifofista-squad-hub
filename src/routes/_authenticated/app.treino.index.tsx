@@ -466,6 +466,7 @@ function ExerciseList({
                 last={last}
                 todayId={todayId}
                 prescribedReps={parsed.reps ?? ""}
+                prescribedSets={parsed.sets ?? ""}
                 onSave={onSaveCarga!}
                 saving={!!savingCarga}
                 onClose={() => onActivate!(null)}
