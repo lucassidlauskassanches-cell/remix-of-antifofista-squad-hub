@@ -1,12 +1,21 @@
 import { createFileRoute } from "@tanstack/react-router";
-import {
-  getActiveSubscribedStudents,
-  getLatestWeightKg,
-  sendOncePerDay,
-  todayInSaoPaulo,
-} from "@/lib/push-notify.server";
 
-async function run() {
+export const Route = createFileRoute("/api/public/cron/morning-water")({
+  server: {
+    handlers: {
+      GET: async () => runResponse(),
+      POST: async () => runResponse(),
+    },
+  },
+});
+
+async function runResponse() {
+  const {
+    getActiveSubscribedStudents,
+    getLatestWeightKg,
+    sendOncePerDay,
+    todayInSaoPaulo,
+  } = await import("@/lib/push-notify.server");
   const today = todayInSaoPaulo();
   const students = await getActiveSubscribedStudents();
   const results = { total: students.length, sent: 0, skipped: 0, noGoal: 0 };
@@ -36,24 +45,7 @@ async function run() {
       }
     }),
   );
-  return results;
+  return new Response(JSON.stringify(results), {
+    headers: { "content-type": "application/json" },
+  });
 }
-
-export const Route = createFileRoute("/api/public/cron/morning-water")({
-  server: {
-    handlers: {
-      GET: async () => {
-        const r = await run();
-        return new Response(JSON.stringify(r), {
-          headers: { "content-type": "application/json" },
-        });
-      },
-      POST: async () => {
-        const r = await run();
-        return new Response(JSON.stringify(r), {
-          headers: { "content-type": "application/json" },
-        });
-      },
-    },
-  },
-});
