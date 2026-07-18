@@ -15,7 +15,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { YouTubePlayer } from "@/lib/youtube";
-import { Play, Check, Table2, LayoutList, Plus, Minus, Timer, Pause, Play as PlayIcon, RotateCcw } from "lucide-react";
+import { Play, Check, Table2, LayoutList, Plus, Minus, Timer, Pause, RotateCcw } from "lucide-react";
 import { toast } from "sonner";
 import {
   describeCell,
