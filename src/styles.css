@@ -860,115 +860,102 @@
     cursor: not-allowed;
   }
 
-  /* Rest timer — floating bottom-right, above the bottom nav */
-  .af-timer {
-    position: fixed;
-    right: 12px;
-    bottom: calc(72px + env(safe-area-inset-bottom, 0px));
-    z-index: 40;
+  /* Controls row: week/block selectors + rest timer aligned to the right */
+  .af-controls {
     display: flex;
-    flex-direction: column;
-    align-items: flex-end;
-    gap: 8px;
-    pointer-events: none;
+    align-items: flex-start;
+    gap: 12px;
   }
-  .af-timer > * {
-    pointer-events: auto;
+  .af-controls-left {
+    flex: 1;
+    min-width: 0;
   }
-  .af-timer-tab {
-    display: inline-flex;
-    align-items: center;
-    gap: 8px;
-    padding: 8px 12px;
-    border-radius: 999px;
-    border: 1px solid var(--color-border);
-    background: var(--color-card, #111);
-    color: var(--color-foreground);
-    font-family: var(--font-heavy);
-    font-variant-numeric: tabular-nums;
-    font-size: 13px;
-    box-shadow: 0 6px 18px rgba(0, 0, 0, 0.35);
-    cursor: pointer;
-  }
-  .af-timer-tab .clk {
-    letter-spacing: 0.04em;
-  }
-  .af-timer-panel {
-    width: 220px;
-    padding: 12px;
+
+  /* Rest timer — inline, right of the week/block buttons */
+  .af-timer {
+    flex: 0 0 auto;
+    width: 148px;
+    padding: 10px;
     border-radius: 14px;
     border: 1px solid var(--color-border);
     background: var(--color-card, #111);
-    box-shadow: 0 10px 26px rgba(0, 0, 0, 0.45);
+    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.35);
     display: flex;
     flex-direction: column;
-    gap: 10px;
-  }
-  .af-timer-panel .row {
-    display: grid;
-    grid-template-columns: 1fr auto 1fr;
-    align-items: center;
     gap: 8px;
   }
-  .af-timer-panel .big {
+  .af-timer-head {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    font-family: var(--font-display);
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    font-size: 9.5px;
+    color: var(--color-muted-foreground);
+  }
+  .af-timer-body {
+    display: grid;
+    grid-template-columns: auto 1fr auto;
+    align-items: center;
+    gap: 6px;
+  }
+  .af-timer-body .big {
     font-family: var(--font-heavy);
-    font-size: 28px;
+    font-size: 30px;
     font-variant-numeric: tabular-nums;
+    line-height: 1;
     text-align: center;
     color: var(--color-foreground);
   }
-  .af-timer-panel .stp {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    gap: 3px;
-    padding: 6px 8px;
-    border-radius: 9px;
+  .af-timer .stp {
+    width: 28px;
+    height: 28px;
+    display: grid;
+    place-items: center;
+    border-radius: 8px;
     border: 1px solid var(--color-border);
     background: transparent;
     color: var(--color-muted-foreground);
-    font-family: var(--font-display);
-    font-size: 10px;
-    letter-spacing: 0.06em;
     cursor: pointer;
   }
-  .af-timer-panel .row2 {
+  .af-timer-foot {
     display: flex;
     gap: 6px;
   }
-  .af-timer-panel .prm {
+  .af-timer .prm {
     flex: 1;
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    gap: 6px;
-    padding: 8px 10px;
+    display: grid;
+    place-items: center;
+    height: 34px;
     border-radius: 9px;
     border: 0;
     background: var(--grad);
     color: var(--primary-foreground);
-    font-family: var(--font-display);
-    letter-spacing: 0.08em;
-    font-size: 11px;
-    text-transform: uppercase;
     cursor: pointer;
   }
-  .af-timer-panel .sec {
+  .af-timer .sec {
+    width: 34px;
+    height: 34px;
     display: grid;
     place-items: center;
-    width: 38px;
     border-radius: 9px;
     border: 1px solid var(--color-border);
     background: transparent;
     color: var(--color-muted-foreground);
     cursor: pointer;
   }
-  .af-timer-panel .hint {
-    text-align: center;
-    font-family: var(--font-display);
-    letter-spacing: 0.08em;
-    text-transform: uppercase;
-    font-size: 9px;
-    color: var(--color-muted-foreground);
+
+  @media (max-width: 480px) {
+    .af-controls {
+      gap: 8px;
+    }
+    .af-timer {
+      width: 128px;
+      padding: 8px;
+    }
+    .af-timer-body .big {
+      font-size: 24px;
+    }
   }
 }

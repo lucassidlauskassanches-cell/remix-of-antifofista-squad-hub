@@ -214,41 +214,46 @@ function EstruturadoPage() {
 
   return (
     <div>
-      <RestTimer />
       <button type="button" className="af-planilha" onClick={() => setPlanilha((v) => !v)}>
         {planilha ? <LayoutList className="w-3.5 h-3.5" /> : <Table2 className="w-3.5 h-3.5" />}
         {planilha ? "Ver treino em cards" : "Ver treino em planilha"}
       </button>
 
-      {plan.blocks.length > 1 && (
-        <div className="af-week">
-          {plan.blocks.map((b, i) => (
-            <button
-              key={i}
-              type="button"
-              className={`af-wk${i === safeBlockIdx ? " on" : ""}`}
-              onClick={() => setBlockIdx(i)}
-            >
-              {b.name}
-            </button>
-          ))}
-        </div>
-      )}
+      <div className="af-controls">
+        <div className="af-controls-left">
+          {plan.blocks.length > 1 && (
+            <div className="af-week">
+              {plan.blocks.map((b, i) => (
+                <button
+                  key={i}
+                  type="button"
+                  className={`af-wk${i === safeBlockIdx ? " on" : ""}`}
+                  onClick={() => setBlockIdx(i)}
+                >
+                  {b.name}
+                </button>
+              ))}
+            </div>
+          )}
 
-      <div className="af-wk-label">Semana</div>
-      <div className="af-week">
-        {plan.weeks.map((w, i) => (
-          <button
-            key={i}
-            type="button"
-            className={`af-wk${i === safeWeekIdx ? " on" : ""}`}
-            onClick={() => setWeekIdx(i)}
-            aria-label={weekLabel(w, i)}
-          >
-            {i === safeWeekIdx ? weekLabel(w, i) : weekNumber(w, i)}
-          </button>
-        ))}
+          <div className="af-wk-label">Semana</div>
+          <div className="af-week">
+            {plan.weeks.map((w, i) => (
+              <button
+                key={i}
+                type="button"
+                className={`af-wk${i === safeWeekIdx ? " on" : ""}`}
+                onClick={() => setWeekIdx(i)}
+                aria-label={weekLabel(w, i)}
+              >
+                {i === safeWeekIdx ? weekLabel(w, i) : weekNumber(w, i)}
+              </button>
+            ))}
+          </div>
+        </div>
+        <RestTimer />
       </div>
+
 
       {planilha ? (
         <PlanilhaTable block={block} weeks={plan.weeks} />
@@ -668,7 +673,6 @@ function RestTimer() {
   });
   const [remaining, setRemaining] = useState<number>(defaultSec);
   const [running, setRunning] = useState(false);
-  const [open, setOpen] = useState(false);
   const endAtRef = useRef<number | null>(null);
   const audioRef = useRef<AudioContext | null>(null);
 
@@ -736,50 +740,36 @@ function RestTimer() {
   const ss = String(remaining % 60).padStart(2, "0");
 
   return (
-    <div className={`af-timer${open ? " open" : ""}`}>
-      <button
-        type="button"
-        className="af-timer-tab"
-        onClick={() => setOpen((v) => !v)}
-        aria-label="Timer de descanso"
-      >
-        <Timer className="w-4 h-4" />
-        <span className="clk">
+    <div className="af-timer">
+      <div className="af-timer-head">
+        <Timer className="w-3.5 h-3.5" />
+        <span>Descanso</span>
+      </div>
+      <div className="af-timer-body">
+        <button type="button" className="stp" onClick={() => bump(-15)} aria-label="-15s">
+          <Minus className="w-3.5 h-3.5" />
+        </button>
+        <div className="big">
           {mm}:{ss}
-        </span>
-      </button>
-      {open && (
-        <div className="af-timer-panel">
-          <div className="row">
-            <button type="button" className="stp" onClick={() => bump(-15)} aria-label="-15s">
-              <Minus className="w-3.5 h-3.5" />
-              15
-            </button>
-            <div className="big">
-              {mm}:{ss}
-            </div>
-            <button type="button" className="stp" onClick={() => bump(15)} aria-label="+15s">
-              <Plus className="w-3.5 h-3.5" />
-              15
-            </button>
-          </div>
-          <div className="row2">
-            {running ? (
-              <button type="button" className="prm" onClick={pause}>
-                <Pause className="w-4 h-4" /> Pausar
-              </button>
-            ) : (
-              <button type="button" className="prm" onClick={start}>
-                <Play className="w-4 h-4" /> Iniciar
-              </button>
-            )}
-            <button type="button" className="sec" onClick={reset} aria-label="Resetar">
-              <RotateCcw className="w-4 h-4" />
-            </button>
-          </div>
-          <div className="hint">Padrão: {defaultSec}s</div>
         </div>
-      )}
+        <button type="button" className="stp" onClick={() => bump(15)} aria-label="+15s">
+          <Plus className="w-3.5 h-3.5" />
+        </button>
+      </div>
+      <div className="af-timer-foot">
+        {running ? (
+          <button type="button" className="prm" onClick={pause} aria-label="Pausar">
+            <Pause className="w-4 h-4" />
+          </button>
+        ) : (
+          <button type="button" className="prm" onClick={start} aria-label="Iniciar">
+            <Play className="w-4 h-4" />
+          </button>
+        )}
+        <button type="button" className="sec" onClick={reset} aria-label="Resetar">
+          <RotateCcw className="w-3.5 h-3.5" />
+        </button>
+      </div>
     </div>
   );
 }
