@@ -745,3 +745,230 @@
     text-transform: uppercase;
   }
 }
+
+@layer utilities {
+  /* Multi-set editor */
+  .af-logsets {
+    margin-top: 10px;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+  }
+  .af-logsetrow {
+    display: flex;
+    align-items: stretch;
+    gap: 6px;
+  }
+  .af-logsetrow .af-setno {
+    flex: 0 0 22px;
+    display: grid;
+    place-items: center;
+    font-family: var(--font-heavy);
+    font-size: 12px;
+    color: var(--color-muted-foreground);
+    background: var(--field-bg);
+    border: 1px solid var(--color-border);
+    border-radius: 9px;
+  }
+  .af-logsetrow .fld {
+    flex: 1;
+    min-width: 0;
+    border: 1px solid var(--color-border);
+    border-radius: 9px;
+    padding: 5px 9px;
+    background: var(--field-bg);
+    display: flex;
+    flex-direction: column;
+    gap: 1px;
+  }
+  .af-logsetrow .fld .fl {
+    font-family: var(--font-display);
+    letter-spacing: 0.1em;
+    font-size: 7.5px;
+    text-transform: uppercase;
+    color: var(--color-muted-foreground);
+  }
+  .af-logsetrow .fld input {
+    font-family: var(--font-heavy);
+    font-size: 15px;
+    font-variant-numeric: tabular-nums;
+    line-height: 1;
+    background: transparent;
+    border: 0;
+    outline: none;
+    color: var(--color-foreground);
+    width: 100%;
+    padding: 0;
+  }
+  .af-logsetrow .fld input::placeholder {
+    color: var(--color-muted-foreground);
+    opacity: 0.5;
+  }
+  .af-logsetrow .af-setbtn {
+    flex: 0 0 28px;
+    display: grid;
+    place-items: center;
+    border: 1px solid var(--color-border);
+    border-radius: 9px;
+    background: transparent;
+    color: var(--color-muted-foreground);
+    cursor: pointer;
+  }
+  .af-logsetrow .af-setbtn:disabled {
+    opacity: 0.3;
+    cursor: not-allowed;
+  }
+  .af-logsetsfoot {
+    display: flex;
+    gap: 6px;
+    margin-top: 2px;
+  }
+  .af-addset {
+    flex: 0 0 auto;
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 6px 10px;
+    border-radius: 9px;
+    border: 1px dashed var(--color-border);
+    background: transparent;
+    color: var(--color-muted-foreground);
+    font-family: var(--font-display);
+    letter-spacing: 0.08em;
+    font-size: 10px;
+    text-transform: uppercase;
+    cursor: pointer;
+  }
+  .af-savesets {
+    margin-left: auto;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 8px 14px;
+    border-radius: 9px;
+    border: 0;
+    background: var(--grad);
+    color: var(--primary-foreground);
+    font-family: var(--font-display);
+    letter-spacing: 0.08em;
+    font-size: 11px;
+    text-transform: uppercase;
+    cursor: pointer;
+  }
+  .af-savesets:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+  }
+
+  /* Rest timer — floating bottom-right, above the bottom nav */
+  .af-timer {
+    position: fixed;
+    right: 12px;
+    bottom: calc(72px + env(safe-area-inset-bottom, 0px));
+    z-index: 40;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 8px;
+    pointer-events: none;
+  }
+  .af-timer > * {
+    pointer-events: auto;
+  }
+  .af-timer-tab {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 12px;
+    border-radius: 999px;
+    border: 1px solid var(--color-border);
+    background: var(--color-card, #111);
+    color: var(--color-foreground);
+    font-family: var(--font-heavy);
+    font-variant-numeric: tabular-nums;
+    font-size: 13px;
+    box-shadow: 0 6px 18px rgba(0, 0, 0, 0.35);
+    cursor: pointer;
+  }
+  .af-timer-tab .clk {
+    letter-spacing: 0.04em;
+  }
+  .af-timer-panel {
+    width: 220px;
+    padding: 12px;
+    border-radius: 14px;
+    border: 1px solid var(--color-border);
+    background: var(--color-card, #111);
+    box-shadow: 0 10px 26px rgba(0, 0, 0, 0.45);
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+  .af-timer-panel .row {
+    display: grid;
+    grid-template-columns: 1fr auto 1fr;
+    align-items: center;
+    gap: 8px;
+  }
+  .af-timer-panel .big {
+    font-family: var(--font-heavy);
+    font-size: 28px;
+    font-variant-numeric: tabular-nums;
+    text-align: center;
+    color: var(--color-foreground);
+  }
+  .af-timer-panel .stp {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 3px;
+    padding: 6px 8px;
+    border-radius: 9px;
+    border: 1px solid var(--color-border);
+    background: transparent;
+    color: var(--color-muted-foreground);
+    font-family: var(--font-display);
+    font-size: 10px;
+    letter-spacing: 0.06em;
+    cursor: pointer;
+  }
+  .af-timer-panel .row2 {
+    display: flex;
+    gap: 6px;
+  }
+  .af-timer-panel .prm {
+    flex: 1;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    padding: 8px 10px;
+    border-radius: 9px;
+    border: 0;
+    background: var(--grad);
+    color: var(--primary-foreground);
+    font-family: var(--font-display);
+    letter-spacing: 0.08em;
+    font-size: 11px;
+    text-transform: uppercase;
+    cursor: pointer;
+  }
+  .af-timer-panel .sec {
+    display: grid;
+    place-items: center;
+    width: 38px;
+    border-radius: 9px;
+    border: 1px solid var(--color-border);
+    background: transparent;
+    color: var(--color-muted-foreground);
+    cursor: pointer;
+  }
+  .af-timer-panel .hint {
+    text-align: center;
+    font-family: var(--font-display);
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    font-size: 9px;
+    color: var(--color-muted-foreground);
+  }
+}
