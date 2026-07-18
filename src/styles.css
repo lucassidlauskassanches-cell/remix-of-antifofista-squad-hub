@@ -871,10 +871,9 @@
     min-width: 0;
   }
 
-  /* Rest timer — inline, right of the week/block buttons */
+  /* Rest timer — floating, draggable */
   .af-timer {
-    flex: 0 0 auto;
-    width: 148px;
+    width: 156px;
     padding: 10px;
     border-radius: 14px;
     border: 1px solid var(--color-border);
@@ -884,6 +883,27 @@
     flex-direction: column;
     gap: 8px;
   }
+  .af-timer-float {
+    position: fixed;
+    z-index: 60;
+    touch-action: none;
+  }
+  .af-timer-float.dragging {
+    box-shadow: 0 12px 28px rgba(0, 0, 0, 0.5);
+    opacity: 0.95;
+  }
+  .af-timer-drag {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    cursor: grab;
+    color: var(--color-muted-foreground);
+    user-select: none;
+    -webkit-user-select: none;
+    margin: -2px 0 -4px;
+    padding: 2px 0;
+  }
+  .af-timer-float.dragging .af-timer-drag { cursor: grabbing; }
   .af-timer-head {
     display: inline-flex;
     align-items: center;
