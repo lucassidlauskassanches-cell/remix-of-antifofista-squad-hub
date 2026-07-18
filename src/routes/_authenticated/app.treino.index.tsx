@@ -676,6 +676,74 @@ function RestTimer() {
   const endAtRef = useRef<number | null>(null);
   const audioRef = useRef<AudioContext | null>(null);
 
+  // Drag state — position saved in viewport-relative coords (px from top-left).
+  const rootRef = useRef<HTMLDivElement | null>(null);
+  const [pos, setPos] = useState<{ x: number; y: number } | null>(null);
+  const [dragging, setDragging] = useState(false);
+  const dragRef = useRef<{ dx: number; dy: number; pointerId: number } | null>(null);
+
+  // Load saved position (or default to bottom-right, above bottom nav)
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const raw = localStorage.getItem("treino:timerPos");
+    const el = rootRef.current;
+    const w = el?.offsetWidth ?? 156;
+    const h = el?.offsetHeight ?? 150;
+    const margin = 12;
+    const bottomNav = 96;
+    if (raw) {
+      try {
+        const p = JSON.parse(raw) as { x: number; y: number };
+        setPos(clamp(p.x, p.y, w, h));
+        return;
+      } catch {}
+    }
+    setPos({
+      x: Math.max(margin, window.innerWidth - w - margin),
+      y: Math.max(margin, window.innerHeight - h - bottomNav),
+    });
+  }, []);
+
+  function clamp(x: number, y: number, w: number, h: number) {
+    const margin = 4;
+    const maxX = Math.max(margin, window.innerWidth - w - margin);
+    const maxY = Math.max(margin, window.innerHeight - h - margin);
+    return { x: Math.min(Math.max(margin, x), maxX), y: Math.min(Math.max(margin, y), maxY) };
+  }
+
+  // Reclamp on viewport resize
+  useEffect(() => {
+    function onResize() {
+      const el = rootRef.current;
+      if (!el || !pos) return;
+      setPos((p) => (p ? clamp(p.x, p.y, el.offsetWidth, el.offsetHeight) : p));
+    }
+    window.addEventListener("resize", onResize);
+    return () => window.removeEventListener("resize", onResize);
+  }, [pos]);
+
+  function onHandlePointerDown(e: React.PointerEvent<HTMLDivElement>) {
+    const el = rootRef.current;
+    if (!el || !pos) return;
+    (e.target as HTMLElement).setPointerCapture?.(e.pointerId);
+    dragRef.current = { dx: e.clientX - pos.x, dy: e.clientY - pos.y, pointerId: e.pointerId };
+    setDragging(true);
+    e.preventDefault();
+  }
+  function onHandlePointerMove(e: React.PointerEvent<HTMLDivElement>) {
+    const drag = dragRef.current;
+    const el = rootRef.current;
+    if (!drag || !el || drag.pointerId !== e.pointerId) return;
+    const next = clamp(e.clientX - drag.dx, e.clientY - drag.dy, el.offsetWidth, el.offsetHeight);
+    setPos(next);
+  }
+  function onHandlePointerUp(e: React.PointerEvent<HTMLDivElement>) {
+    if (!dragRef.current || dragRef.current.pointerId !== e.pointerId) return;
+    dragRef.current = null;
+    setDragging(false);
+    if (pos) localStorage.setItem("treino:timerPos", JSON.stringify(pos));
+  }
+
   useEffect(() => {
     if (typeof window !== "undefined") {
       localStorage.setItem("treino:restSec", String(defaultSec));
@@ -739,11 +807,30 @@ function RestTimer() {
   const mm = String(Math.floor(remaining / 60)).padStart(2, "0");
   const ss = String(remaining % 60).padStart(2, "0");
 
+  const style: React.CSSProperties = pos
+    ? { left: pos.x, top: pos.y, right: "auto", bottom: "auto" }
+    : { right: 12, bottom: 96 };
+
   return (
-    <div className="af-timer">
-      <div className="af-timer-head">
-        <Timer className="w-3.5 h-3.5" />
-        <span>Descanso</span>
+    <div
+      ref={rootRef}
+      className={`af-timer af-timer-float${dragging ? " dragging" : ""}`}
+      style={style}
+    >
+      <div
+        className="af-timer-drag"
+        onPointerDown={onHandlePointerDown}
+        onPointerMove={onHandlePointerMove}
+        onPointerUp={onHandlePointerUp}
+        onPointerCancel={onHandlePointerUp}
+        role="button"
+        aria-label="Arrastar timer"
+      >
+        <GripVertical className="w-3.5 h-3.5" />
+        <div className="af-timer-head">
+          <Timer className="w-3.5 h-3.5" />
+          <span>Descanso</span>
+        </div>
       </div>
       <div className="af-timer-body">
         <button type="button" className="stp" onClick={() => bump(-15)} aria-label="-15s">
