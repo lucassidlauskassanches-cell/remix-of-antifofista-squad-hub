@@ -23,6 +23,9 @@ import { Route as AuthenticatedAppGaleriaRouteImport } from './routes/_authentic
 import { Route as AuthenticatedAppAcaoRouteImport } from './routes/_authenticated/app.acao'
 import { Route as AuthenticatedAppTreinoIndexRouteImport } from './routes/_authenticated/app.treino.index'
 import { Route as AuthenticatedAppNutricionalIndexRouteImport } from './routes/_authenticated/app.nutricional.index'
+import { Route as ApiPublicCronWaterGapRouteImport } from './routes/api/public/cron/water-gap'
+import { Route as ApiPublicCronReengagementRouteImport } from './routes/api/public/cron/reengagement'
+import { Route as ApiPublicCronMorningWaterRouteImport } from './routes/api/public/cron/morning-water'
 import { Route as AuthenticatedAppNutricionalSubstituicoesRouteImport } from './routes/_authenticated/app.nutricional.substituicoes'
 import { Route as AuthenticatedAppAdminVisaoRouteImport } from './routes/_authenticated/app.admin.visao'
 import { Route as AuthenticatedAppAdminTreinadoresRouteImport } from './routes/_authenticated/app.admin.treinadores'
@@ -105,6 +108,23 @@ const AuthenticatedAppNutricionalIndexRoute =
     path: '/',
     getParentRoute: () => AuthenticatedAppNutricionalRoute,
   } as any)
+const ApiPublicCronWaterGapRoute = ApiPublicCronWaterGapRouteImport.update({
+  id: '/api/public/cron/water-gap',
+  path: '/api/public/cron/water-gap',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiPublicCronReengagementRoute =
+  ApiPublicCronReengagementRouteImport.update({
+    id: '/api/public/cron/reengagement',
+    path: '/api/public/cron/reengagement',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const ApiPublicCronMorningWaterRoute =
+  ApiPublicCronMorningWaterRouteImport.update({
+    id: '/api/public/cron/morning-water',
+    path: '/api/public/cron/morning-water',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const AuthenticatedAppNutricionalSubstituicoesRoute =
   AuthenticatedAppNutricionalSubstituicoesRouteImport.update({
     id: '/substituicoes',
@@ -171,6 +191,9 @@ export interface FileRoutesByFullPath {
   '/app/admin/treinadores': typeof AuthenticatedAppAdminTreinadoresRoute
   '/app/admin/visao': typeof AuthenticatedAppAdminVisaoRoute
   '/app/nutricional/substituicoes': typeof AuthenticatedAppNutricionalSubstituicoesRoute
+  '/api/public/cron/morning-water': typeof ApiPublicCronMorningWaterRoute
+  '/api/public/cron/reengagement': typeof ApiPublicCronReengagementRoute
+  '/api/public/cron/water-gap': typeof ApiPublicCronWaterGapRoute
   '/app/nutricional/': typeof AuthenticatedAppNutricionalIndexRoute
   '/app/treino/': typeof AuthenticatedAppTreinoIndexRoute
   '/app/admin/alunos/$id': typeof AuthenticatedAppAdminAlunosIdRoute
@@ -190,6 +213,9 @@ export interface FileRoutesByTo {
   '/app/admin/treinadores': typeof AuthenticatedAppAdminTreinadoresRoute
   '/app/admin/visao': typeof AuthenticatedAppAdminVisaoRoute
   '/app/nutricional/substituicoes': typeof AuthenticatedAppNutricionalSubstituicoesRoute
+  '/api/public/cron/morning-water': typeof ApiPublicCronMorningWaterRoute
+  '/api/public/cron/reengagement': typeof ApiPublicCronReengagementRoute
+  '/api/public/cron/water-gap': typeof ApiPublicCronWaterGapRoute
   '/app/nutricional': typeof AuthenticatedAppNutricionalIndexRoute
   '/app/treino': typeof AuthenticatedAppTreinoIndexRoute
   '/app/admin/alunos/$id': typeof AuthenticatedAppAdminAlunosIdRoute
@@ -215,6 +241,9 @@ export interface FileRoutesById {
   '/_authenticated/app/admin/treinadores': typeof AuthenticatedAppAdminTreinadoresRoute
   '/_authenticated/app/admin/visao': typeof AuthenticatedAppAdminVisaoRoute
   '/_authenticated/app/nutricional/substituicoes': typeof AuthenticatedAppNutricionalSubstituicoesRoute
+  '/api/public/cron/morning-water': typeof ApiPublicCronMorningWaterRoute
+  '/api/public/cron/reengagement': typeof ApiPublicCronReengagementRoute
+  '/api/public/cron/water-gap': typeof ApiPublicCronWaterGapRoute
   '/_authenticated/app/nutricional/': typeof AuthenticatedAppNutricionalIndexRoute
   '/_authenticated/app/treino/': typeof AuthenticatedAppTreinoIndexRoute
   '/_authenticated/app/admin/alunos/$id': typeof AuthenticatedAppAdminAlunosIdRoute
@@ -240,6 +269,9 @@ export interface FileRouteTypes {
     | '/app/admin/treinadores'
     | '/app/admin/visao'
     | '/app/nutricional/substituicoes'
+    | '/api/public/cron/morning-water'
+    | '/api/public/cron/reengagement'
+    | '/api/public/cron/water-gap'
     | '/app/nutricional/'
     | '/app/treino/'
     | '/app/admin/alunos/$id'
@@ -259,6 +291,9 @@ export interface FileRouteTypes {
     | '/app/admin/treinadores'
     | '/app/admin/visao'
     | '/app/nutricional/substituicoes'
+    | '/api/public/cron/morning-water'
+    | '/api/public/cron/reengagement'
+    | '/api/public/cron/water-gap'
     | '/app/nutricional'
     | '/app/treino'
     | '/app/admin/alunos/$id'
@@ -283,6 +318,9 @@ export interface FileRouteTypes {
     | '/_authenticated/app/admin/treinadores'
     | '/_authenticated/app/admin/visao'
     | '/_authenticated/app/nutricional/substituicoes'
+    | '/api/public/cron/morning-water'
+    | '/api/public/cron/reengagement'
+    | '/api/public/cron/water-gap'
     | '/_authenticated/app/nutricional/'
     | '/_authenticated/app/treino/'
     | '/_authenticated/app/admin/alunos/$id'
@@ -295,6 +333,9 @@ export interface RootRouteChildren {
   AuthenticatedRouteRoute: typeof AuthenticatedRouteRouteWithChildren
   AuthRoute: typeof AuthRoute
   ResetPasswordRoute: typeof ResetPasswordRoute
+  ApiPublicCronMorningWaterRoute: typeof ApiPublicCronMorningWaterRoute
+  ApiPublicCronReengagementRoute: typeof ApiPublicCronReengagementRoute
+  ApiPublicCronWaterGapRoute: typeof ApiPublicCronWaterGapRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -396,6 +437,27 @@ declare module '@tanstack/react-router' {
       fullPath: '/app/nutricional/'
       preLoaderRoute: typeof AuthenticatedAppNutricionalIndexRouteImport
       parentRoute: typeof AuthenticatedAppNutricionalRoute
+    }
+    '/api/public/cron/water-gap': {
+      id: '/api/public/cron/water-gap'
+      path: '/api/public/cron/water-gap'
+      fullPath: '/api/public/cron/water-gap'
+      preLoaderRoute: typeof ApiPublicCronWaterGapRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/public/cron/reengagement': {
+      id: '/api/public/cron/reengagement'
+      path: '/api/public/cron/reengagement'
+      fullPath: '/api/public/cron/reengagement'
+      preLoaderRoute: typeof ApiPublicCronReengagementRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/public/cron/morning-water': {
+      id: '/api/public/cron/morning-water'
+      path: '/api/public/cron/morning-water'
+      fullPath: '/api/public/cron/morning-water'
+      preLoaderRoute: typeof ApiPublicCronMorningWaterRouteImport
+      parentRoute: typeof rootRouteImport
     }
     '/_authenticated/app/nutricional/substituicoes': {
       id: '/_authenticated/app/nutricional/substituicoes'
@@ -556,6 +618,9 @@ const rootRouteChildren: RootRouteChildren = {
   AuthenticatedRouteRoute: AuthenticatedRouteRouteWithChildren,
   AuthRoute: AuthRoute,
   ResetPasswordRoute: ResetPasswordRoute,
+  ApiPublicCronMorningWaterRoute: ApiPublicCronMorningWaterRoute,
+  ApiPublicCronReengagementRoute: ApiPublicCronReengagementRoute,
+  ApiPublicCronWaterGapRoute: ApiPublicCronWaterGapRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
