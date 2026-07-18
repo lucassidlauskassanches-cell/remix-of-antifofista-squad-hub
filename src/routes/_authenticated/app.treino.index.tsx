@@ -251,8 +251,8 @@ function EstruturadoPage() {
             ))}
           </div>
         </div>
-        <RestTimer />
       </div>
+      <RestTimer />
 
 
       {planilha ? (
