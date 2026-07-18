@@ -15,7 +15,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { YouTubePlayer } from "@/lib/youtube";
-import { Play, Check, Table2, LayoutList } from "lucide-react";
+import { Play, Check, Table2, LayoutList, Plus, Minus, Timer, Pause, RotateCcw } from "lucide-react";
 import { toast } from "sonner";
 import {
   describeCell,
@@ -214,6 +214,7 @@ function EstruturadoPage() {
 
   return (
     <div>
+      <RestTimer />
       <button type="button" className="af-planilha" onClick={() => setPlanilha((v) => !v)}>
         {planilha ? <LayoutList className="w-3.5 h-3.5" /> : <Table2 className="w-3.5 h-3.5" />}
         {planilha ? "Ver treino em cards" : "Ver treino em planilha"}
@@ -465,6 +466,7 @@ function ExerciseList({
                 last={last}
                 todayId={todayId}
                 prescribedReps={parsed.reps ?? ""}
+                prescribedSets={parsed.sets ?? ""}
                 onSave={onSaveCarga!}
                 saving={!!savingCarga}
                 onClose={() => onActivate!(null)}
@@ -522,6 +524,7 @@ function LogEdit({
   last,
   todayId,
   prescribedReps,
+  prescribedSets,
   onSave,
   saving,
   onClose,
@@ -530,15 +533,41 @@ function LogEdit({
   last: LastEntry | null;
   todayId?: string;
   prescribedReps: string;
+  prescribedSets: string;
   onSave: SaveCarga;
   saving: boolean;
   onClose: () => void;
 }) {
-  const [load, setLoad] = useState(last?.load ?? "");
-  const [reps, setReps] = useState(last?.reps || prescribedReps);
+  const initialSetCount = (() => {
+    const fromLast = Math.max(
+      (last?.load ?? "").split("/").length,
+      (last?.reps ?? "").split("/").length,
+    );
+    if (last?.load && fromLast > 0) return fromLast;
+    const p = parseInt(prescribedSets, 10);
+    if (Number.isFinite(p) && p > 0) return p;
+    return 1;
+  })();
+
+  const initialLoads = (() => {
+    const arr = (last?.load ?? "").split("/").map((s) => s.trim());
+    while (arr.length < initialSetCount) arr.push("");
+    return arr.slice(0, initialSetCount);
+  })();
+
+  const initialReps = (() => {
+    const arr = (last?.reps ?? "").split("/").map((s) => s.trim());
+    if (arr.filter(Boolean).length === 0 && prescribedReps) {
+      return Array(initialSetCount).fill(prescribedReps.trim());
+    }
+    while (arr.length < initialSetCount) arr.push(prescribedReps.trim());
+    return arr.slice(0, initialSetCount);
+  })();
+
+  const [loads, setLoads] = useState<string[]>(initialLoads);
+  const [reps, setReps] = useState<string[]>(initialReps);
   const wrapRef = useRef<HTMLDivElement>(null);
 
-  // Fecha ao clicar fora — sem botão "Cancelar" desnecessário na UI.
   useEffect(() => {
     function onDown(e: MouseEvent | TouchEvent) {
       if (!wrapRef.current) return;
@@ -552,43 +581,206 @@ function LogEdit({
     };
   }, [onClose]);
 
+  function addSet() {
+    setLoads((a) => [...a, ""]);
+    setReps((a) => [...a, prescribedReps.trim()]);
+  }
+  function removeSet(i: number) {
+    if (loads.length <= 1) return;
+    setLoads((a) => a.filter((_, k) => k !== i));
+    setReps((a) => a.filter((_, k) => k !== i));
+  }
+  function updateLoad(i: number, v: string) {
+    setLoads((a) => a.map((x, k) => (k === i ? v : x)));
+  }
+  function updateReps(i: number, v: string) {
+    setReps((a) => a.map((x, k) => (k === i ? v : x)));
+  }
+
   function submit() {
-    if (!load.trim() || saving) return;
-    onSave({ id: todayId, exercise, load: load.trim(), reps: reps.trim() });
+    const hasAny = loads.some((l) => l.trim());
+    if (!hasAny || saving) return;
+    const load = loads.map((l) => l.trim() || "-").join("/");
+    const rep = reps.map((r) => r.trim() || "-").join("/");
+    onSave({ id: todayId, exercise, load, reps: rep });
   }
 
   return (
-    <div ref={wrapRef} className="af-logedit">
-      <label className="fld">
-        <span className="fl">Carga</span>
-        <input
-          inputMode="decimal"
-          value={load}
-          onChange={(e) => setLoad(e.target.value)}
-          onKeyDown={(e) => e.key === "Enter" && submit()}
-          placeholder="kg"
-          autoFocus
-        />
-      </label>
-      <label className="fld">
-        <span className="fl">Reps</span>
-        <input
-          inputMode="numeric"
-          value={reps}
-          onChange={(e) => setReps(e.target.value)}
-          onKeyDown={(e) => e.key === "Enter" && submit()}
-          placeholder="—"
-        />
-      </label>
-      <button
-        type="button"
-        className="save"
-        onClick={submit}
-        disabled={saving || !load.trim()}
-        aria-label={todayId ? "Atualizar carga" : "Registrar carga"}
-      >
-        <Check className="w-4 h-4" />
-      </button>
+    <div ref={wrapRef} className="af-logsets">
+      {loads.map((l, i) => (
+        <div key={i} className="af-logsetrow">
+          <span className="af-setno">{i + 1}</span>
+          <label className="fld">
+            <span className="fl">Carga</span>
+            <input
+              inputMode="decimal"
+              value={l}
+              onChange={(e) => updateLoad(i, e.target.value)}
+              onKeyDown={(e) => e.key === "Enter" && submit()}
+              placeholder="kg"
+              autoFocus={i === 0}
+            />
+          </label>
+          <label className="fld">
+            <span className="fl">Reps</span>
+            <input
+              inputMode="numeric"
+              value={reps[i] ?? ""}
+              onChange={(e) => updateReps(i, e.target.value)}
+              onKeyDown={(e) => e.key === "Enter" && submit()}
+              placeholder="—"
+            />
+          </label>
+          <button
+            type="button"
+            className="af-setbtn"
+            onClick={() => removeSet(i)}
+            disabled={loads.length <= 1}
+            aria-label="Remover série"
+          >
+            <Minus className="w-3.5 h-3.5" />
+          </button>
+        </div>
+      ))}
+      <div className="af-logsetsfoot">
+        <button type="button" className="af-addset" onClick={addSet}>
+          <Plus className="w-3.5 h-3.5" /> Série
+        </button>
+        <button
+          type="button"
+          className="af-savesets"
+          onClick={submit}
+          disabled={saving || !loads.some((l) => l.trim())}
+        >
+          <Check className="w-4 h-4" />
+          {todayId ? "Atualizar" : "Registrar"}
+        </button>
+      </div>
     </div>
   );
 }
+
+function RestTimer() {
+  const [defaultSec, setDefaultSec] = useState<number>(() => {
+    if (typeof window === "undefined") return 90;
+    const v = Number(localStorage.getItem("treino:restSec"));
+    return Number.isFinite(v) && v > 0 ? v : 90;
+  });
+  const [remaining, setRemaining] = useState<number>(defaultSec);
+  const [running, setRunning] = useState(false);
+  const [open, setOpen] = useState(false);
+  const endAtRef = useRef<number | null>(null);
+  const audioRef = useRef<AudioContext | null>(null);
+
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      localStorage.setItem("treino:restSec", String(defaultSec));
+    }
+  }, [defaultSec]);
+
+  useEffect(() => {
+    if (!running) return;
+    const id = window.setInterval(() => {
+      if (endAtRef.current == null) return;
+      const left = Math.max(0, Math.round((endAtRef.current - Date.now()) / 1000));
+      setRemaining(left);
+      if (left <= 0) {
+        setRunning(false);
+        endAtRef.current = null;
+        beep();
+      }
+    }, 200);
+    return () => window.clearInterval(id);
+  }, [running]);
+
+  function beep() {
+    try {
+      const Ctx =
+        (window as any).AudioContext || (window as any).webkitAudioContext;
+      if (!Ctx) return;
+      const ctx: AudioContext = audioRef.current ?? new Ctx();
+      audioRef.current = ctx;
+      const o = ctx.createOscillator();
+      const g = ctx.createGain();
+      o.type = "sine";
+      o.frequency.value = 880;
+      g.gain.value = 0.15;
+      o.connect(g);
+      g.connect(ctx.destination);
+      o.start();
+      o.stop(ctx.currentTime + 0.35);
+      if (navigator.vibrate) navigator.vibrate([200, 80, 200]);
+    } catch {}
+  }
+
+  function start() {
+    endAtRef.current = Date.now() + remaining * 1000;
+    setRunning(true);
+  }
+  function pause() {
+    setRunning(false);
+    endAtRef.current = null;
+  }
+  function reset() {
+    setRunning(false);
+    endAtRef.current = null;
+    setRemaining(defaultSec);
+  }
+  function bump(delta: number) {
+    const next = Math.max(5, Math.min(900, defaultSec + delta));
+    setDefaultSec(next);
+    if (!running) setRemaining(next);
+  }
+
+  const mm = String(Math.floor(remaining / 60)).padStart(2, "0");
+  const ss = String(remaining % 60).padStart(2, "0");
+
+  return (
+    <div className={`af-timer${open ? " open" : ""}`}>
+      <button
+        type="button"
+        className="af-timer-tab"
+        onClick={() => setOpen((v) => !v)}
+        aria-label="Timer de descanso"
+      >
+        <Timer className="w-4 h-4" />
+        <span className="clk">
+          {mm}:{ss}
+        </span>
+      </button>
+      {open && (
+        <div className="af-timer-panel">
+          <div className="row">
+            <button type="button" className="stp" onClick={() => bump(-15)} aria-label="-15s">
+              <Minus className="w-3.5 h-3.5" />
+              15
+            </button>
+            <div className="big">
+              {mm}:{ss}
+            </div>
+            <button type="button" className="stp" onClick={() => bump(15)} aria-label="+15s">
+              <Plus className="w-3.5 h-3.5" />
+              15
+            </button>
+          </div>
+          <div className="row2">
+            {running ? (
+              <button type="button" className="prm" onClick={pause}>
+                <Pause className="w-4 h-4" /> Pausar
+              </button>
+            ) : (
+              <button type="button" className="prm" onClick={start}>
+                <Play className="w-4 h-4" /> Iniciar
+              </button>
+            )}
+            <button type="button" className="sec" onClick={reset} aria-label="Resetar">
+              <RotateCcw className="w-4 h-4" />
+            </button>
+          </div>
+          <div className="hint">Padrão: {defaultSec}s</div>
+        </div>
+      )}
+    </div>
+  );
+}
+
