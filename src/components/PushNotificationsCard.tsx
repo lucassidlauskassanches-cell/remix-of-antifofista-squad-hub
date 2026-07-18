@@ -71,9 +71,10 @@ export function PushNotificationsCard() {
         return;
       }
       const reg = await navigator.serviceWorker.ready;
+      const key = urlBase64ToUint8Array(VAPID_PUBLIC_KEY);
       const sub = await reg.pushManager.subscribe({
         userVisibleOnly: true,
-        applicationServerKey: urlBase64ToUint8Array(VAPID_PUBLIC_KEY),
+        applicationServerKey: key.buffer.slice(key.byteOffset, key.byteOffset + key.byteLength) as ArrayBuffer,
       });
       const json = sub.toJSON();
       const p256dh = json.keys?.p256dh ?? bufToBase64Url(sub.getKey("p256dh"));
