@@ -673,7 +673,6 @@ function RestTimer() {
   });
   const [remaining, setRemaining] = useState<number>(defaultSec);
   const [running, setRunning] = useState(false);
-  const [open, setOpen] = useState(false);
   const endAtRef = useRef<number | null>(null);
   const audioRef = useRef<AudioContext | null>(null);
 
