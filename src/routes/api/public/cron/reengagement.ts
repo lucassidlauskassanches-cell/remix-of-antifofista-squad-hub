@@ -1,13 +1,16 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { supabaseAdmin } from "@/integrations/supabase/client.server";
-import {
-  getActiveSubscribedStudents,
-  sendOncePerDay,
-  todayInSaoPaulo,
-} from "@/lib/push-notify.server";
 
 const MIN_DAYS = 3;
 const COOLDOWN_DAYS = 3;
+
+export const Route = createFileRoute("/api/public/cron/reengagement")({
+  server: {
+    handlers: {
+      GET: async () => runResponse(),
+      POST: async () => runResponse(),
+    },
+  },
+});
 
 function diffDays(fromISO: string, toISO: string) {
   const a = new Date(fromISO + "T00:00:00Z").getTime();
@@ -15,14 +18,17 @@ function diffDays(fromISO: string, toISO: string) {
   return Math.floor((b - a) / (24 * 60 * 60 * 1000));
 }
 
-async function run() {
+async function runResponse() {
+  const { getActiveSubscribedStudents, sendOncePerDay, todayInSaoPaulo } = await import(
+    "@/lib/push-notify.server"
+  );
+  const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
   const today = todayInSaoPaulo();
   const students = await getActiveSubscribedStudents();
   const ids = students.map((s) => s.id);
   const results = { total: students.length, sent: 0, skipped: 0, notEligible: 0 };
-  if (ids.length === 0) return results;
+  if (ids.length === 0) return json(results);
 
-  // Latest log per student
   const { data: logs } = await supabaseAdmin
     .from("daily_logs")
     .select("student_id, log_date")
@@ -33,7 +39,6 @@ async function run() {
     if (!lastByUser.has(l.student_id)) lastByUser.set(l.student_id, l.log_date);
   });
 
-  // Recent reengagement logs for cooldown
   const cooldownStart = todayInSaoPaulo(-COOLDOWN_DAYS);
   const { data: recentLog } = await supabaseAdmin
     .from("notification_log")
@@ -51,7 +56,6 @@ async function run() {
           return;
         }
         const last = lastByUser.get(s.id);
-        // Never logged: treat as eligible only if student has been active (skip to avoid brand-new users)
         if (!last) {
           results.notEligible++;
           return;
@@ -78,14 +82,9 @@ async function run() {
       }
     }),
   );
-  return results;
+  return json(results);
 }
 
-export const Route = createFileRoute("/api/public/cron/reengagement")({
-  server: {
-    handlers: {
-      GET: async () => new Response(JSON.stringify(await run()), { headers: { "content-type": "application/json" } }),
-      POST: async () => new Response(JSON.stringify(await run()), { headers: { "content-type": "application/json" } }),
-    },
-  },
-});
+function json(v: unknown) {
+  return new Response(JSON.stringify(v), { headers: { "content-type": "application/json" } });
+}
