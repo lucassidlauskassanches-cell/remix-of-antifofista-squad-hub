@@ -85,7 +85,8 @@ function computeScoreLocal(day: DayData): number {
   const waterMl = (day.log as any)?.water_ml ?? 0;
   const trained = !!(day.log as any)?.trained;
   const rest = !!(day.log as any)?.rest_day;
-  const waterPct = goal > 0 ? Math.min(waterMl / goal, 1) : 0;
+  const hasWaterGoal = goal > 0;
+  const waterPct = hasWaterGoal ? Math.min(waterMl / goal, 1) : 0;
   const trainingPct = trained ? 1 : 0;
   const ratings = (day.meals ?? [])
     .filter((m: any) => m.done)
@@ -93,10 +94,15 @@ function computeScoreLocal(day: DayData): number {
   const mealPct = ratings.length
     ? ratings.reduce((a: number, b: number) => a + b, 0) / (ratings.length * 5)
     : 0;
-  const s = rest
-    ? waterPct * 40 + mealPct * 60
-    : waterPct * 30 + trainingPct * 25 + mealPct * 45;
+  // Sem peso definido → água tem peso 0 e o restante é reescalonado para 100.
+  const wWater = hasWaterGoal ? (rest ? 40 : 30) : 0;
+  const wTraining = rest ? 0 : 25;
+  const wMeals = rest ? 60 : 45;
+  const totalW = wWater + wTraining + wMeals;
+  const raw = waterPct * wWater + trainingPct * wTraining + mealPct * wMeals;
+  const s = totalW > 0 ? (raw / totalW) * 100 : 0;
   return Math.round(Math.max(0, Math.min(100, s)) * 10) / 10;
+
 }
 
 function RegistroPage() {

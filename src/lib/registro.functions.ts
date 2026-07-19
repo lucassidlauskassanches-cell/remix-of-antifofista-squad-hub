@@ -59,20 +59,28 @@ function calcScore(input: {
   mealRatings: number[]; // 0..5 for meals marked done
   restDay?: boolean;
 }) {
-  const waterPct =
-    input.waterGoalMl > 0
-      ? Math.min(input.waterMl / input.waterGoalMl, 1)
-      : 0;
+  const hasWaterGoal = input.waterGoalMl > 0;
+  const waterPct = hasWaterGoal
+    ? Math.min(input.waterMl / input.waterGoalMl, 1)
+    : 0;
   const trainingPct = input.trained ? 1 : 0;
   const mealPct = input.mealRatings.length
     ? input.mealRatings.reduce((a, b) => a + b, 0) /
       (input.mealRatings.length * 5)
     : 0;
-  // On rest days the training weight is redistributed: water 40 / meals 60.
-  const score = input.restDay
-    ? waterPct * 40 + mealPct * 60
-    : waterPct * 30 + trainingPct * 25 + mealPct * 45;
+  // Weights: água 30 / treino 25 / refeições 45 (dia normal)
+  //          água 40 / refeições 60 (descanso)
+  // Se o aluno ainda não tem peso definido, água tem peso 0 e o restante
+  // é reescalonado para 100 — não penaliza quem não preencheu o peso.
+  const wWater = hasWaterGoal ? (input.restDay ? 40 : 30) : 0;
+  const wTraining = input.restDay ? 0 : 25;
+  const wMeals = input.restDay ? 60 : 45;
+  const totalW = wWater + wTraining + wMeals;
+  const raw =
+    waterPct * wWater + trainingPct * wTraining + mealPct * wMeals;
+  const score = totalW > 0 ? (raw / totalW) * 100 : 0;
   return Math.round(Math.max(0, Math.min(100, score)) * 10) / 10;
+
 }
 
 
