@@ -405,6 +405,56 @@ export const assignStudentTrainer = createServerFn({ method: "POST" })
     return { ok: true };
   });
 
+export const updateStudentProfile = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: unknown) =>
+    z
+      .object({
+        studentId: z.string().uuid(),
+        full_name: z.string().trim().min(1).max(200),
+        email: z.string().trim().email().max(255),
+        phone: z.string().trim().max(40).optional().nullable(),
+      })
+      .parse(d),
+  )
+  .handler(async ({ data, context }) => {
+    await assertCanManageStudent(context, data.studentId);
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+
+    // Fetch current email to decide whether to touch auth
+    const { data: current, error: curErr } = await supabaseAdmin
+      .from("profiles")
+      .select("email")
+      .eq("id", data.studentId)
+      .maybeSingle();
+    if (curErr) throw new Error(curErr.message);
+
+    if (current && current.email !== data.email) {
+      const { error: authErr } = await supabaseAdmin.auth.admin.updateUserById(
+        data.studentId,
+        { email: data.email, email_confirm: true },
+      );
+      if (authErr) {
+        throw new Error(
+          authErr.message?.toLowerCase().includes("already")
+            ? "Já existe uma conta com este e-mail."
+            : authErr.message,
+        );
+      }
+    }
+
+    const { error } = await supabaseAdmin
+      .from("profiles")
+      .update({
+        full_name: data.full_name,
+        email: data.email,
+        phone: data.phone ?? null,
+      })
+      .eq("id", data.studentId);
+    if (error) throw new Error(error.message);
+    return { ok: true };
+  });
+
 export const getStudentDetail = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((d: unknown) =>

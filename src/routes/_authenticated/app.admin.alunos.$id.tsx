@@ -6,6 +6,7 @@ import {
   getStudentDetail,
   getStudentStructuredTrainingPlan,
   getStudentDiet,
+  updateStudentProfile,
 } from "@/lib/squad.functions";
 import { saveStudentAnamnese, getStudentAdherence } from "@/lib/registro.functions";
 import { StructuredTrainingUploader } from "@/components/StructuredTrainingUploader";
@@ -52,6 +53,15 @@ function AlunoEditor() {
         <p className="text-sm text-muted-foreground">{data.profile?.email}</p>
       </div>
 
+      <DadosCard
+        studentId={id}
+        initial={{
+          full_name: data.profile?.full_name ?? "",
+          email: data.profile?.email ?? "",
+          phone: (data.profile as any)?.phone ?? "",
+        }}
+      />
+
       <AnamneseCard
         studentId={id}
         initial={{
@@ -85,6 +95,72 @@ function AlunoEditor() {
         </TabsContent>
       </Tabs>
     </div>
+  );
+}
+
+function DadosCard({
+  studentId,
+  initial,
+}: {
+  studentId: string;
+  initial: { full_name: string; email: string; phone: string };
+}) {
+  const [form, setForm] = useState(initial);
+  const saveFn = useServerFn(updateStudentProfile);
+  const qc = useQueryClient();
+  const mSave = useMutation({
+    mutationFn: () =>
+      saveFn({
+        data: {
+          studentId,
+          full_name: form.full_name.trim(),
+          email: form.email.trim(),
+          phone: form.phone.trim() || null,
+        },
+      }),
+    onSuccess: () => {
+      toast.success("Dados do aluno atualizados");
+      qc.invalidateQueries({ queryKey: ["student", studentId] });
+      qc.invalidateQueries({ queryKey: ["students"] });
+    },
+    onError: (e: any) => toast.error(e.message ?? "Erro ao salvar"),
+  });
+
+  return (
+    <Card className="p-4 space-y-3">
+      <h3 className="tactical-heading text-sm tracking-widest">DADOS DO ALUNO</h3>
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+        <div>
+          <Label className="text-xs">Nome completo</Label>
+          <Input
+            value={form.full_name}
+            onChange={(e) => setForm({ ...form, full_name: e.target.value })}
+          />
+        </div>
+        <div>
+          <Label className="text-xs">E-mail</Label>
+          <Input
+            type="email"
+            value={form.email}
+            onChange={(e) => setForm({ ...form, email: e.target.value })}
+          />
+        </div>
+        <div>
+          <Label className="text-xs">Telefone</Label>
+          <Input
+            value={form.phone}
+            onChange={(e) => setForm({ ...form, phone: e.target.value })}
+          />
+        </div>
+      </div>
+      <Button
+        onClick={() => mSave.mutate()}
+        disabled={mSave.isPending || !form.full_name.trim() || !form.email.trim()}
+        size="sm"
+      >
+        SALVAR DADOS
+      </Button>
+    </Card>
   );
 }
 
