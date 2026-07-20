@@ -741,8 +741,9 @@ export const getStudentAdherence = createServerFn({ method: "POST" })
 
     const weightKg =
       Number(latestWeight?.weight_kg ?? profile?.initial_weight_kg ?? 0) || 0;
+    const goalWeightKg = Number(profile?.initial_weight_kg ?? 0) || 0;
     const coef = Number(profile?.water_ml_per_kg ?? 50) || 50;
-    const waterGoalMl = Math.round(weightKg * coef);
+    const waterGoalMl = Math.round(goalWeightKg * coef);
 
     const logIds = (logs ?? []).map((l: any) => l.id);
     const { data: mealChecks } = logIds.length
