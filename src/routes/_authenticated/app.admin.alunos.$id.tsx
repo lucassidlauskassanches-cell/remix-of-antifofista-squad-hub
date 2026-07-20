@@ -6,6 +6,7 @@ import {
   getStudentDetail,
   getStudentStructuredTrainingPlan,
   getStudentDiet,
+  updateStudentProfile,
 } from "@/lib/squad.functions";
 import { saveStudentAnamnese, getStudentAdherence } from "@/lib/registro.functions";
 import { StructuredTrainingUploader } from "@/components/StructuredTrainingUploader";
