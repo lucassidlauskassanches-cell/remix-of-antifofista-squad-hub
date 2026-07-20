@@ -370,8 +370,10 @@ export const getMyDayRegistro = createServerFn({ method: "POST" })
 
     const weightKg =
       Number(latestWeight?.weight_kg ?? profile?.initial_weight_kg ?? 0) || 0;
+    const goalWeightKg = Number(profile?.initial_weight_kg ?? 0) || 0;
     const coef = Number(profile?.water_ml_per_kg ?? 50) || 50;
-    const waterGoalMl = Math.round(weightKg * coef);
+    // Meta de água ancorada no peso da anamnese — o peso diário não afeta o %.
+    const waterGoalMl = Math.round(goalWeightKg * coef);
 
     // meal names from active diet
     const mealNames: string[] = Array.isArray(
