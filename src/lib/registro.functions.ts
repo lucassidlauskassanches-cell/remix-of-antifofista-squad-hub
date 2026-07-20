@@ -135,10 +135,14 @@ async function recomputeScore(
         .maybeSingle(),
     ]);
 
+  // Water goal is anchored to the anamnese weight (initial_weight_kg) so that
+  // logging a new daily weight does NOT shift the goal and therefore does not
+  // affect the daily score / patente %.
   const weightKg =
     Number(latestWeight?.weight_kg ?? profile?.initial_weight_kg ?? 0) || 0;
+  const goalWeightKg = Number(profile?.initial_weight_kg ?? 0) || 0;
   const coef = Number(profile?.water_ml_per_kg ?? 50) || 50;
-  const goal = Math.round(weightKg * coef);
+  const goal = Math.round(goalWeightKg * coef);
   const ratings = (meals ?? [])
     .filter((m: any) => m.done)
     .map((m: any) => Number(m.rating) || 0);
