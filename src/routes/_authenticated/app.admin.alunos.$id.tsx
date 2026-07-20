@@ -53,6 +53,15 @@ function AlunoEditor() {
         <p className="text-sm text-muted-foreground">{data.profile?.email}</p>
       </div>
 
+      <DadosCard
+        studentId={id}
+        initial={{
+          full_name: data.profile?.full_name ?? "",
+          email: data.profile?.email ?? "",
+          phone: (data.profile as any)?.phone ?? "",
+        }}
+      />
+
       <AnamneseCard
         studentId={id}
         initial={{
