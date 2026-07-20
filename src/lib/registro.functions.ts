@@ -135,10 +135,14 @@ async function recomputeScore(
         .maybeSingle(),
     ]);
 
+  // Water goal is anchored to the anamnese weight (initial_weight_kg) so that
+  // logging a new daily weight does NOT shift the goal and therefore does not
+  // affect the daily score / patente %.
   const weightKg =
     Number(latestWeight?.weight_kg ?? profile?.initial_weight_kg ?? 0) || 0;
+  const goalWeightKg = Number(profile?.initial_weight_kg ?? 0) || 0;
   const coef = Number(profile?.water_ml_per_kg ?? 50) || 50;
-  const goal = Math.round(weightKg * coef);
+  const goal = Math.round(goalWeightKg * coef);
   const ratings = (meals ?? [])
     .filter((m: any) => m.done)
     .map((m: any) => Number(m.rating) || 0);
@@ -366,8 +370,10 @@ export const getMyDayRegistro = createServerFn({ method: "POST" })
 
     const weightKg =
       Number(latestWeight?.weight_kg ?? profile?.initial_weight_kg ?? 0) || 0;
+    const goalWeightKg = Number(profile?.initial_weight_kg ?? 0) || 0;
     const coef = Number(profile?.water_ml_per_kg ?? 50) || 50;
-    const waterGoalMl = Math.round(weightKg * coef);
+    // Meta de água ancorada no peso da anamnese — o peso diário não afeta o %.
+    const waterGoalMl = Math.round(goalWeightKg * coef);
 
     // meal names from active diet
     const mealNames: string[] = Array.isArray(
@@ -735,8 +741,9 @@ export const getStudentAdherence = createServerFn({ method: "POST" })
 
     const weightKg =
       Number(latestWeight?.weight_kg ?? profile?.initial_weight_kg ?? 0) || 0;
+    const goalWeightKg = Number(profile?.initial_weight_kg ?? 0) || 0;
     const coef = Number(profile?.water_ml_per_kg ?? 50) || 50;
-    const waterGoalMl = Math.round(weightKg * coef);
+    const waterGoalMl = Math.round(goalWeightKg * coef);
 
     const logIds = (logs ?? []).map((l: any) => l.id);
     const { data: mealChecks } = logIds.length
