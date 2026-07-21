@@ -45,6 +45,7 @@ import {
 import { PatenteCard, getPatente } from "@/components/PatenteCard";
 import { StreakMilestoneCard } from "@/components/StreakMilestoneCard";
 import { PushNotificationsCard } from "@/components/PushNotificationsCard";
+import { RankingCard } from "@/components/RankingCard";
 import html2canvas from "html2canvas-pro";
 
 
@@ -239,6 +240,7 @@ function RegistroPage() {
   return (
     <div className="space-y-4">
       <PushNotificationsCard />
+      <RankingCard />
       {/* header: date nav */}
       <div className="flex items-center justify-between">
         <Button
