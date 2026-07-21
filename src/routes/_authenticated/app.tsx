@@ -142,18 +142,32 @@ function AppShell() {
               </>
             )}
             {(ctx.isTreinador || ctx.isAdmin) && (
-              <Button
-                asChild
-                variant={
-                  loc.pathname.startsWith("/app/admin/alunos") ? "default" : "outline"
-                }
-                size="sm"
-                className="tactical-heading text-xs"
-              >
-                <Link to="/app/admin/alunos">
-                  <ShieldCheck className="w-4 h-4 mr-1" /> ALUNOS
-                </Link>
-              </Button>
+              <>
+                <Button
+                  asChild
+                  variant={
+                    loc.pathname.startsWith("/app/admin/alunos") ? "default" : "outline"
+                  }
+                  size="sm"
+                  className="tactical-heading text-xs"
+                >
+                  <Link to="/app/admin/alunos">
+                    <ShieldCheck className="w-4 h-4 mr-1" /> ALUNOS
+                  </Link>
+                </Button>
+                <Button
+                  asChild
+                  variant={
+                    loc.pathname.startsWith("/app/admin/ranking") ? "default" : "outline"
+                  }
+                  size="sm"
+                  className="tactical-heading text-xs"
+                >
+                  <Link to="/app/admin/ranking">
+                    <Trophy className="w-4 h-4 mr-1" /> RANKING
+                  </Link>
+                </Button>
+              </>
             )}
 
             <Button onClick={signOut} variant="ghost" size="icon" aria-label="Sair">
