@@ -719,31 +719,7 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      get_leaderboard: {
-        Args: { period: string }
-        Returns: {
-          current_streak: number
-          full_name: string
-          is_self: boolean
-          points: number
-          points_above: number
-          rank_position: number
-          student_id: string
-          total_participants: number
-          trainer_id: string
-          trainer_name: string
-        }[]
-      }
-      get_trainer_leaderboard: {
-        Args: { period?: string }
-        Returns: {
-          active_students: number
-          avg_points: number
-          avg_streak: number
-          trainer_id: string
-          trainer_name: string
-        }[]
-      }
+      [_ in never]: never
     }
     Enums: {
       app_role: "aluno" | "treinador" | "admin"
