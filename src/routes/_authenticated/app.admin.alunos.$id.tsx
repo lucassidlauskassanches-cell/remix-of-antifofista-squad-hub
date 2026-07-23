@@ -7,8 +7,17 @@ import {
   getStudentStructuredTrainingPlan,
   getStudentDiet,
   updateStudentProfile,
+  assignStudentTrainer,
 } from "@/lib/squad.functions";
 import { saveStudentAnamnese, getStudentAdherence } from "@/lib/registro.functions";
+import { getMyContext, listTrainersForStudentForm } from "@/lib/access.functions";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { StructuredTrainingUploader } from "@/components/StructuredTrainingUploader";
 import { DietUploader } from "@/components/DietUploader";
 import { GerarPlanoAcao } from "@/components/GerarPlanoAcao";
@@ -60,6 +69,11 @@ function AlunoEditor() {
           email: data.profile?.email ?? "",
           phone: (data.profile as any)?.phone ?? "",
         }}
+      />
+
+      <TrainerAssignCard
+        studentId={id}
+        currentTrainerId={(data.profile as any)?.trainer_id ?? null}
       />
 
       <AnamneseCard
@@ -582,3 +596,78 @@ function colorForPct(pct: number): string {
 
 
 
+
+function TrainerAssignCard({
+  studentId,
+  currentTrainerId,
+}: {
+  studentId: string;
+  currentTrainerId: string | null;
+}) {
+  const fetchCtx = useServerFn(getMyContext);
+  const { data: ctx } = useQuery({
+    queryKey: ["my-context"],
+    queryFn: () => fetchCtx(),
+  });
+  const fetchTrainers = useServerFn(listTrainersForStudentForm);
+  const { data: trainersData } = useQuery({
+    queryKey: ["trainers"],
+    queryFn: () => fetchTrainers(),
+    enabled: !!ctx?.isAdmin,
+  });
+  const assignFn = useServerFn(assignStudentTrainer);
+  const qc = useQueryClient();
+  const [selected, setSelected] = useState<string>(currentTrainerId ?? "__none__");
+
+  const mAssign = useMutation({
+    mutationFn: () =>
+      assignFn({
+        data: {
+          studentId,
+          trainerId: selected === "__none__" ? null : selected,
+        },
+      }),
+    onSuccess: () => {
+      toast.success("Treinador do aluno atualizado");
+      qc.invalidateQueries({ queryKey: ["student", studentId] });
+      qc.invalidateQueries({ queryKey: ["students"] });
+      qc.invalidateQueries({ queryKey: ["admin-overview"] });
+    },
+    onError: (e: any) => toast.error(e.message ?? "Erro ao atribuir treinador"),
+  });
+
+  if (!ctx?.isAdmin) return null;
+
+  const dirty = (selected === "__none__" ? null : selected) !== currentTrainerId;
+
+  return (
+    <Card className="p-4 space-y-3">
+      <h3 className="tactical-heading text-sm tracking-widest">TREINADOR RESPONSÁVEL</h3>
+      <div className="grid grid-cols-1 sm:grid-cols-[1fr_auto] gap-3 items-end">
+        <div>
+          <Label className="text-xs">Treinador</Label>
+          <Select value={selected} onValueChange={setSelected}>
+            <SelectTrigger>
+              <SelectValue placeholder="Selecione um treinador" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="__none__">Sem treinador</SelectItem>
+              {(trainersData?.rows ?? []).map((t: any) => (
+                <SelectItem key={t.id} value={t.id}>
+                  {t.full_name || t.email}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+        <Button
+          onClick={() => mAssign.mutate()}
+          disabled={mAssign.isPending || !dirty}
+          size="sm"
+        >
+          ATRIBUIR
+        </Button>
+      </div>
+    </Card>
+  );
+}
