@@ -71,6 +71,11 @@ function AlunoEditor() {
         }}
       />
 
+      <TrainerAssignCard
+        studentId={id}
+        currentTrainerId={(data.profile as any)?.trainer_id ?? null}
+      />
+
       <AnamneseCard
         studentId={id}
         initial={{
