@@ -7,8 +7,17 @@ import {
   getStudentStructuredTrainingPlan,
   getStudentDiet,
   updateStudentProfile,
+  assignStudentTrainer,
 } from "@/lib/squad.functions";
 import { saveStudentAnamnese, getStudentAdherence } from "@/lib/registro.functions";
+import { getMyContext, listTrainersForStudentForm } from "@/lib/access.functions";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { StructuredTrainingUploader } from "@/components/StructuredTrainingUploader";
 import { DietUploader } from "@/components/DietUploader";
 import { GerarPlanoAcao } from "@/components/GerarPlanoAcao";
