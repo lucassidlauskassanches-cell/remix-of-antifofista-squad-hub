@@ -376,8 +376,8 @@ export const getMyDayRegistro = createServerFn({ method: "POST" })
     const waterGoalMl = Math.round(goalWeightKg * coef);
 
     // meal names from active diet — dedupe because meal_checks has UNIQUE(daily_log_id, meal_name).
-    // Se a dieta tem nomes repetidos (ex.: "Jantar" 2x), o insert em lote falha inteiro
-    // e o aluno fica sem nenhuma refeição pra marcar no dia.
+    // Alguns alunos têm dietas com nomes repetidos (ex.: "Jantar" para ocasiões diferentes).
+    // Mantemos apenas a primeira ocorrência de cada nome para não duplicar no scorecard.
     const rawMealNames: string[] = Array.isArray(
       (diet?.data as any)?.refeicoes,
     )
@@ -386,11 +386,11 @@ export const getMyDayRegistro = createServerFn({ method: "POST" })
           .filter((n) => n.length > 0)
       : [];
     const mealNames: string[] = [];
-    const nameCounts = new Map<string, number>();
+    const seenNames = new Set<string>();
     for (const raw of rawMealNames) {
-      const count = nameCounts.get(raw) ?? 0;
-      nameCounts.set(raw, count + 1);
-      mealNames.push(count === 0 ? raw : `${raw} (${count + 1})`);
+      if (seenNames.has(raw)) continue;
+      seenNames.add(raw);
+      mealNames.push(raw);
     }
 
     // ensure daily log exists for the date (only for editable dates: today or yesterday)
