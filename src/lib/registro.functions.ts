@@ -375,14 +375,23 @@ export const getMyDayRegistro = createServerFn({ method: "POST" })
     // Meta de água ancorada no peso da anamnese — o peso diário não afeta o %.
     const waterGoalMl = Math.round(goalWeightKg * coef);
 
-    // meal names from active diet
-    const mealNames: string[] = Array.isArray(
+    // meal names from active diet — dedupe because meal_checks has UNIQUE(daily_log_id, meal_name).
+    // Se a dieta tem nomes repetidos (ex.: "Jantar" 2x), o insert em lote falha inteiro
+    // e o aluno fica sem nenhuma refeição pra marcar no dia.
+    const rawMealNames: string[] = Array.isArray(
       (diet?.data as any)?.refeicoes,
     )
       ? ((diet!.data as any).refeicoes as any[])
           .map((m: any) => String(m?.nome ?? "").trim())
           .filter((n) => n.length > 0)
       : [];
+    const mealNames: string[] = [];
+    const nameCounts = new Map<string, number>();
+    for (const raw of rawMealNames) {
+      const count = nameCounts.get(raw) ?? 0;
+      nameCounts.set(raw, count + 1);
+      mealNames.push(count === 0 ? raw : `${raw} (${count + 1})`);
+    }
 
     // ensure daily log exists for the date (only for editable dates: today or yesterday)
     let logId: string | null = null;
