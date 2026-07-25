@@ -324,7 +324,6 @@ function RegistroPage() {
                   key={v}
                   variant="outline"
                   onClick={() => mAddWater.mutate(v)}
-                  disabled={!goal}
                 >
                   +{v >= 1000 ? `${v / 1000}L` : `${v}ml`}
                 </Button>
