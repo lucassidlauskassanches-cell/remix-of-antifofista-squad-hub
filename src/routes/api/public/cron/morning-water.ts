@@ -3,11 +3,22 @@ import { createFileRoute } from "@tanstack/react-router";
 export const Route = createFileRoute("/api/public/cron/morning-water")({
   server: {
     handlers: {
-      GET: async () => runResponse(),
-      POST: async () => runResponse(),
+      GET: async ({ request }) => authed(request),
+      POST: async ({ request }) => authed(request),
     },
   },
 });
+
+function authed(request: Request) {
+  const secret = process.env.CRON_SECRET;
+  const provided =
+    request.headers.get("x-cron-secret") ||
+    request.headers.get("authorization")?.replace(/^Bearer\s+/i, "");
+  if (!secret || provided !== secret) {
+    return new Response("Unauthorized", { status: 401 });
+  }
+  return runResponse();
+}
 
 async function runResponse() {
   const {
