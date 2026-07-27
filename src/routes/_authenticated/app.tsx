@@ -6,6 +6,7 @@ import { getMyContext } from "@/lib/access.functions";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import logoAsset from "@/assets/logo-antifofista.png.asset.json";
+import { PromoBannerModal } from "@/components/PromoBannerModal";
 
 function BearIcon({ className }: { className?: string }) {
   return (
@@ -180,6 +181,13 @@ function AppShell() {
       <main className="relative z-10 flex-1 max-w-3xl mx-auto w-full px-4 py-4">
         <Outlet />
       </main>
+
+      {ctx.isAluno && !ctx.isTreinador && !ctx.isAdmin && (
+        <PromoBannerModal
+          isAluno={ctx.isAluno}
+          lastSeenAt={(ctx.profile as { last_banner_seen_at?: string | null } | null)?.last_banner_seen_at ?? null}
+        />
+      )}
 
       {!isAdminArea && (
         <nav className="fixed bottom-0 inset-x-0 bg-card/95 backdrop-blur border-t border-border z-10">
