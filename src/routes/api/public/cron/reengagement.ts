@@ -6,11 +6,22 @@ const COOLDOWN_DAYS = 3;
 export const Route = createFileRoute("/api/public/cron/reengagement")({
   server: {
     handlers: {
-      GET: async () => runResponse(),
-      POST: async () => runResponse(),
+      GET: async ({ request }) => authed(request),
+      POST: async ({ request }) => authed(request),
     },
   },
 });
+
+function authed(request: Request) {
+  const secret = process.env.CRON_SECRET;
+  const provided =
+    request.headers.get("x-cron-secret") ||
+    request.headers.get("authorization")?.replace(/^Bearer\s+/i, "");
+  if (!secret || provided !== secret) {
+    return new Response("Unauthorized", { status: 401 });
+  }
+  return runResponse();
+}
 
 function diffDays(fromISO: string, toISO: string) {
   const a = new Date(fromISO + "T00:00:00Z").getTime();
