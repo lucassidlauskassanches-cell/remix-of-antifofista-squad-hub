@@ -23,7 +23,6 @@ export const getLeaderboard = createServerFn({ method: "GET" })
   .handler(async ({ data, context }) => {
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const { data: rows, error } = await supabaseAdmin
-      .schema("app_private" as never)
       .rpc("get_leaderboard" as never, {
         _caller: context.userId,
         _period: data.period,
@@ -47,7 +46,6 @@ export const getTrainerLeaderboard = createServerFn({ method: "GET" })
       throw new Error("Apenas administradores.");
     }
     const { data: rows, error } = await supabaseAdmin
-      .schema("app_private" as never)
       .rpc("get_trainer_leaderboard" as never, {
         _caller: context.userId,
         _period: data.period,
