@@ -127,7 +127,14 @@ export function PushNotificationsCard() {
       <div className="flex items-center gap-3 min-w-0">
         {isOn ? <Bell className="w-5 h-5 text-primary shrink-0" /> : <BellOff className="w-5 h-5 text-muted-foreground shrink-0" />}
         <div className="min-w-0">
-          <div className="font-semibold text-sm uppercase tracking-wide">Notificações</div>
+          <div className="font-semibold text-sm uppercase tracking-wide flex items-center gap-2">
+            Notificações
+            {isOn && (
+              <span className="inline-flex items-center gap-1 text-[10px] font-bold uppercase tracking-wider text-primary">
+                <span aria-hidden>✓</span> Ativas
+              </span>
+            )}
+          </div>
           <div className="text-xs text-muted-foreground">
             {status === "denied"
               ? "Bloqueadas pelo navegador — ative nas configurações do sistema."
@@ -138,19 +145,25 @@ export function PushNotificationsCard() {
         </div>
       </div>
       {status !== "denied" && (
-        <button
-          type="button"
-          onClick={isOn ? disable : enable}
-          disabled={busy}
-          className={
-            "shrink-0 rounded-lg px-3 py-2 text-xs font-bold uppercase tracking-wider transition-colors " +
-            (isOn
-              ? "border border-border text-foreground hover:bg-muted"
-              : "bg-primary text-primary-foreground hover:opacity-90")
-          }
-        >
-          {busy ? "..." : isOn ? "Desativar" : "Ativar"}
-        </button>
+        isOn ? (
+          <button
+            type="button"
+            onClick={disable}
+            disabled={busy}
+            className="shrink-0 text-[11px] font-medium text-muted-foreground underline underline-offset-4 hover:text-foreground transition-colors"
+          >
+            {busy ? "..." : "desativar"}
+          </button>
+        ) : (
+          <button
+            type="button"
+            onClick={enable}
+            disabled={busy}
+            className="shrink-0 rounded-lg px-3 py-2 text-xs font-bold uppercase tracking-wider bg-primary text-primary-foreground hover:opacity-90 transition-colors"
+          >
+            {busy ? "..." : "Ativar"}
+          </button>
+        )
       )}
     </div>
   );
