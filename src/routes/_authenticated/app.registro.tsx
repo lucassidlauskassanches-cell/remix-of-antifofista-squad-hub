@@ -239,6 +239,7 @@ function RegistroPage() {
 
   return (
     <div className="space-y-4">
+      <RotatingBannerStrip />
       <PushNotificationsCard />
       <RankingCard />
       {/* header: date nav */}
