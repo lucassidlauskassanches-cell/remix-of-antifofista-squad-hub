@@ -194,14 +194,17 @@ async function reconcileStreak(
   // Pull last 400 daily logs, ascending. Walk day by day, applying rules.
   const { data: logs } = await supabase
     .from("daily_logs")
-    .select("log_date, daily_score")
+    .select("log_date, daily_score, rest_day")
     .eq("student_id", studentId)
     .order("log_date", { ascending: true })
     .limit(400);
 
-  const byDate = new Map<string, number>();
+  const byDate = new Map<string, { score: number; rest: boolean }>();
   (logs ?? []).forEach((l: any) =>
-    byDate.set(l.log_date, Number(l.daily_score) || 0),
+    byDate.set(l.log_date, {
+      score: Number(l.daily_score) || 0,
+      rest: !!l.rest_day,
+    }),
   );
 
   // Load previous milestone from db so we can detect "just crossed"
@@ -227,7 +230,9 @@ async function reconcileStreak(
   const totalDays = daysBetween(start, end);
   for (let i = 0; i <= totalDays; i++) {
     const date = addDaysIso(start, i);
-    const score = byDate.get(date) ?? 0;
+    const entry = byDate.get(date);
+    const score = entry?.score ?? 0;
+    const isRest = !!entry?.rest;
 
     if (score >= STREAK_THRESHOLD) {
       current += 1;
@@ -242,6 +247,10 @@ async function reconcileStreak(
       } else {
         shieldProgress = 0;
       }
+    } else if (isRest) {
+      // Rest day is neutral: does not advance the streak, but never resets it.
+      // Preserves current streak, shields e progresso do scorecard.
+      continue;
     } else {
       // failed day
       if (current > 0 && shields > 0) {
