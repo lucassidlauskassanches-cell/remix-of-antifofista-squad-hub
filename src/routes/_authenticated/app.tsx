@@ -7,7 +7,6 @@ import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import logoAsset from "@/assets/logo-antifofista.png.asset.json";
 import { PromoBannerModal } from "@/components/PromoBannerModal";
-import { RotatingBannerStrip } from "@/components/RotatingBannerStrip";
 
 function BearIcon({ className }: { className?: string }) {
   return (
@@ -178,8 +177,6 @@ function AppShell() {
           </div>
         </div>
       </header>
-
-      {ctx.isAluno && !ctx.isTreinador && !ctx.isAdmin && <RotatingBannerStrip />}
 
       <main className="relative z-10 flex-1 max-w-3xl mx-auto w-full px-4 py-4">
         <Outlet />
