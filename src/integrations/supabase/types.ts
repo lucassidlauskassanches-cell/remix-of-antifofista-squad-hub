@@ -421,6 +421,7 @@ export type Database = {
           height_cm: number | null
           id: string
           initial_weight_kg: number | null
+          last_banner_seen_at: string | null
           phone: string | null
           trainer_id: string | null
           water_ml_per_kg: number
@@ -435,6 +436,7 @@ export type Database = {
           height_cm?: number | null
           id: string
           initial_weight_kg?: number | null
+          last_banner_seen_at?: string | null
           phone?: string | null
           trainer_id?: string | null
           water_ml_per_kg?: number
@@ -449,6 +451,7 @@ export type Database = {
           height_cm?: number | null
           id?: string
           initial_weight_kg?: number | null
+          last_banner_seen_at?: string | null
           phone?: string | null
           trainer_id?: string | null
           water_ml_per_kg?: number
