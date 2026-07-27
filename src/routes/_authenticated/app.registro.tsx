@@ -45,6 +45,7 @@ import {
 import { PatenteCard, getPatente } from "@/components/PatenteCard";
 import { StreakMilestoneCard } from "@/components/StreakMilestoneCard";
 import { PushNotificationsCard } from "@/components/PushNotificationsCard";
+import { RotatingBannerStrip } from "@/components/RotatingBannerStrip";
 import { RankingCard } from "@/components/RankingCard";
 import html2canvas from "html2canvas-pro";
 
@@ -239,6 +240,7 @@ function RegistroPage() {
 
   return (
     <div className="space-y-4">
+      <RotatingBannerStrip />
       <PushNotificationsCard />
       <RankingCard />
       {/* header: date nav */}
