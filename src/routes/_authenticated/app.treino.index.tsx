@@ -25,7 +25,13 @@ import {
 } from "@/lib/training-xlsx-parser";
 
 function todayStr() {
-  return new Date().toISOString().split("T")[0];
+  // Brasília timezone (UTC-3, no DST) — matches server-side date computations.
+  return new Intl.DateTimeFormat("en-CA", {
+    timeZone: "America/Sao_Paulo",
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+  }).format(new Date());
 }
 
 type LastEntry = { load: string; reps: string; date: string };

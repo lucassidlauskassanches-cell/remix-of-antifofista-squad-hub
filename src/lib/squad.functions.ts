@@ -902,7 +902,14 @@ export const saveLogbookEntry = createServerFn({ method: "POST" })
   .inputValidator((d: unknown) => logbookEntryInput.parse(d))
   .handler(async ({ data, context }) => {
     const { supabase, userId } = context;
-    const entryDate = data.entry_date || new Date().toISOString().split("T")[0];
+    const entryDate =
+      data.entry_date ||
+      new Intl.DateTimeFormat("en-CA", {
+        timeZone: "America/Sao_Paulo",
+        year: "numeric",
+        month: "2-digit",
+        day: "2-digit",
+      }).format(new Date());
     if (data.id) {
       const { error } = await supabase
         .from("logbook_entries")
