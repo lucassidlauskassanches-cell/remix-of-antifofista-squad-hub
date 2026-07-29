@@ -151,7 +151,9 @@ function ExerciseProgress({
   const latest = numeric[numeric.length - 1]?.value ?? null;
   const prev = numeric.length > 1 ? numeric[numeric.length - 2].value : null;
   const delta = latest !== null && prev !== null ? Math.round((latest - prev) * 10) / 10 : null;
-  const recent = [...group.entries].reverse().slice(0, 6);
+  const all = [...group.entries].reverse();
+  const [expanded, setExpanded] = useState(false);
+  const visible = expanded ? all : all.slice(0, 6);
 
   return (
     <div className="af-evo">
@@ -178,7 +180,7 @@ function ExerciseProgress({
       )}
 
       <ul className="mt-3 divide-y divide-border">
-        {recent.map((e) => (
+        {visible.map((e) => (
           <li
             key={e.id}
             className="grid grid-cols-[auto_1fr_auto] gap-3 items-center py-1.5 text-sm"
@@ -199,9 +201,20 @@ function ExerciseProgress({
           </li>
         ))}
       </ul>
+
+      {all.length > 6 && (
+        <button
+          type="button"
+          className="mt-2 text-xs uppercase tracking-wide text-muted-foreground hover:text-foreground"
+          onClick={() => setExpanded((v) => !v)}
+        >
+          {expanded ? "Ver menos" : `Ver histórico completo (${all.length})`}
+        </button>
+      )}
     </div>
   );
 }
+
 
 function Sparkline({ points }: { points: number[] }) {
   const min = Math.min(...points);
