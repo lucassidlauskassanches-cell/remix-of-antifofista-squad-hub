@@ -879,14 +879,24 @@ export const deletePlanPdf = createServerFn({ method: "POST" })
 export const getMyLogbook = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }) => {
-    const { data } = await context.supabase
-      .from("logbook_entries")
-      .select("*")
-      .eq("student_id", context.userId)
-      .order("exercise", { ascending: true })
-      .order("entry_date", { ascending: true });
-    return { rows: data ?? [] };
+    // Histórico completo: pagina para não esbarrar no limite padrão da API
+    const pageSize = 1000;
+    const rows: any[] = [];
+    for (let page = 0; page < 50; page++) {
+      const { data, error } = await context.supabase
+        .from("logbook_entries")
+        .select("*")
+        .eq("student_id", context.userId)
+        .order("exercise", { ascending: true })
+        .order("entry_date", { ascending: true })
+        .range(page * pageSize, page * pageSize + pageSize - 1);
+      if (error) throw new Error(error.message);
+      rows.push(...(data ?? []));
+      if (!data || data.length < pageSize) break;
+    }
+    return { rows };
   });
+
 
 const logbookEntryInput = z.object({
   id: z.string().uuid().optional(),
