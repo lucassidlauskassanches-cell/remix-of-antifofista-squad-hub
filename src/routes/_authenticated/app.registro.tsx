@@ -175,9 +175,11 @@ function RegistroPage() {
         const cur = d.log.water_ml ?? 0;
         d.log.water_ml = Math.max(0, Math.min(20000, cur + deltaMl));
       }),
+    retry: 2,
+    retryDelay: (attempt) => Math.min(1000 * 2 ** attempt, 4000),
     onError: (e: any, _v, ctx) => {
       rollback(ctx);
-      toast.error(e.message ?? "Erro");
+      toastMutationError(e);
     },
     onSettled: scheduleReconcile,
   });
@@ -187,9 +189,11 @@ function RegistroPage() {
       optimisticPatch((d) => {
         d.log.water_ml = Math.max(0, Math.min(20000, waterMl));
       }),
+    retry: 2,
+    retryDelay: (attempt) => Math.min(1000 * 2 ** attempt, 4000),
     onError: (e: any, _v, ctx) => {
       rollback(ctx);
-      toast.error(e.message ?? "Erro");
+      toastMutationError(e);
     },
     onSettled: scheduleReconcile,
   });
@@ -199,9 +203,11 @@ function RegistroPage() {
       optimisticPatch((d) => {
         d.log.trained = t;
       }),
+    retry: 2,
+    retryDelay: (attempt) => Math.min(1000 * 2 ** attempt, 4000),
     onError: (e: any, _v, ctx) => {
       rollback(ctx);
-      toast.error(e.message ?? "Erro");
+      toastMutationError(e);
     },
     onSettled: scheduleReconcile,
   });
@@ -211,9 +217,11 @@ function RegistroPage() {
       optimisticPatch((d) => {
         d.log.rest_day = r;
       }),
+    retry: 2,
+    retryDelay: (attempt) => Math.min(1000 * 2 ** attempt, 4000),
     onError: (e: any, _v, ctx) => {
       rollback(ctx);
-      toast.error(e.message ?? "Erro");
+      toastMutationError(e);
     },
     onSettled: scheduleReconcile,
   });
@@ -230,9 +238,11 @@ function RegistroPage() {
           m.done = true;
         }
       }),
+    retry: 2,
+    retryDelay: (attempt) => Math.min(1000 * 2 ** attempt, 4000),
     onError: (e: any, _v, ctx) => {
       rollback(ctx);
-      toast.error(e.message ?? "Erro");
+      toastMutationError(e);
     },
     onSettled: scheduleReconcile,
   });
