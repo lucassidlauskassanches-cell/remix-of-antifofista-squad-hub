@@ -141,6 +141,17 @@ function RegistroPage() {
   function rollback(ctx: { prev?: DayData } | undefined) {
     if (ctx?.prev) qc.setQueryData(dayKey, ctx.prev);
   }
+  // Transient network hiccups (offline, backgrounded PWA, mobile handoff) surface
+  // as `TypeError: Failed to fetch`. Swallow the toast — the reconcile will retry.
+  function isTransientNetworkError(e: any): boolean {
+    const msg = String(e?.message ?? e ?? "");
+    if (typeof navigator !== "undefined" && navigator.onLine === false) return true;
+    return /failed to fetch|networkerror|load failed|network request failed/i.test(msg);
+  }
+  function toastMutationError(e: any) {
+    if (isTransientNetworkError(e)) return;
+    toast.error(e?.message ?? "Erro");
+  }
   // Debounced background reconcile so streak/score sync with server.
   const reconcileRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   function scheduleReconcile() {
@@ -164,9 +175,11 @@ function RegistroPage() {
         const cur = d.log.water_ml ?? 0;
         d.log.water_ml = Math.max(0, Math.min(20000, cur + deltaMl));
       }),
+    retry: 2,
+    retryDelay: (attempt) => Math.min(1000 * 2 ** attempt, 4000),
     onError: (e: any, _v, ctx) => {
       rollback(ctx);
-      toast.error(e.message ?? "Erro");
+      toastMutationError(e);
     },
     onSettled: scheduleReconcile,
   });
@@ -176,9 +189,11 @@ function RegistroPage() {
       optimisticPatch((d) => {
         d.log.water_ml = Math.max(0, Math.min(20000, waterMl));
       }),
+    retry: 2,
+    retryDelay: (attempt) => Math.min(1000 * 2 ** attempt, 4000),
     onError: (e: any, _v, ctx) => {
       rollback(ctx);
-      toast.error(e.message ?? "Erro");
+      toastMutationError(e);
     },
     onSettled: scheduleReconcile,
   });
@@ -188,9 +203,11 @@ function RegistroPage() {
       optimisticPatch((d) => {
         d.log.trained = t;
       }),
+    retry: 2,
+    retryDelay: (attempt) => Math.min(1000 * 2 ** attempt, 4000),
     onError: (e: any, _v, ctx) => {
       rollback(ctx);
-      toast.error(e.message ?? "Erro");
+      toastMutationError(e);
     },
     onSettled: scheduleReconcile,
   });
@@ -200,9 +217,11 @@ function RegistroPage() {
       optimisticPatch((d) => {
         d.log.rest_day = r;
       }),
+    retry: 2,
+    retryDelay: (attempt) => Math.min(1000 * 2 ** attempt, 4000),
     onError: (e: any, _v, ctx) => {
       rollback(ctx);
-      toast.error(e.message ?? "Erro");
+      toastMutationError(e);
     },
     onSettled: scheduleReconcile,
   });
@@ -219,9 +238,11 @@ function RegistroPage() {
           m.done = true;
         }
       }),
+    retry: 2,
+    retryDelay: (attempt) => Math.min(1000 * 2 ** attempt, 4000),
     onError: (e: any, _v, ctx) => {
       rollback(ctx);
-      toast.error(e.message ?? "Erro");
+      toastMutationError(e);
     },
     onSettled: scheduleReconcile,
   });
