@@ -42,6 +42,45 @@ type SaveCarga = (v: {
   reps: string;
 }) => void;
 
+// ---- Rascunho local do editor de série (por exercício + dia) ----
+type LogDraft = { loads: string[]; reps: string[] };
+
+function draftKey(exercise: string) {
+  return `treino:draft:${todayStr()}:${normalize(exercise)}`;
+}
+function readDraft(exercise: string): LogDraft | null {
+  if (typeof window === "undefined") return null;
+  try {
+    const raw = localStorage.getItem(draftKey(exercise));
+    if (!raw) return null;
+    const p = JSON.parse(raw);
+    if (!Array.isArray(p?.loads) || !Array.isArray(p?.reps)) return null;
+    return {
+      loads: p.loads.map((x: unknown) => String(x ?? "")),
+      reps: p.reps.map((x: unknown) => String(x ?? "")),
+    };
+  } catch {
+    return null;
+  }
+}
+function writeDraft(exercise: string, d: LogDraft) {
+  if (typeof window === "undefined") return;
+  try {
+    localStorage.setItem(draftKey(exercise), JSON.stringify(d));
+  } catch {
+    /* storage cheio/indisponível — ignora */
+  }
+}
+function clearDraft(exercise: string) {
+  if (typeof window === "undefined") return;
+  try {
+    localStorage.removeItem(draftKey(exercise));
+  } catch {
+    /* ignora */
+  }
+}
+
+
 export const Route = createFileRoute("/_authenticated/app/treino/")({
   component: EstruturadoPage,
 });
