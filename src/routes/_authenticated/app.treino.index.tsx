@@ -144,10 +144,12 @@ function EstruturadoPage() {
         },
       }),
     onSuccess: (_d, v) => {
+      clearDraft(v.exercise);
       queryClient.invalidateQueries({ queryKey: ["my-logbook"] });
       toast.success("Carga registrada");
       setActiveKey((cur) => (cur === normalize(v.exercise) ? null : cur));
     },
+
     onError: (e: unknown) =>
       toast.error(e instanceof Error ? e.message : "Falha ao registrar"),
   });
