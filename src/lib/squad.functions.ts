@@ -405,6 +405,115 @@ export const assignStudentTrainer = createServerFn({ method: "POST" })
     return { ok: true };
   });
 
+// ===== Admin: excluir aluno completamente =====
+export const deleteStudentAccount = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: unknown) =>
+    z.object({ studentId: z.string().uuid() }).parse(d),
+  )
+  .handler(async ({ data, context }) => {
+    await assertAdmin(context);
+    if (data.studentId === context.userId) {
+      throw new Error("Você não pode excluir sua própria conta.");
+    }
+    const { supabaseAdmin } = await import(
+      "@/integrations/supabase/client.server"
+    );
+    const sid = data.studentId;
+
+    // 1) Remover arquivos do storage (PDFs e fotos)
+    const paths: string[] = [];
+    const [{ data: tPlans }, { data: nPlans }, { data: aPlans }, { data: inputs }] =
+      await Promise.all([
+        supabaseAdmin.from("training_plans").select("pdf_path").eq("student_id", sid),
+        supabaseAdmin.from("nutrition_plans").select("pdf_path").eq("student_id", sid),
+        supabaseAdmin.from("action_plans").select("pdf_path").eq("student_id", sid),
+        supabaseAdmin
+          .from("action_plan_inputs")
+          .select("anamnese_path,foto_frente_path,foto_lado_path,foto_costas_path")
+          .eq("student_id", sid),
+      ]);
+    for (const row of [...(tPlans ?? []), ...(nPlans ?? []), ...(aPlans ?? [])]) {
+      if ((row as any).pdf_path) paths.push((row as any).pdf_path);
+    }
+    for (const row of inputs ?? []) {
+      for (const k of [
+        "anamnese_path",
+        "foto_frente_path",
+        "foto_lado_path",
+        "foto_costas_path",
+      ] as const) {
+        const v = (row as any)[k];
+        if (v) paths.push(v);
+      }
+    }
+    if (paths.length) {
+      await supabaseAdmin.storage.from("plans").remove(paths);
+    }
+
+    // 2) Remover filhos que dependem dos planos
+    const planIds = async (table: "training_plans" | "nutrition_plans") =>
+      (
+        (await supabaseAdmin.from(table).select("id").eq("student_id", sid)).data ??
+        []
+      ).map((r: any) => r.id);
+
+    const tIds = await planIds("training_plans");
+    if (tIds.length) {
+      await supabaseAdmin.from("training_exercises").delete().in("plan_id", tIds);
+    }
+    const nIds = await planIds("nutrition_plans");
+    if (nIds.length) {
+      const mealIds = (
+        (await supabaseAdmin.from("meals").select("id").in("plan_id", nIds)).data ??
+        []
+      ).map((r: any) => r.id);
+      if (mealIds.length) {
+        await supabaseAdmin.from("meal_items").delete().in("meal_id", mealIds);
+      }
+      await supabaseAdmin.from("meals").delete().in("plan_id", nIds);
+    }
+    const logIds = (
+      (await supabaseAdmin.from("daily_logs").select("id").eq("student_id", sid))
+        .data ?? []
+    ).map((r: any) => r.id);
+    if (logIds.length) {
+      await supabaseAdmin.from("meal_checks").delete().in("daily_log_id", logIds);
+    }
+
+    // 3) Remover dados do aluno
+    for (const table of [
+      "training_plans",
+      "nutrition_plans",
+      "action_plans",
+      "action_plan_inputs",
+      "structured_training_plans",
+      "diet_prescriptions",
+      "daily_logs",
+      "weight_entries",
+      "logbook_entries",
+      "streaks",
+    ] as const) {
+      await supabaseAdmin.from(table).delete().eq("student_id", sid);
+    }
+    for (const table of [
+      "push_subscriptions",
+      "notification_log",
+    ] as const) {
+      await supabaseAdmin.from(table).delete().eq("user_id", sid);
+    }
+    await supabaseAdmin.from("user_roles").delete().eq("user_id", sid);
+    await supabaseAdmin.from("profiles").delete().eq("id", sid);
+
+    // 4) Remover a conta de autenticação
+    const { error: authErr } = await supabaseAdmin.auth.admin.deleteUser(sid);
+    if (authErr && !authErr.message?.toLowerCase().includes("not found")) {
+      throw new Error(authErr.message);
+    }
+    return { ok: true };
+  });
+
+
 export const updateStudentProfile = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((d: unknown) =>
