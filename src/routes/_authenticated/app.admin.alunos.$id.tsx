@@ -1,4 +1,4 @@
-import { createFileRoute, Link, useParams } from "@tanstack/react-router";
+import { createFileRoute, Link, useParams, useNavigate } from "@tanstack/react-router";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { useState } from "react";
@@ -8,6 +8,7 @@ import {
   getStudentDiet,
   updateStudentProfile,
   assignStudentTrainer,
+  deleteStudentAccount,
 } from "@/lib/squad.functions";
 import { saveStudentAnamnese, getStudentAdherence } from "@/lib/registro.functions";
 import { getMyContext, listTrainersForStudentForm } from "@/lib/access.functions";
