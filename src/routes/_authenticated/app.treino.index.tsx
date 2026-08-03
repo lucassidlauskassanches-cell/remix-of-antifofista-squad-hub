@@ -616,46 +616,92 @@ function LogEdit({
     return arr.slice(0, initialSetCount);
   })();
 
-  const [loads, setLoads] = useState<string[]>(initialLoads);
-  const [reps, setReps] = useState<string[]>(initialReps);
+  // Rascunho de hoje tem prioridade sobre o último registro salvo.
+  const draft = readDraft(exercise);
+  const [loads, setLoads] = useState<string[]>(draft?.loads ?? initialLoads);
+  const [reps, setReps] = useState<string[]>(draft?.reps ?? initialReps);
   const wrapRef = useRef<HTMLDivElement>(null);
+  const dirtyRef = useRef(false);
+  const submittedRef = useRef(false);
+
+  // Persiste o rascunho a cada alteração.
+  useEffect(() => {
+    if (!dirtyRef.current || submittedRef.current) return;
+    writeDraft(exercise, { loads, reps });
+  }, [exercise, loads, reps]);
+
+  function submit() {
+    const hasAny = loads.some((l) => l.trim());
+    if (!hasAny || saving || submittedRef.current) return;
+    submittedRef.current = true;
+    const load = loads.map((l) => l.trim() || "-").join("/");
+    const rep = reps.map((r) => r.trim() || "-").join("/");
+    onSave({ id: todayId, exercise, load, reps: rep });
+  }
+
+  // Fechar nunca descarta: o rascunho fica salvo e, se houver carga, salva de verdade.
+  const closeRef = useRef(onClose);
+  closeRef.current = onClose;
+  const submitRef = useRef(submit);
+  submitRef.current = submit;
 
   useEffect(() => {
-    function onDown(e: MouseEvent | TouchEvent) {
-      if (!wrapRef.current) return;
-      if (!wrapRef.current.contains(e.target as Node)) onClose();
+    let scrolled = false;
+    // Pequeno atraso pra não fechar pelo mesmo toque que abriu o editor.
+    let armed = false;
+    const arm = window.setTimeout(() => {
+      armed = true;
+    }, 350);
+
+    function onTouchMove() {
+      scrolled = true;
     }
-    document.addEventListener("mousedown", onDown);
-    document.addEventListener("touchstart", onDown, { passive: true });
+    function onTouchEnd() {
+      window.setTimeout(() => {
+        scrolled = false;
+      }, 120);
+    }
+    function onDown(e: PointerEvent) {
+      if (!armed || scrolled) return;
+      const el = wrapRef.current;
+      if (!el) return;
+      const target = e.target as Node | null;
+      if (target && el.contains(target)) return;
+      // Toque fora: salva se houver carga preenchida, senão só fecha (rascunho preservado).
+      if (loads.some((l) => l.trim())) submitRef.current();
+      closeRef.current();
+    }
+    document.addEventListener("pointerdown", onDown);
+    document.addEventListener("touchmove", onTouchMove, { passive: true });
+    document.addEventListener("touchend", onTouchEnd, { passive: true });
     return () => {
-      document.removeEventListener("mousedown", onDown);
-      document.removeEventListener("touchstart", onDown);
+      window.clearTimeout(arm);
+      document.removeEventListener("pointerdown", onDown);
+      document.removeEventListener("touchmove", onTouchMove);
+      document.removeEventListener("touchend", onTouchEnd);
     };
-  }, [onClose]);
+  }, [loads]);
 
   function addSet() {
+    dirtyRef.current = true;
     setLoads((a) => [...a, ""]);
     setReps((a) => [...a, prescribedReps.trim()]);
   }
   function removeSet(i: number) {
     if (loads.length <= 1) return;
+    dirtyRef.current = true;
     setLoads((a) => a.filter((_, k) => k !== i));
     setReps((a) => a.filter((_, k) => k !== i));
   }
   function updateLoad(i: number, v: string) {
+    dirtyRef.current = true;
     setLoads((a) => a.map((x, k) => (k === i ? v : x)));
   }
   function updateReps(i: number, v: string) {
+    dirtyRef.current = true;
     setReps((a) => a.map((x, k) => (k === i ? v : x)));
   }
 
-  function submit() {
-    const hasAny = loads.some((l) => l.trim());
-    if (!hasAny || saving) return;
-    const load = loads.map((l) => l.trim() || "-").join("/");
-    const rep = reps.map((r) => r.trim() || "-").join("/");
-    onSave({ id: todayId, exercise, load, reps: rep });
-  }
 
   return (
     <div ref={wrapRef} className="af-logsets">
