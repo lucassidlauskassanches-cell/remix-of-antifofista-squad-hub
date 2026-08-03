@@ -109,9 +109,81 @@ function AlunoEditor() {
           <LogbookReadOnly rows={(data as any).logbook ?? []} />
         </TabsContent>
       </Tabs>
+
+      <DangerZoneCard
+        studentId={id}
+        studentName={data.profile?.full_name ?? ""}
+      />
     </div>
   );
 }
+
+function DangerZoneCard({
+  studentId,
+  studentName,
+}: {
+  studentId: string;
+  studentName: string;
+}) {
+  const fetchCtx = useServerFn(getMyContext);
+  const { data: ctx } = useQuery({
+    queryKey: ["my-context"],
+    queryFn: () => fetchCtx(),
+  });
+  const deleteFn = useServerFn(deleteStudentAccount);
+  const qc = useQueryClient();
+  const navigate = useNavigate();
+  const [confirmText, setConfirmText] = useState("");
+
+  const mDelete = useMutation({
+    mutationFn: () => deleteFn({ data: { studentId } }),
+    onSuccess: () => {
+      toast.success("Aluno excluído permanentemente");
+      qc.invalidateQueries({ queryKey: ["students"] });
+      qc.invalidateQueries({ queryKey: ["admin-overview"] });
+      navigate({ to: "/app/admin/alunos" });
+    },
+    onError: (e: any) => toast.error(e.message ?? "Erro ao excluir aluno"),
+  });
+
+  if (!ctx?.isAdmin) return null;
+
+  return (
+    <Card className="p-4 space-y-3 border-destructive/50">
+      <h3 className="tactical-heading text-sm tracking-widest text-destructive">
+        EXCLUIR ALUNO
+      </h3>
+      <p className="text-xs text-muted-foreground">
+        Remove permanentemente a conta de <strong>{studentName}</strong> e todos os
+        dados: treinos, dieta, registros diários, cargas, peso, streak e arquivos.
+        Esta ação não pode ser desfeita.
+      </p>
+      <div className="grid grid-cols-1 sm:grid-cols-[1fr_auto] gap-3 items-end">
+        <div>
+          <Label className="text-xs">
+            Digite EXCLUIR para confirmar
+          </Label>
+          <Input
+            value={confirmText}
+            onChange={(e) => setConfirmText(e.target.value)}
+            placeholder="EXCLUIR"
+          />
+        </div>
+        <Button
+          variant="destructive"
+          size="sm"
+          disabled={
+            mDelete.isPending || confirmText.trim().toUpperCase() !== "EXCLUIR"
+          }
+          onClick={() => mDelete.mutate()}
+        >
+          {mDelete.isPending ? "EXCLUINDO..." : "EXCLUIR DEFINITIVAMENTE"}
+        </Button>
+      </div>
+    </Card>
+  );
+}
+
 
 function DadosCard({
   studentId,
