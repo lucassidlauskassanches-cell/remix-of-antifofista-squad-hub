@@ -1,17 +1,27 @@
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
+import { useQuery } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import { Plus, Trash2, Save, X } from "lucide-react";
+import { Plus, Trash2, Save, X, Video, VideoOff } from "lucide-react";
 import type {
   StructuredPlan,
   StructuredBlock,
   StructuredExercise,
 } from "@/lib/training-xlsx-parser";
-import { saveStructuredTrainingPlan } from "@/lib/squad.functions";
+import { saveStructuredTrainingPlan, listGallery } from "@/lib/squad.functions";
+
+function normalize(s: string) {
+  return (s || "")
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/[^a-z0-9]+/g, " ")
+    .trim();
+}
 
 type Section = "blocks" | "abdomen" | "cardio";
 
@@ -29,12 +39,38 @@ export function TrainingEditor({
   onCancel: () => void;
 }) {
   const save = useServerFn(saveStructuredTrainingPlan);
+  const fetchGallery = useServerFn(listGallery);
+  const { data: galleryData } = useQuery({
+    queryKey: ["gallery"],
+    queryFn: () => fetchGallery(),
+  });
+  const galleryKeys = useMemo(() => {
+    const set = new Set<string>();
+    ((galleryData?.items ?? []) as any[]).forEach((it) => {
+      const k = normalize(it.title);
+      if (k) set.add(k);
+    });
+    return set;
+  }, [galleryData]);
+  function hasVideo(name: string) {
+    const k = normalize(name);
+    return !!k && galleryKeys.has(k);
+  }
   const [plan, setPlan] = useState<StructuredPlan>(() =>
     JSON.parse(JSON.stringify(initial)),
   );
   const [busy, setBusy] = useState(false);
 
   const weekCount = plan.weeks.length;
+
+  const missingVideos = useMemo(() => {
+    const names = [
+      ...plan.blocks.flatMap((b) => b.exercises.map((e) => e.name)),
+      ...plan.abdomen.map((e) => e.name),
+      ...plan.cardio.map((e) => e.name),
+    ].filter((n) => n.trim());
+    return names.filter((n) => !hasVideo(n)).length;
+  }, [plan, galleryKeys]);
 
   function padWeeks(arr: string[]): string[] {
     const out = arr.slice(0, weekCount);
@@ -253,6 +289,7 @@ export function TrainingEditor({
     onNote: (v: string) => void,
     onRemove: () => void,
   ) {
+    const linked = hasVideo(ex.name);
     return (
       <div className="space-y-1 rounded-md border border-border p-2">
         <div className="flex items-center gap-2">
@@ -262,6 +299,25 @@ export function TrainingEditor({
             onChange={(e) => onName(e.target.value)}
             className="font-medium"
           />
+          <span
+            title={
+              linked
+                ? "Vídeo encontrado na galeria"
+                : "Sem vídeo correspondente na galeria (o nome precisa ser igual ao título do vídeo)"
+            }
+            className={`shrink-0 inline-flex items-center gap-1 rounded-md border px-1.5 py-1 text-[10px] tracking-widest tactical-heading ${
+              linked
+                ? "border-primary/40 text-primary"
+                : "border-muted-foreground/30 text-muted-foreground"
+            }`}
+          >
+            {linked ? (
+              <Video className="w-3.5 h-3.5" />
+            ) : (
+              <VideoOff className="w-3.5 h-3.5" />
+            )}
+            {linked ? "VÍDEO" : "SEM VÍDEO"}
+          </span>
           <Button
             size="sm"
             variant="ghost"
@@ -300,9 +356,16 @@ export function TrainingEditor({
   return (
     <Card className="p-4 space-y-4">
       <div className="flex items-center justify-between">
-        <p className="tactical-heading text-xs text-primary tracking-widest">
-          EDITAR TREINO
-        </p>
+        <div>
+          <p className="tactical-heading text-xs text-primary tracking-widest">
+            EDITAR TREINO
+          </p>
+          {missingVideos > 0 && (
+            <p className="text-[10px] text-muted-foreground mt-0.5">
+              {missingVideos} exercício(s) sem vídeo na galeria
+            </p>
+          )}
+        </div>
         <div className="flex gap-2">
           <Button size="sm" variant="ghost" onClick={onCancel} disabled={busy}>
             <X className="w-4 h-4 mr-1" /> Cancelar
