@@ -875,6 +875,10 @@ export const savePlanPdf = createServerFn({ method: "POST" })
   )
   .handler(async ({ data, context }) => {
     await assertCanManageStudent(context, data.studentId);
+    // O arquivo tem que estar dentro da pasta do próprio aluno.
+    if (!data.pdf_path.startsWith(`${data.studentId}/`)) {
+      throw new Error("Caminho de arquivo inválido.");
+    }
     const { supabase } = context;
     const table = tableForKind(data.kind);
     const { data: existing } = await supabase
