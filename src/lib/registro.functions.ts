@@ -912,6 +912,19 @@ export const saveActionPlanInputs = createServerFn({ method: "POST" })
   )
   .handler(async ({ data, context }) => {
     await assertCanManageStudent(context, data.studentId);
+    // Todos os caminhos têm que estar dentro da pasta do próprio aluno.
+    const prefix = `${data.studentId}/`;
+    for (const key of [
+      "anamnese_path",
+      "foto_frente_path",
+      "foto_lado_path",
+      "foto_costas_path",
+    ] as const) {
+      const p = data[key];
+      if (typeof p === "string" && p.length > 0 && !p.startsWith(prefix)) {
+        throw new Error("Caminho de arquivo inválido.");
+      }
+    }
     const patch: any = { student_id: data.studentId };
     for (const k of [
       "anamnese_path",
