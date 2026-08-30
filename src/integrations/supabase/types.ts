@@ -97,6 +97,75 @@ export type Database = {
         }
         Relationships: []
       }
+      checkins: {
+        Row: {
+          adesao: string | null
+          created_at: string
+          data_recebida: string
+          data_respondida: string | null
+          explicacao: string | null
+          fome_sono_energia: string | null
+          fotos_ok: boolean
+          id: string
+          medidas: string | null
+          o_que_mudou: string | null
+          peso_medio: number | null
+          status: Database["public"]["Enums"]["checkin_status"]
+          student_id: string
+          trainer_id: string | null
+          updated_at: string
+        }
+        Insert: {
+          adesao?: string | null
+          created_at?: string
+          data_recebida?: string
+          data_respondida?: string | null
+          explicacao?: string | null
+          fome_sono_energia?: string | null
+          fotos_ok?: boolean
+          id?: string
+          medidas?: string | null
+          o_que_mudou?: string | null
+          peso_medio?: number | null
+          status?: Database["public"]["Enums"]["checkin_status"]
+          student_id: string
+          trainer_id?: string | null
+          updated_at?: string
+        }
+        Update: {
+          adesao?: string | null
+          created_at?: string
+          data_recebida?: string
+          data_respondida?: string | null
+          explicacao?: string | null
+          fome_sono_energia?: string | null
+          fotos_ok?: boolean
+          id?: string
+          medidas?: string | null
+          o_que_mudou?: string | null
+          peso_medio?: number | null
+          status?: Database["public"]["Enums"]["checkin_status"]
+          student_id?: string
+          trainer_id?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "checkins_student_id_fkey"
+            columns: ["student_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "checkins_trainer_id_fkey"
+            columns: ["trainer_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       daily_logs: {
         Row: {
           created_at: string
@@ -496,6 +565,54 @@ export type Database = {
         }
         Relationships: []
       }
+      reminders: {
+        Row: {
+          concluido: boolean
+          created_at: string
+          data_alvo: string
+          id: string
+          student_id: string
+          texto: string
+          trainer_id: string | null
+          updated_at: string
+        }
+        Insert: {
+          concluido?: boolean
+          created_at?: string
+          data_alvo: string
+          id?: string
+          student_id: string
+          texto: string
+          trainer_id?: string | null
+          updated_at?: string
+        }
+        Update: {
+          concluido?: boolean
+          created_at?: string
+          data_alvo?: string
+          id?: string
+          student_id?: string
+          texto?: string
+          trainer_id?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "reminders_student_id_fkey"
+            columns: ["student_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "reminders_trainer_id_fkey"
+            columns: ["trainer_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       streaks: {
         Row: {
           current_streak: number
@@ -567,6 +684,107 @@ export type Database = {
             foreignKeyName: "structured_training_plans_student_id_fkey"
             columns: ["student_id"]
             isOneToOne: true
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      student_crm: {
+        Row: {
+          checkin_dia: number | null
+          created_at: string
+          data_inicio: string | null
+          data_vencimento: string | null
+          objetivo: string | null
+          plano_tipo: Database["public"]["Enums"]["crm_plano_tipo"] | null
+          restricoes: string | null
+          status: Database["public"]["Enums"]["crm_status"]
+          student_id: string
+          updated_at: string
+          whatsapp_grupo_url: string | null
+        }
+        Insert: {
+          checkin_dia?: number | null
+          created_at?: string
+          data_inicio?: string | null
+          data_vencimento?: string | null
+          objetivo?: string | null
+          plano_tipo?: Database["public"]["Enums"]["crm_plano_tipo"] | null
+          restricoes?: string | null
+          status?: Database["public"]["Enums"]["crm_status"]
+          student_id: string
+          updated_at?: string
+          whatsapp_grupo_url?: string | null
+        }
+        Update: {
+          checkin_dia?: number | null
+          created_at?: string
+          data_inicio?: string | null
+          data_vencimento?: string | null
+          objetivo?: string | null
+          plano_tipo?: Database["public"]["Enums"]["crm_plano_tipo"] | null
+          restricoes?: string | null
+          status?: Database["public"]["Enums"]["crm_status"]
+          student_id?: string
+          updated_at?: string
+          whatsapp_grupo_url?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "student_crm_student_id_fkey"
+            columns: ["student_id"]
+            isOneToOne: true
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      student_notes: {
+        Row: {
+          anexo_url: string | null
+          categoria: Database["public"]["Enums"]["note_categoria"]
+          created_at: string
+          data: string
+          id: string
+          student_id: string
+          texto: string
+          trainer_id: string | null
+          updated_at: string
+        }
+        Insert: {
+          anexo_url?: string | null
+          categoria?: Database["public"]["Enums"]["note_categoria"]
+          created_at?: string
+          data?: string
+          id?: string
+          student_id: string
+          texto: string
+          trainer_id?: string | null
+          updated_at?: string
+        }
+        Update: {
+          anexo_url?: string | null
+          categoria?: Database["public"]["Enums"]["note_categoria"]
+          created_at?: string
+          data?: string
+          id?: string
+          student_id?: string
+          texto?: string
+          trainer_id?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "student_notes_student_id_fkey"
+            columns: ["student_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "student_notes_trainer_id_fkey"
+            columns: ["trainer_id"]
+            isOneToOne: false
             referencedRelation: "profiles"
             referencedColumns: ["id"]
           },
@@ -750,6 +968,22 @@ export type Database = {
     }
     Enums: {
       app_role: "aluno" | "treinador" | "admin"
+      checkin_status: "recebido" | "respondido"
+      crm_plano_tipo: "mensal" | "trimestral" | "semestral"
+      crm_status:
+        | "ativo"
+        | "aguardando_checkin"
+        | "aguardando_resposta"
+        | "plano_a_montar"
+        | "renovacao_proxima"
+      note_categoria:
+        | "dieta"
+        | "treino"
+        | "saude"
+        | "sono"
+        | "feedback"
+        | "ajuste"
+        | "geral"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -878,6 +1112,24 @@ export const Constants = {
   public: {
     Enums: {
       app_role: ["aluno", "treinador", "admin"],
+      checkin_status: ["recebido", "respondido"],
+      crm_plano_tipo: ["mensal", "trimestral", "semestral"],
+      crm_status: [
+        "ativo",
+        "aguardando_checkin",
+        "aguardando_resposta",
+        "plano_a_montar",
+        "renovacao_proxima",
+      ],
+      note_categoria: [
+        "dieta",
+        "treino",
+        "saude",
+        "sono",
+        "feedback",
+        "ajuste",
+        "geral",
+      ],
     },
   },
 } as const

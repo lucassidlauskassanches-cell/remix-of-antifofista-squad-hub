@@ -16,7 +16,7 @@ function AppIndex() {
   });
 
   if (!ctx) return null;
-  if (ctx.isAdmin) return <Navigate to="/app/admin/visao" replace />;
-  if (ctx.isTreinador) return <Navigate to="/app/admin/alunos" replace />;
+  if (ctx.isAdmin) return <Navigate to="/app/admin/painel" replace />;
+  if (ctx.isTreinador) return <Navigate to="/app/admin/painel" replace />;
   return <Navigate to="/app/treino" replace />;
 }

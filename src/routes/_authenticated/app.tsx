@@ -1,7 +1,7 @@
 import { createFileRoute, Outlet, Link, useNavigate, useLocation } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
-import { Dumbbell, Apple, Video, LogOut, ShieldCheck, Users, TrendingUp, Trophy } from "lucide-react";
+import { Dumbbell, Apple, Video, LogOut, ShieldCheck, Users, TrendingUp, Trophy, LayoutDashboard } from "lucide-react";
 import { getMyContext } from "@/lib/access.functions";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
@@ -144,6 +144,18 @@ function AppShell() {
             )}
             {(ctx.isTreinador || ctx.isAdmin) && (
               <>
+                <Button
+                  asChild
+                  variant={
+                    loc.pathname.startsWith("/app/admin/painel") ? "default" : "outline"
+                  }
+                  size="sm"
+                  className="tactical-heading text-xs"
+                >
+                  <Link to="/app/admin/painel">
+                    <LayoutDashboard className="w-4 h-4 mr-1" /> PAINEL
+                  </Link>
+                </Button>
                 <Button
                   asChild
                   variant={
