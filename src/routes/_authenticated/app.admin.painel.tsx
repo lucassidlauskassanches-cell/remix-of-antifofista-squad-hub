@@ -125,9 +125,12 @@ function PainelTreinador() {
   if (isPending) return <p className="text-sm text-muted-foreground">Carregando painel...</p>;
   if (error)
     return (
-      <p className="text-sm text-destructive">
-        Não foi possível carregar o painel. Tente novamente.
-      </p>
+      <div className="space-y-2 text-sm text-destructive">
+        <p>Não foi possível carregar o painel. Tente novamente.</p>
+        <p className="text-xs text-muted-foreground">
+          {error instanceof Error ? error.message : "Erro inesperado ao consultar os dados."}
+        </p>
+      </div>
     );
 
 
