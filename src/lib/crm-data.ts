@@ -54,7 +54,10 @@ export type PanelRow = {
   id: string;
   full_name: string;
   email: string;
+  trainer_id?: string | null;
+  trainer_name?: string | null;
   status: string;
+
   objetivo: string | null;
   plano_tipo: string | null;
   data_vencimento: string | null;

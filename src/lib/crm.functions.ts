@@ -7,6 +7,7 @@ import {
   crmRoles,
   fetchAll,
   maxIso,
+  type PanelRow,
 } from "@/lib/crm-data";
 import { computeAlerts } from "@/lib/crm-alerts";
 import { addDaysIso, todayInBrasilia } from "@/lib/tz";
@@ -41,7 +42,35 @@ export const getTrainerPanel = createServerFn({ method: "GET" })
     const { data: students, error: studentsError } = await studentsQ;
     if (studentsError) throw new Error(studentsError.message);
     const ids = (students ?? []).map((s: any) => s.id);
-    if (!ids.length) return { rows: [], today };
+
+    const trainerNames = new Map<string, string>();
+    if (isAdmin) {
+      const trainerIds = Array.from(
+        new Set(
+          (students ?? [])
+            .map((s: any) => s.trainer_id as string | null)
+            .filter((v: string | null): v is string => Boolean(v)),
+        ),
+      );
+      if (trainerIds.length) {
+        const { data: trainerProfiles } = await supabase
+          .from("profiles")
+          .select("id,full_name,email")
+          .in("id", trainerIds);
+        for (const t of (trainerProfiles ?? []) as any[]) {
+          trainerNames.set(t.id, t.full_name || t.email || "(sem nome)");
+        }
+      }
+    }
+    const trainersList: { id: string; full_name: string }[] = Array.from(
+      trainerNames.entries(),
+    )
+      .map(([id, full_name]) => ({ id, full_name }))
+      .sort((a, b) => a.full_name.localeCompare(b.full_name));
+
+    if (!ids.length)
+      return { rows: [] as PanelRow[], today, isAdmin: Boolean(isAdmin), trainers: trainersList };
+
 
     const [logs, weights, crms, notes, checkins, reminders, streaks, structured, trainingPlans, diets] =
       await Promise.all([
@@ -118,7 +147,7 @@ export const getTrainerPanel = createServerFn({ method: "GET" })
         ),
       ]);
 
-    const rows = (students ?? []).map((s: any) => {
+    const rows: PanelRow[] = (students ?? []).map((s: any) => {
       const myLogs = logs.filter((l) => l.student_id === s.id);
       const lastLog = myLogs.reduce<string | null>(
         (acc, l) => maxIso(acc, l.log_date),
@@ -141,33 +170,47 @@ export const getTrainerPanel = createServerFn({ method: "GET" })
         ? { data_recebida: myCheckins[0].data_recebida, status: myCheckins[0].status }
         : null;
       const nextReminderRow = reminders.find((r) => r.student_id === s.id);
-      return buildPanelRow(
-        { id: s.id, full_name: s.full_name, email: s.email },
-        {
-          crm: crms.find((c) => c.student_id === s.id) ?? null,
-          lastActivity: maxIso(lastLog, lastWeight),
-          lastFeedback: maxIso(lastNote, lastCheckin?.data_recebida ?? null),
-          adesao7,
-          streak:
-            Number(
-              streaks.find((st) => st.student_id === s.id)?.current_streak ?? 0,
-            ) || 0,
-          lastCheckin,
-          nextReminder: nextReminderRow
-            ? { texto: nextReminderRow.texto, data_alvo: nextReminderRow.data_alvo }
-            : null,
-          hasPlan:
-            structured.some((p) => p.student_id === s.id) ||
-            trainingPlans.some((p) => p.student_id === s.id) ||
-            diets.some((p) => p.student_id === s.id),
-        },
-        today,
-      );
+      return {
+        ...buildPanelRow(
+          { id: s.id, full_name: s.full_name, email: s.email },
+          {
+            crm: crms.find((c) => c.student_id === s.id) ?? null,
+            lastActivity: maxIso(lastLog, lastWeight),
+            lastFeedback: maxIso(lastNote, lastCheckin?.data_recebida ?? null),
+            adesao7,
+            streak:
+              Number(
+                streaks.find((st) => st.student_id === s.id)?.current_streak ?? 0,
+              ) || 0,
+            lastCheckin,
+            nextReminder: nextReminderRow
+              ? { texto: nextReminderRow.texto, data_alvo: nextReminderRow.data_alvo }
+              : null,
+            hasPlan:
+              structured.some((p) => p.student_id === s.id) ||
+              trainingPlans.some((p) => p.student_id === s.id) ||
+              diets.some((p) => p.student_id === s.id),
+          },
+          today,
+        ),
+        trainer_id: (s.trainer_id as string | null) ?? null,
+        trainer_name: s.trainer_id ? (trainerNames.get(s.trainer_id) ?? null) : null,
+      };
     });
 
     rows.sort((a, b) => b.urgencia - a.urgencia || a.full_name.localeCompare(b.full_name));
-    return { rows, today };
+    return {
+      rows,
+      today,
+      isAdmin,
+      trainers: isAdmin
+        ? Array.from(trainerNames.entries())
+            .map(([id, full_name]) => ({ id, full_name }))
+            .sort((a, b) => a.full_name.localeCompare(b.full_name))
+        : [],
+    };
   });
+
 
 export const getStudentBordo = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
