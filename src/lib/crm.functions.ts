@@ -6,6 +6,7 @@ import {
   crmAssertStudent,
   crmRoles,
   fetchAll,
+  fetchAllIn,
   maxIso,
   type PanelRow,
 } from "@/lib/crm-data";
@@ -74,75 +75,75 @@ export const getTrainerPanel = createServerFn({ method: "GET" })
 
     const [logs, weights, crms, notes, checkins, reminders, streaks, structured, trainingPlans, diets] =
       await Promise.all([
-        fetchAll((from, to) =>
+        fetchAllIn(ids, (chunk, from, to) =>
           supabase
             .from("daily_logs")
             .select("student_id,log_date,daily_score")
-            .in("student_id", ids)
+            .in("student_id", chunk)
             .gte("log_date", since30)
             .range(from, to),
         ),
-        fetchAll((from, to) =>
+        fetchAllIn(ids, (chunk, from, to) =>
           supabase
             .from("weight_entries")
             .select("student_id,entry_date")
-            .in("student_id", ids)
+            .in("student_id", chunk)
             .gte("entry_date", since30)
             .range(from, to),
         ),
-        fetchAll((from, to) =>
-          supabase.from("student_crm").select("*").in("student_id", ids).range(from, to),
+        fetchAllIn(ids, (chunk, from, to) =>
+          supabase.from("student_crm").select("*").in("student_id", chunk).range(from, to),
         ),
-        fetchAll((from, to) =>
+        fetchAllIn(ids, (chunk, from, to) =>
           supabase
             .from("student_notes")
             .select("student_id,data")
-            .in("student_id", ids)
+            .in("student_id", chunk)
             .range(from, to),
         ),
-        fetchAll((from, to) =>
+        fetchAllIn(ids, (chunk, from, to) =>
           supabase
             .from("checkins")
             .select("student_id,data_recebida,status")
-            .in("student_id", ids)
+            .in("student_id", chunk)
             .range(from, to),
         ),
-        fetchAll((from, to) =>
+        fetchAllIn(ids, (chunk, from, to) =>
           supabase
             .from("reminders")
             .select("student_id,texto,data_alvo")
-            .in("student_id", ids)
+            .in("student_id", chunk)
             .eq("concluido", false)
             .order("data_alvo")
             .range(from, to),
         ),
-        fetchAll((from, to) =>
+        fetchAllIn(ids, (chunk, from, to) =>
           supabase
             .from("streaks")
             .select("student_id,current_streak")
-            .in("student_id", ids)
+            .in("student_id", chunk)
             .range(from, to),
         ),
-        fetchAll((from, to) =>
+        fetchAllIn(ids, (chunk, from, to) =>
           supabase
             .from("structured_training_plans")
             .select("student_id")
-            .in("student_id", ids)
+            .in("student_id", chunk)
             .range(from, to),
         ),
-        fetchAll((from, to) =>
+        fetchAllIn(ids, (chunk, from, to) =>
           supabase
             .from("training_plans")
             .select("student_id,active")
-            .in("student_id", ids)
+            .in("student_id", chunk)
             .eq("active", true)
             .range(from, to),
         ),
-        fetchAll((from, to) =>
+        fetchAllIn(ids, (chunk, from, to) =>
           supabase
             .from("diet_prescriptions")
             .select("student_id")
-            .in("student_id", ids)
+            .in("student_id", chunk)
             .range(from, to),
         ),
       ]);
