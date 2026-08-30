@@ -41,7 +41,35 @@ export const getTrainerPanel = createServerFn({ method: "GET" })
     const { data: students, error: studentsError } = await studentsQ;
     if (studentsError) throw new Error(studentsError.message);
     const ids = (students ?? []).map((s: any) => s.id);
-    if (!ids.length) return { rows: [], today };
+
+    const trainerNames = new Map<string, string>();
+    if (isAdmin) {
+      const trainerIds = Array.from(
+        new Set(
+          (students ?? [])
+            .map((s: any) => s.trainer_id as string | null)
+            .filter((v: string | null): v is string => Boolean(v)),
+        ),
+      );
+      if (trainerIds.length) {
+        const { data: trainerProfiles } = await supabase
+          .from("profiles")
+          .select("id,full_name,email")
+          .in("id", trainerIds);
+        for (const t of (trainerProfiles ?? []) as any[]) {
+          trainerNames.set(t.id, t.full_name || t.email || "(sem nome)");
+        }
+      }
+    }
+    const trainersList: { id: string; full_name: string }[] = Array.from(
+      trainerNames.entries(),
+    )
+      .map(([id, full_name]) => ({ id, full_name }))
+      .sort((a, b) => a.full_name.localeCompare(b.full_name));
+
+    if (!ids.length)
+      return { rows: [] as any[], today, isAdmin: Boolean(isAdmin), trainers: trainersList };
+
 
     const [logs, weights, crms, notes, checkins, reminders, streaks, structured, trainingPlans, diets] =
       await Promise.all([
