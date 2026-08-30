@@ -44,6 +44,27 @@ export async function fetchAll(makeQuery: (from: number, to: number) => any) {
   return out;
 }
 
+/** Divide uma lista em blocos (evita URLs gigantes no filtro .in()). */
+export function chunkIds(ids: string[], size = 80): string[][] {
+  const out: string[][] = [];
+  for (let i = 0; i < ids.length; i += size) out.push(ids.slice(i, i + size));
+  return out;
+}
+
+/** Igual a fetchAll, mas quebrando o filtro .in() em blocos de ids. */
+export async function fetchAllIn(
+  ids: string[],
+  makeQuery: (chunk: string[], from: number, to: number) => any,
+) {
+  const out: any[] = [];
+  for (const chunk of chunkIds(ids)) {
+    const rows = await fetchAll((from, to) => makeQuery(chunk, from, to));
+    out.push(...rows);
+  }
+  return out;
+}
+
+
 export function maxIso(a: string | null, b: string | null): string | null {
   if (!a) return b;
   if (!b) return a;
