@@ -7,6 +7,7 @@ import {
   crmRoles,
   fetchAll,
   maxIso,
+  type PanelRow,
 } from "@/lib/crm-data";
 import { computeAlerts } from "@/lib/crm-alerts";
 import { addDaysIso, todayInBrasilia } from "@/lib/tz";
@@ -68,7 +69,7 @@ export const getTrainerPanel = createServerFn({ method: "GET" })
       .sort((a, b) => a.full_name.localeCompare(b.full_name));
 
     if (!ids.length)
-      return { rows: [] as any[], today, isAdmin: Boolean(isAdmin), trainers: trainersList };
+      return { rows: [] as PanelRow[], today, isAdmin: Boolean(isAdmin), trainers: trainersList };
 
 
     const [logs, weights, crms, notes, checkins, reminders, streaks, structured, trainingPlans, diets] =
@@ -146,7 +147,7 @@ export const getTrainerPanel = createServerFn({ method: "GET" })
         ),
       ]);
 
-    const rows = (students ?? []).map((s: any) => {
+    const rows: PanelRow[] = (students ?? []).map((s: any) => {
       const myLogs = logs.filter((l) => l.student_id === s.id);
       const lastLog = myLogs.reduce<string | null>(
         (acc, l) => maxIso(acc, l.log_date),
