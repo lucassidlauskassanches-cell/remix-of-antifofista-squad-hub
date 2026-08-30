@@ -261,6 +261,12 @@ function PainelTreinador() {
                   <p className="text-sm font-semibold text-foreground truncate">
                     {r.full_name}
                   </p>
+                  {isAdmin && (
+                    <p className="text-[11px] text-primary/80 truncate">
+                      Treinador: {r.trainer_name ?? "sem treinador"}
+                    </p>
+                  )}
+
                   <p className="text-[11px] text-muted-foreground">
                     {STATUS_LABEL[r.status as keyof typeof STATUS_LABEL] ?? r.status} ·{" "}
                     {dias === null
