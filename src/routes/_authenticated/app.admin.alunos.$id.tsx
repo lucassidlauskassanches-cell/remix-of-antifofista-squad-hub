@@ -85,14 +85,18 @@ function AlunoEditor() {
         }}
       />
 
-      <Tabs defaultValue="treino">
-        <TabsList className="grid grid-cols-5 w-full">
+      <Tabs defaultValue="bordo">
+        <TabsList className="grid grid-cols-6 w-full">
+          <TabsTrigger value="bordo" className="tactical-heading">BORDO</TabsTrigger>
           <TabsTrigger value="aderencia" className="tactical-heading">ADERÊNCIA</TabsTrigger>
           <TabsTrigger value="treino" className="tactical-heading">TREINO</TabsTrigger>
           <TabsTrigger value="nutricao" className="tactical-heading">NUTRIÇÃO</TabsTrigger>
           <TabsTrigger value="acao" className="tactical-heading">AÇÃO</TabsTrigger>
           <TabsTrigger value="logbook" className="tactical-heading">LOGBOOK</TabsTrigger>
         </TabsList>
+        <TabsContent value="bordo" className="mt-4">
+          <ManualBordo studentId={id} />
+        </TabsContent>
         <TabsContent value="aderencia" className="mt-4">
           <AderenciaSection studentId={id} />
         </TabsContent>
