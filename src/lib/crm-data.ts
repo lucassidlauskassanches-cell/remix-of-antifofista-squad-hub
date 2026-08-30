@@ -4,12 +4,14 @@ import { computeAlerts, urgencia, type StudentAlert } from "@/lib/crm-alerts";
 type Ctx = { supabase: any; userId: string };
 
 export async function crmRoles(ctx: Ctx) {
-  const { data } = await ctx.supabase
+  const { data, error } = await ctx.supabase
     .from("user_roles")
     .select("role")
-    .eq("user_id", ctx.userId)
-    .in("role", ["treinador", "admin"]);
-  const roles = (data ?? []).map((r: any) => r.role);
+    .eq("user_id", ctx.userId);
+  if (error) throw new Error(`Não foi possível validar o acesso ao painel: ${error.message}`);
+  const roles = (data ?? [])
+    .map((r: any) => r.role)
+    .filter((role: string) => role === "treinador" || role === "admin");
   if (!roles.length) throw new Error("Forbidden: treinador required");
   return { isAdmin: roles.includes("admin"), isTrainer: roles.includes("treinador") };
 }
@@ -56,11 +58,20 @@ export async function fetchAllIn(
   ids: string[],
   makeQuery: (chunk: string[], from: number, to: number) => any,
 ) {
+  const chunks = chunkIds(ids);
   const out: any[] = [];
-  for (const chunk of chunkIds(ids)) {
-    const rows = await fetchAll((from, to) => makeQuery(chunk, from, to));
-    out.push(...rows);
+  const concurrency = 3;
+
+  for (let i = 0; i < chunks.length; i += concurrency) {
+    const batch = chunks.slice(i, i + concurrency);
+    const rows = await Promise.all(
+      batch.map((chunk) =>
+        fetchAll((from, to) => makeQuery(chunk, from, to)),
+      ),
+    );
+    out.push(...rows.flat());
   }
+
   return out;
 }
 
