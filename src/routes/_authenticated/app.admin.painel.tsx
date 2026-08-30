@@ -58,14 +58,28 @@ function PainelTreinador() {
   });
   const [search, setSearch] = useState("");
   const [filter, setFilter] = useState<FilterKey>("todos");
+  const [trainerFilter, setTrainerFilter] = useState<string>("all");
 
-  const rows = data?.rows ?? [];
+  const allRows = data?.rows ?? [];
   const today = data?.today ?? "";
+  const isAdmin = data?.isAdmin ?? false;
+  const trainers = data?.trainers ?? [];
 
-  const counts = useMemo(() => {
-    const has = (k: AlertKey) => rows.filter((r) => r.alerts.some((a) => a.key === k)).length;
+  const rows = useMemo(
+    () =>
+      trainerFilter === "all"
+        ? allRows
+        : trainerFilter === "none"
+          ? allRows.filter((r) => !r.trainer_id)
+          : allRows.filter((r) => r.trainer_id === trainerFilter),
+    [allRows, trainerFilter],
+  );
+
+  const countsOf = (list: typeof allRows) => {
+    const has = (k: AlertKey) => list.filter((r) => r.alerts.some((a) => a.key === k)).length;
     return {
-      responder: rows.filter(
+      total: list.length,
+      responder: list.filter(
         (r) => r.status === "aguardando_resposta" || r.lastCheckin?.status === "recebido",
       ).length,
       checkin: has("checkin_vencido"),
@@ -73,7 +87,27 @@ function PainelTreinador() {
       renovacao: has("renovacao") + has("renovacao_vencida"),
       plano: has("plano_a_montar"),
     };
-  }, [rows]);
+  };
+
+  const counts = useMemo(() => countsOf(rows), [rows]);
+
+  const trainerSummary = useMemo(() => {
+    if (!isAdmin) return [];
+    const groups = trainers.map((t) => ({
+      id: t.id,
+      full_name: t.full_name,
+      ...countsOf(allRows.filter((r) => r.trainer_id === t.id)),
+    }));
+    const orphans = allRows.filter((r) => !r.trainer_id);
+    if (orphans.length) {
+      groups.push({ id: "none", full_name: "Sem treinador", ...countsOf(orphans) });
+    }
+    return groups.sort(
+      (a, b) =>
+        b.responder + b.checkin + b.sumidos + b.renovacao -
+        (a.responder + a.checkin + a.sumidos + a.renovacao),
+    );
+  }, [allRows, trainers, isAdmin]);
 
   const visible = useMemo(() => {
     const q = search.trim().toLowerCase();
@@ -95,6 +129,7 @@ function PainelTreinador() {
         Não foi possível carregar o painel. Tente novamente.
       </p>
     );
+
 
   return (
     <div className="space-y-4">
