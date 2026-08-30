@@ -135,8 +135,78 @@ function PainelTreinador() {
     <div className="space-y-4">
       <div>
         <h1 className="tactical-heading text-2xl">PAINEL</h1>
-        <p className="text-sm text-muted-foreground">Quem precisa de mim agora.</p>
+        <p className="text-sm text-muted-foreground">
+          {isAdmin
+            ? trainerFilter === "all"
+              ? "Visão consolidada de todos os treinadores."
+              : `Visão do treinador: ${
+                  trainerFilter === "none"
+                    ? "Sem treinador"
+                    : (trainers.find((t) => t.id === trainerFilter)?.full_name ?? "")
+                }`
+            : "Quem precisa de mim agora."}
+        </p>
       </div>
+
+      {isAdmin && (
+        <div className="space-y-2">
+          <div className="flex flex-wrap gap-1">
+            <button
+              type="button"
+              onClick={() => setTrainerFilter("all")}
+              className={`rounded-md border px-2 py-1 text-xs transition-colors ${
+                trainerFilter === "all"
+                  ? "border-primary bg-primary/10 text-primary"
+                  : "border-border text-muted-foreground hover:text-foreground"
+              }`}
+            >
+              Todos os treinadores
+            </button>
+            {trainerSummary.map((t) => (
+              <button
+                key={t.id}
+                type="button"
+                onClick={() => setTrainerFilter(t.id)}
+                className={`rounded-md border px-2 py-1 text-xs transition-colors ${
+                  trainerFilter === t.id
+                    ? "border-primary bg-primary/10 text-primary"
+                    : "border-border text-muted-foreground hover:text-foreground"
+                }`}
+              >
+                {t.full_name}
+              </button>
+            ))}
+          </div>
+
+          <Card className="p-3 space-y-2">
+            <p className="text-[10px] tracking-wider text-muted-foreground">
+              RESUMO POR TREINADOR
+            </p>
+            {trainerSummary.length === 0 && (
+              <p className="text-xs text-muted-foreground">Nenhum treinador com alunos.</p>
+            )}
+            {trainerSummary.map((t) => (
+              <button
+                key={t.id}
+                type="button"
+                onClick={() => setTrainerFilter(t.id)}
+                className="w-full text-left rounded-md border border-border px-2 py-2 hover:border-primary/60 transition-colors"
+              >
+                <p className="text-sm font-semibold text-foreground truncate">
+                  {t.full_name}{" "}
+                  <span className="text-[11px] font-normal text-muted-foreground">
+                    · {t.total} aluno(s)
+                  </span>
+                </p>
+                <p className="text-[11px] text-muted-foreground">
+                  A responder {t.responder} · Check-in vencido {t.checkin} · Sumidos{" "}
+                  {t.sumidos} · Renovação {t.renovacao}
+                </p>
+              </button>
+            ))}
+          </Card>
+        </div>
+      )}
 
       <div className="grid grid-cols-2 sm:grid-cols-5 gap-2">
         <CountCard label="A RESPONDER" value={counts.responder} />
@@ -145,6 +215,7 @@ function PainelTreinador() {
         <CountCard label="RENOVAÇÃO" value={counts.renovacao} />
         <CountCard label="PLANO A MONTAR" value={counts.plano} />
       </div>
+
 
       <div className="relative">
         <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
