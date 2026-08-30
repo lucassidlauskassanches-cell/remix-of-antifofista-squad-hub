@@ -56,11 +56,20 @@ export async function fetchAllIn(
   ids: string[],
   makeQuery: (chunk: string[], from: number, to: number) => any,
 ) {
+  const chunks = chunkIds(ids);
   const out: any[] = [];
-  for (const chunk of chunkIds(ids)) {
-    const rows = await fetchAll((from, to) => makeQuery(chunk, from, to));
-    out.push(...rows);
+  const concurrency = 3;
+
+  for (let i = 0; i < chunks.length; i += concurrency) {
+    const batch = chunks.slice(i, i + concurrency);
+    const rows = await Promise.all(
+      batch.map((chunk) =>
+        fetchAll((from, to) => makeQuery(chunk, from, to)),
+      ),
+    );
+    out.push(...rows.flat());
   }
+
   return out;
 }
 
