@@ -4,10 +4,11 @@ import { computeAlerts, urgencia, type StudentAlert } from "@/lib/crm-alerts";
 type Ctx = { supabase: any; userId: string };
 
 export async function crmRoles(ctx: Ctx) {
-  const { data } = await ctx.supabase
+  const { data, error } = await ctx.supabase
     .from("user_roles")
     .select("role")
     .eq("user_id", ctx.userId);
+  if (error) throw new Error(`Não foi possível validar o acesso ao painel: ${error.message}`);
   const roles = (data ?? [])
     .map((r: any) => r.role)
     .filter((role: string) => role === "treinador" || role === "admin");
