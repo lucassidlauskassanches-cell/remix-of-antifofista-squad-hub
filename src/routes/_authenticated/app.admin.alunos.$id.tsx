@@ -74,6 +74,10 @@ function AlunoEditor() {
         }}
       />
 
+      <SenhaCard studentId={id} />
+
+
+
       <TrainerAssignCard
         studentId={id}
         currentTrainerId={(data.profile as any)?.trainer_id ?? null}
