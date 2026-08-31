@@ -194,6 +194,67 @@ function DangerZoneCard({
   );
 }
 
+function SenhaCard({ studentId }: { studentId: string }) {
+  const fetchCtx = useServerFn(getMyContext);
+  const { data: ctx } = useQuery({ queryKey: ["my-context"], queryFn: () => fetchCtx() });
+  const setPass = useServerFn(setStudentPassword);
+  const [password, setPassword] = useState("");
+  const [confirm, setConfirm] = useState("");
+
+  const mPass = useMutation({
+    mutationFn: () => setPass({ data: { studentId, password } }),
+    onSuccess: () => {
+      toast.success("Senha do aluno redefinida");
+      setPassword("");
+      setConfirm("");
+    },
+    onError: (e: any) => toast.error(e.message ?? "Erro ao redefinir senha"),
+  });
+
+  if (!ctx?.isAdmin) return null;
+
+  const invalid = password.length < 6 || password !== confirm;
+
+  return (
+    <Card className="p-4 space-y-3">
+      <h3 className="tactical-heading text-sm tracking-widest">ACESSO DO ALUNO (ADMIN SUPREMO)</h3>
+      <p className="text-xs text-muted-foreground">
+        O e-mail de login é alterado no cartão DADOS DO ALUNO. Aqui você define uma nova senha
+        diretamente, sem precisar do e-mail de recuperação.
+      </p>
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+        <div>
+          <Label className="text-xs">Nova senha</Label>
+          <Input
+            type="password"
+            autoComplete="new-password"
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+            placeholder="Mínimo 6 caracteres"
+          />
+        </div>
+        <div>
+          <Label className="text-xs">Confirmar nova senha</Label>
+          <Input
+            type="password"
+            autoComplete="new-password"
+            value={confirm}
+            onChange={(e) => setConfirm(e.target.value)}
+          />
+        </div>
+      </div>
+      {password.length > 0 && invalid && (
+        <p className="text-xs text-destructive">
+          {password.length < 6 ? "A senha deve ter ao menos 6 caracteres." : "As senhas não coincidem."}
+        </p>
+      )}
+      <Button size="sm" disabled={invalid || mPass.isPending} onClick={() => mPass.mutate()}>
+        {mPass.isPending ? "SALVANDO..." : "REDEFINIR SENHA"}
+      </Button>
+    </Card>
+  );
+}
+
 
 function DadosCard({
   studentId,
