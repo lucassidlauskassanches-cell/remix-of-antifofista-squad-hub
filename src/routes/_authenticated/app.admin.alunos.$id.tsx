@@ -9,6 +9,7 @@ import {
   updateStudentProfile,
   assignStudentTrainer,
   deleteStudentAccount,
+  setStudentPassword,
 } from "@/lib/squad.functions";
 import { saveStudentAnamnese, getStudentAdherence } from "@/lib/registro.functions";
 import { getMyContext, listTrainersForStudentForm } from "@/lib/access.functions";
