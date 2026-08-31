@@ -564,6 +564,29 @@ export const updateStudentProfile = createServerFn({ method: "POST" })
     return { ok: true };
   });
 
+// Somente ADMIN SUPREMO pode redefinir a senha (e o e-mail de login) de um aluno.
+export const setStudentPassword = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: unknown) =>
+    z
+      .object({
+        studentId: z.string().uuid(),
+        password: z.string().min(6).max(200),
+      })
+      .parse(d),
+  )
+  .handler(async ({ data, context }) => {
+    const { isAdmin } = await assertTrainerOrAdmin(context);
+    if (!isAdmin) throw new Error("Forbidden: apenas o admin supremo pode alterar senhas.");
+
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { error } = await supabaseAdmin.auth.admin.updateUserById(data.studentId, {
+      password: data.password,
+    });
+    if (error) throw new Error(error.message);
+    return { ok: true };
+  });
+
 export const getStudentDetail = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((d: unknown) =>
