@@ -184,7 +184,11 @@ export const updateTrainerAccount = createServerFn({ method: "POST" })
       }
     }
 
-    const profilePatch: Record<string, unknown> = {};
+    const profilePatch: {
+      full_name?: string;
+      email?: string;
+      phone?: string | null;
+    } = {};
     if (data.full_name) profilePatch.full_name = data.full_name;
     if (data.email) profilePatch.email = data.email;
     if (data.phone !== undefined) profilePatch.phone = data.phone ?? null;
