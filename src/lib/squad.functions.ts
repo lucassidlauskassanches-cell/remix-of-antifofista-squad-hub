@@ -134,6 +134,75 @@ export const removeTrainer = createServerFn({ method: "POST" })
     return { ok: true };
   });
 
+// Somente ADMIN SUPREMO: alterar login (e-mail), nome/telefone e senha de um treinador.
+export const updateTrainerAccount = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: unknown) =>
+    z
+      .object({
+        userId: z.string().uuid(),
+        full_name: z.string().trim().min(1).max(200).optional(),
+        email: z.string().trim().email().max(255).optional(),
+        phone: z.string().trim().max(40).optional().nullable(),
+        password: z.string().min(6).max(200).optional(),
+      })
+      .parse(d),
+  )
+  .handler(async ({ data, context }) => {
+    await assertAdmin(context);
+    const { supabaseAdmin } = await import(
+      "@/integrations/supabase/client.server"
+    );
+
+    // Garante que o alvo é realmente um treinador
+    const { data: role } = await supabaseAdmin
+      .from("user_roles")
+      .select("role")
+      .eq("user_id", data.userId)
+      .eq("role", "treinador" as any)
+      .maybeSingle();
+    if (!role) throw new Error("Usuário não é um treinador.");
+
+    const authPayload: Record<string, unknown> = {};
+    if (data.email) {
+      authPayload.email = data.email;
+      authPayload.email_confirm = true;
+    }
+    if (data.password) authPayload.password = data.password;
+
+    if (Object.keys(authPayload).length) {
+      const { error: authErr } = await supabaseAdmin.auth.admin.updateUserById(
+        data.userId,
+        authPayload as any,
+      );
+      if (authErr) {
+        throw new Error(
+          authErr.message?.toLowerCase().includes("already")
+            ? "Já existe uma conta com este e-mail."
+            : authErr.message,
+        );
+      }
+    }
+
+    const profilePatch: {
+      full_name?: string;
+      email?: string;
+      phone?: string | null;
+    } = {};
+    if (data.full_name) profilePatch.full_name = data.full_name;
+    if (data.email) profilePatch.email = data.email;
+    if (data.phone !== undefined) profilePatch.phone = data.phone ?? null;
+    if (Object.keys(profilePatch).length) {
+      const { error } = await supabaseAdmin
+        .from("profiles")
+        .update(profilePatch)
+        .eq("id", data.userId);
+      if (error) throw new Error(error.message);
+    }
+
+    return { ok: true };
+  });
+
 
 // ===== Aluno: views =====
 
