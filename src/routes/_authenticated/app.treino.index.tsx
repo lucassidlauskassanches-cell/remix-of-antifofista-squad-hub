@@ -641,13 +641,20 @@ function LogEdit({
     writeDraft(exercise, { loads, reps });
   }, [exercise, loads, reps]);
 
-  function submit() {
+  async function submit() {
     const hasAny = loads.some((l) => l.trim());
     if (!hasAny || saving || submittedRef.current) return;
     submittedRef.current = true;
     const load = loads.map((l) => l.trim() || "-").join("/");
     const rep = reps.map((r) => r.trim() || "-").join("/");
-    onSave({ id: todayId, exercise, load, reps: rep });
+    // Garante que o rascunho está gravado antes de tentar salvar no servidor.
+    writeDraft(exercise, { loads, reps });
+    try {
+      await onSave({ id: todayId, exercise, load, reps: rep });
+    } catch {
+      // Falhou: libera para o aluno tentar registrar de novo sem perder nada.
+      submittedRef.current = false;
+    }
   }
 
   // Fechar nunca descarta: o rascunho fica salvo e, se houver carga, salva de verdade.
