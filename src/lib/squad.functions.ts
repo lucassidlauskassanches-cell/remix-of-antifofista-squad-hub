@@ -1106,8 +1106,8 @@ export const getMyLogbook = createServerFn({ method: "GET" })
 const logbookEntryInput = z.object({
   id: z.string().uuid().optional(),
   exercise: z.string().trim().max(200).default(""),
-  load: z.string().trim().max(80).default(""),
-  reps: z.string().trim().max(80).default(""),
+  load: z.string().trim().max(200).default(""),
+  reps: z.string().trim().max(200).default(""),
   entry_date: z.string().trim().max(10).default(""),
   order_index: z.number().int().default(0),
 });
