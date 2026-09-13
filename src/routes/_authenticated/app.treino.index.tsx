@@ -40,7 +40,7 @@ type SaveCarga = (v: {
   exercise: string;
   load: string;
   reps: string;
-}) => void;
+}) => Promise<void>;
 
 // ---- Rascunho local do editor de série (por exercício + dia) ----
 type LogDraft = { loads: string[]; reps: string[] };
@@ -127,6 +127,8 @@ function EstruturadoPage() {
   const save = useServerFn(saveLogbookEntry);
   const [activeKey, setActiveKey] = useState<string | null>(null);
   const saveMutation = useMutation({
+    retry: 2,
+    retryDelay: (attempt) => 400 * (attempt + 1),
     mutationFn: (v: {
       id?: string;
       exercise: string;
@@ -137,8 +139,9 @@ function EstruturadoPage() {
         data: {
           id: v.id,
           exercise: v.exercise,
-          load: v.load,
-          reps: v.reps,
+          // Limites do servidor: evita erro de validação em treinos com muitas séries.
+          load: v.load.slice(0, 200),
+          reps: v.reps.slice(0, 200),
           entry_date: todayStr(),
           order_index: 0,
         },
@@ -150,10 +153,18 @@ function EstruturadoPage() {
       setActiveKey((cur) => (cur === normalize(v.exercise) ? null : cur));
     },
 
-    onError: (e: unknown) =>
-      toast.error(e instanceof Error ? e.message : "Falha ao registrar"),
+    onError: (e: unknown) => {
+      const msg = e instanceof Error ? e.message : "";
+      toast.error(
+        /fetch|network|Load failed/i.test(msg)
+          ? "Sem conexão agora. Seus valores ficaram salvos — toque em Registrar novamente."
+          : msg || "Falha ao registrar",
+      );
+    },
   });
-  const saveCarga: SaveCarga = (v) => saveMutation.mutate(v);
+  const saveCarga: SaveCarga = async (v) => {
+    await saveMutation.mutateAsync(v);
+  };
 
   const today = todayStr();
   const lastByExercise = useMemo(() => {
