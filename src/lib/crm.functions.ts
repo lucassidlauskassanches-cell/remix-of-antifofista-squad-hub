@@ -72,7 +72,7 @@ export const getTrainerPanel = createServerFn({ method: "GET" })
       return { rows: [] as PanelRow[], today, isAdmin: Boolean(isAdmin), trainers: trainersList };
 
 
-    const [logs, weights, crms, notes, checkins, reminders, streaks, structured, trainingPlans, diets] =
+    const [logs, weights, crms, notes, streaks, structured, trainingPlans, diets] =
       await Promise.all([
         fetchAll((from, to) =>
           supabase
@@ -95,20 +95,6 @@ export const getTrainerPanel = createServerFn({ method: "GET" })
           supabase
             .from("student_notes")
             .select("student_id,data")
-            .range(from, to),
-        ),
-        fetchAll((from, to) =>
-          supabase
-            .from("checkins")
-            .select("student_id,data_recebida,status")
-            .range(from, to),
-        ),
-        fetchAll((from, to) =>
-          supabase
-            .from("reminders")
-            .select("student_id,texto,data_alvo")
-            .eq("concluido", false)
-            .order("data_alvo")
             .range(from, to),
         ),
         fetchAll((from, to) =>
@@ -154,29 +140,18 @@ export const getTrainerPanel = createServerFn({ method: "GET" })
       const lastNote = notes
         .filter((n) => n.student_id === s.id)
         .reduce<string | null>((acc, n) => maxIso(acc, n.data), null);
-      const myCheckins = checkins
-        .filter((c) => c.student_id === s.id)
-        .sort((a, b) => (a.data_recebida < b.data_recebida ? 1 : -1));
-      const lastCheckin = myCheckins[0]
-        ? { data_recebida: myCheckins[0].data_recebida, status: myCheckins[0].status }
-        : null;
-      const nextReminderRow = reminders.find((r) => r.student_id === s.id);
       return {
         ...buildPanelRow(
           { id: s.id, full_name: s.full_name, email: s.email },
           {
             crm: crms.find((c) => c.student_id === s.id) ?? null,
             lastActivity: maxIso(lastLog, lastWeight),
-            lastFeedback: maxIso(lastNote, lastCheckin?.data_recebida ?? null),
+            lastFeedback: lastNote,
             adesao7,
             streak:
               Number(
                 streaks.find((st) => st.student_id === s.id)?.current_streak ?? 0,
               ) || 0,
-            lastCheckin,
-            nextReminder: nextReminderRow
-              ? { texto: nextReminderRow.texto, data_alvo: nextReminderRow.data_alvo }
-              : null,
             hasPlan:
               structured.some((p) => p.student_id === s.id) ||
               trainingPlans.some((p) => p.student_id === s.id) ||
