@@ -300,14 +300,13 @@ export const saveStudentCrm = createServerFn({ method: "POST" })
         restricoes: z.string().max(2000).nullable().optional(),
         plano_tipo: z.enum(["mensal", "trimestral", "semestral"]).nullable().optional(),
         data_inicio: z.string().max(10).nullable().optional(),
-        data_vencimento: z.string().max(10).nullable().optional(),
+        proximo_checkin: z.string().max(10).nullable().optional(),
         status: z
           .enum([
             "ativo",
             "aguardando_checkin",
             "aguardando_resposta",
             "plano_a_montar",
-            "renovacao_proxima",
           ])
           .optional(),
         whatsapp_grupo_url: z.string().trim().max(500).nullable().optional(),
