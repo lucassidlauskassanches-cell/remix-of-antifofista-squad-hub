@@ -354,7 +354,7 @@ export const getMyDayRegistro = createServerFn({ method: "POST" })
     const logDate = data.date ?? todaySP();
 
     // profile + latest weight
-    const [{ data: profile }, { data: latestWeight }, { data: diet }] =
+    const [{ data: profile }, { data: latestWeight }, { data: diet }, { data: crm }] =
       await Promise.all([
         supabase
           .from("profiles")
@@ -373,6 +373,11 @@ export const getMyDayRegistro = createServerFn({ method: "POST" })
         supabase
           .from("diet_prescriptions")
           .select("data")
+          .eq("student_id", userId)
+          .maybeSingle(),
+        supabase
+          .from("student_crm")
+          .select("proximo_checkin")
           .eq("student_id", userId)
           .maybeSingle(),
       ]);
@@ -479,6 +484,7 @@ export const getMyDayRegistro = createServerFn({ method: "POST" })
       }>,
       dietMealNames: mealNames,
       streak,
+      proximoCheckin: ((crm as any)?.proximo_checkin as string | null) ?? null,
       patente: getPatenteGuerra(streak.current_streak),
     };
 
