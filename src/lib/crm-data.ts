@@ -92,14 +92,12 @@ export type PanelRow = {
 
   objetivo: string | null;
   plano_tipo: string | null;
-  data_vencimento: string | null;
   whatsapp_grupo_url: string | null;
   lastActivity: string | null;
   lastFeedback: string | null;
   adesao7: number | null;
   streak: number;
-  lastCheckin: { data_recebida: string; status: string } | null;
-  nextReminder: { texto: string; data_alvo: string } | null;
+  proximoCheckin: string | null;
   hasPlan: boolean;
   alerts: StudentAlert[];
   urgencia: number;
@@ -113,25 +111,18 @@ export function buildPanelRow(
     lastFeedback: string | null;
     adesao7: number | null;
     streak: number;
-    lastCheckin: { data_recebida: string; status: string } | null;
-    nextReminder: { texto: string; data_alvo: string } | null;
     hasPlan: boolean;
   },
   today: string,
 ): PanelRow {
-  const reminderVencido =
-    info.nextReminder && info.nextReminder.data_alvo <= today
-      ? info.nextReminder.texto
-      : null;
+  const proximoCheckin = (info.crm?.proximo_checkin as string | null) ?? null;
   const alerts = computeAlerts(
     {
       lastActivity: info.lastActivity,
       lastFeedback: info.lastFeedback,
       adesao7: info.adesao7,
-      lastCheckinDate: info.lastCheckin?.data_recebida ?? null,
-      dataVencimento: info.crm?.data_vencimento ?? null,
+      proximoCheckin,
       hasPlan: info.hasPlan,
-      reminderVencido,
     },
     today,
   );
@@ -142,14 +133,12 @@ export function buildPanelRow(
     status: info.crm?.status ?? "ativo",
     objetivo: info.crm?.objetivo ?? null,
     plano_tipo: info.crm?.plano_tipo ?? null,
-    data_vencimento: info.crm?.data_vencimento ?? null,
     whatsapp_grupo_url: info.crm?.whatsapp_grupo_url ?? null,
     lastActivity: info.lastActivity,
     lastFeedback: info.lastFeedback,
     adesao7: info.adesao7,
     streak: info.streak,
-    lastCheckin: info.lastCheckin,
-    nextReminder: info.nextReminder,
+    proximoCheckin,
     hasPlan: info.hasPlan,
     alerts,
     urgencia: urgencia(alerts),
