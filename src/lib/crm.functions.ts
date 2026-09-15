@@ -192,8 +192,6 @@ export const getStudentBordo = createServerFn({ method: "POST" })
     const [
       { data: crm },
       { data: notes },
-      { data: checkins },
-      { data: reminders },
       { data: logs },
       { data: weight },
       { data: streak },
@@ -209,19 +207,6 @@ export const getStudentBordo = createServerFn({ method: "POST" })
         .order("data", { ascending: false })
         .order("created_at", { ascending: false })
         .limit(300),
-      supabase
-        .from("checkins")
-        .select("*")
-        .eq("student_id", studentId)
-        .order("data_recebida", { ascending: false })
-        .limit(50),
-      supabase
-        .from("reminders")
-        .select("*")
-        .eq("student_id", studentId)
-        .order("concluido")
-        .order("data_alvo")
-        .limit(50),
       supabase
         .from("daily_logs")
         .select("log_date,daily_score")
@@ -272,21 +257,16 @@ export const getStudentBordo = createServerFn({ method: "POST" })
       allLogs[0]?.log_date ?? null,
       weight?.entry_date ?? null,
     );
-    const lastCheckin = (checkins ?? [])[0] ?? null;
     const lastNote = (notes ?? [])[0]?.data ?? null;
-    const openReminder = (reminders ?? []).find((r: any) => !r.concluido) ?? null;
     const hasPlan = Boolean(structured || trainingPlan || diet);
 
     const alerts = computeAlerts(
       {
         lastActivity,
-        lastFeedback: maxIso(lastNote, lastCheckin?.data_recebida ?? null),
+        lastFeedback: lastNote,
         adesao7,
-        lastCheckinDate: lastCheckin?.data_recebida ?? null,
-        dataVencimento: crm?.data_vencimento ?? null,
+        proximoCheckin: (crm as any)?.proximo_checkin ?? null,
         hasPlan,
-        reminderVencido:
-          openReminder && openReminder.data_alvo <= today ? openReminder.texto : null,
       },
       today,
     );
@@ -295,8 +275,6 @@ export const getStudentBordo = createServerFn({ method: "POST" })
       today,
       crm: crm ?? null,
       notes: notes ?? [],
-      checkins: checkins ?? [],
-      reminders: reminders ?? [],
       alerts,
       resumo: {
         streak: Number(streak?.current_streak ?? 0) || 0,
