@@ -33,6 +33,7 @@ import {
   Shield,
   Moon,
   X,
+  CalendarCheck,
 } from "lucide-react";
 import {
   LineChart,
@@ -307,6 +308,9 @@ function RegistroPage() {
           <ChevronRight className="w-4 h-4" />
         </Button>
       </div>
+
+      {/* PRÓXIMO CHECK-IN */}
+      <CheckinAviso date={d.proximoCheckin} today={todaySP()} />
 
       {/* STREAK */}
       {d.isToday && (
@@ -1058,5 +1062,42 @@ function MilestoneModal({
         </div>
       </Card>
     </div>
+  );
+}
+
+function CheckinAviso({
+  date,
+  today,
+}: {
+  date: string | null;
+  today: string;
+}) {
+  if (!date) return null;
+  const dias = Math.round(
+    (Date.parse(`${date}T00:00:00Z`) - Date.parse(`${today}T00:00:00Z`)) / 86400000,
+  );
+  if (dias > 7) return null;
+  const [y, m, dd] = date.slice(0, 10).split("-");
+  const fmt = `${dd}/${m}/${y}`;
+  const atrasado = dias < 0;
+  const hoje = dias === 0;
+  const texto = atrasado
+    ? "Check-in atrasado — envie seu check-in"
+    : hoje
+      ? "Seu check-in é hoje — envie pro seu treinador"
+      : `Seu check-in é dia ${fmt}`;
+  return (
+    <Card
+      className={`p-3 flex items-center gap-2 ${
+        atrasado
+          ? "border-destructive/50 bg-destructive/10"
+          : "border-primary/50 bg-primary/10"
+      }`}
+    >
+      <CalendarCheck
+        className={`w-4 h-4 shrink-0 ${atrasado ? "text-destructive" : "text-primary"}`}
+      />
+      <p className="tactical-heading text-xs tracking-widest">{texto}</p>
+    </Card>
   );
 }

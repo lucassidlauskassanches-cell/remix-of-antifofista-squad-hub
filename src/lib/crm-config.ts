@@ -7,12 +7,10 @@ export const CRM_LIMITES = {
   feedbackAntigoDias: 45,
   /** Adesão média (%) dos últimos 7 dias abaixo disso => "adesão em queda". */
   adesaoBaixaPct: 50,
-  /** Dias de antecedência para avisar renovação próxima. */
-  renovacaoDias: 10,
-  /** Tolerância (dias) após a data esperada do check-in. */
-  checkinAtrasoDias: 1,
-  /** Intervalo padrão entre check-ins (dias). */
-  checkinIntervaloDias: 7,
+  /** A partir de quantos dias após a data marcada o check-in conta como vencido (0 = no dia). */
+  checkinAtrasoDias: 0,
+  /** Antecedência (dias) para sinalizar "check-in em X dias". */
+  checkinProximoDias: 3,
 } as const;
 
 export const STATUS_LABEL = {
@@ -20,7 +18,6 @@ export const STATUS_LABEL = {
   aguardando_checkin: "Aguardando check-in",
   aguardando_resposta: "Aguardando resposta",
   plano_a_montar: "Plano a montar",
-  renovacao_proxima: "Renovação próxima",
 } as const;
 
 export type CrmStatus = keyof typeof STATUS_LABEL;

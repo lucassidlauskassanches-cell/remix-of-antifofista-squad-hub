@@ -697,6 +697,7 @@ export type Database = {
           data_vencimento: string | null
           objetivo: string | null
           plano_tipo: Database["public"]["Enums"]["crm_plano_tipo"] | null
+          proximo_checkin: string | null
           restricoes: string | null
           status: Database["public"]["Enums"]["crm_status"]
           student_id: string
@@ -710,6 +711,7 @@ export type Database = {
           data_vencimento?: string | null
           objetivo?: string | null
           plano_tipo?: Database["public"]["Enums"]["crm_plano_tipo"] | null
+          proximo_checkin?: string | null
           restricoes?: string | null
           status?: Database["public"]["Enums"]["crm_status"]
           student_id: string
@@ -723,6 +725,7 @@ export type Database = {
           data_vencimento?: string | null
           objetivo?: string | null
           plano_tipo?: Database["public"]["Enums"]["crm_plano_tipo"] | null
+          proximo_checkin?: string | null
           restricoes?: string | null
           status?: Database["public"]["Enums"]["crm_status"]
           student_id?: string

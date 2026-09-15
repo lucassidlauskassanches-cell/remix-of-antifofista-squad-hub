@@ -3,12 +3,10 @@ import { CRM_LIMITES } from "@/lib/crm-config";
 export type AlertKey =
   | "sumido"
   | "checkin_vencido"
+  | "checkin_proximo"
   | "feedback_antigo"
   | "adesao_queda"
-  | "renovacao"
-  | "renovacao_vencida"
-  | "plano_a_montar"
-  | "lembrete_vencido";
+  | "plano_a_montar";
 
 export type StudentAlert = {
   key: AlertKey;
@@ -22,10 +20,8 @@ export type PanelRowInput = {
   lastActivity: string | null;
   lastFeedback: string | null;
   adesao7: number | null;
-  lastCheckinDate: string | null;
-  dataVencimento: string | null;
+  proximoCheckin: string | null;
   hasPlan: boolean;
-  reminderVencido: string | null;
 };
 
 function diffDias(fromIso: string, toIso: string): number {
@@ -51,14 +47,22 @@ export function computeAlerts(row: PanelRowInput, today: string): StudentAlert[]
     });
   }
 
-  if (row.lastCheckinDate) {
-    const esperado = diffDias(row.lastCheckinDate, today) - L.checkinIntervaloDias;
-    if (esperado > L.checkinAtrasoDias) {
+  if (row.proximoCheckin) {
+    const atraso = diffDias(row.proximoCheckin, today);
+    if (atraso >= L.checkinAtrasoDias) {
       out.push({
         key: "checkin_vencido",
-        label: `Check-in atrasado ${esperado} dias`,
-        peso: 90 + esperado,
+        label:
+          atraso === 0 ? "Check-in é hoje" : `Check-in atrasado ${atraso} dias`,
+        peso: 90 + atraso,
         tone: "danger",
+      });
+    } else if (-atraso <= L.checkinProximoDias) {
+      out.push({
+        key: "checkin_proximo",
+        label: `Check-in em ${-atraso} dias`,
+        peso: 40,
+        tone: "info",
       });
     }
   }
@@ -82,40 +86,12 @@ export function computeAlerts(row: PanelRowInput, today: string): StudentAlert[]
     });
   }
 
-  if (row.dataVencimento) {
-    const restante = diffDias(today, row.dataVencimento);
-    if (restante < 0) {
-      out.push({
-        key: "renovacao_vencida",
-        label: `Plano vencido há ${Math.abs(restante)} dias`,
-        peso: 95,
-        tone: "danger",
-      });
-    } else if (restante <= L.renovacaoDias) {
-      out.push({
-        key: "renovacao",
-        label: restante === 0 ? "Vence hoje" : `Renovação em ${restante} dias`,
-        peso: 80,
-        tone: "warn",
-      });
-    }
-  }
-
   if (!row.hasPlan) {
     out.push({
       key: "plano_a_montar",
       label: "Sem plano ativo — montar",
       peso: 85,
       tone: "warn",
-    });
-  }
-
-  if (row.reminderVencido) {
-    out.push({
-      key: "lembrete_vencido",
-      label: `Próxima ação vencida: ${row.reminderVencido}`,
-      peso: 88,
-      tone: "info",
     });
   }
 

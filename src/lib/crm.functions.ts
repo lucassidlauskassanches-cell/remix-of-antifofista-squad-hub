@@ -72,7 +72,7 @@ export const getTrainerPanel = createServerFn({ method: "GET" })
       return { rows: [] as PanelRow[], today, isAdmin: Boolean(isAdmin), trainers: trainersList };
 
 
-    const [logs, weights, crms, notes, checkins, reminders, streaks, structured, trainingPlans, diets] =
+    const [logs, weights, crms, notes, streaks, structured, trainingPlans, diets] =
       await Promise.all([
         fetchAll((from, to) =>
           supabase
@@ -95,20 +95,6 @@ export const getTrainerPanel = createServerFn({ method: "GET" })
           supabase
             .from("student_notes")
             .select("student_id,data")
-            .range(from, to),
-        ),
-        fetchAll((from, to) =>
-          supabase
-            .from("checkins")
-            .select("student_id,data_recebida,status")
-            .range(from, to),
-        ),
-        fetchAll((from, to) =>
-          supabase
-            .from("reminders")
-            .select("student_id,texto,data_alvo")
-            .eq("concluido", false)
-            .order("data_alvo")
             .range(from, to),
         ),
         fetchAll((from, to) =>
@@ -154,29 +140,18 @@ export const getTrainerPanel = createServerFn({ method: "GET" })
       const lastNote = notes
         .filter((n) => n.student_id === s.id)
         .reduce<string | null>((acc, n) => maxIso(acc, n.data), null);
-      const myCheckins = checkins
-        .filter((c) => c.student_id === s.id)
-        .sort((a, b) => (a.data_recebida < b.data_recebida ? 1 : -1));
-      const lastCheckin = myCheckins[0]
-        ? { data_recebida: myCheckins[0].data_recebida, status: myCheckins[0].status }
-        : null;
-      const nextReminderRow = reminders.find((r) => r.student_id === s.id);
       return {
         ...buildPanelRow(
           { id: s.id, full_name: s.full_name, email: s.email },
           {
             crm: crms.find((c) => c.student_id === s.id) ?? null,
             lastActivity: maxIso(lastLog, lastWeight),
-            lastFeedback: maxIso(lastNote, lastCheckin?.data_recebida ?? null),
+            lastFeedback: lastNote,
             adesao7,
             streak:
               Number(
                 streaks.find((st) => st.student_id === s.id)?.current_streak ?? 0,
               ) || 0,
-            lastCheckin,
-            nextReminder: nextReminderRow
-              ? { texto: nextReminderRow.texto, data_alvo: nextReminderRow.data_alvo }
-              : null,
             hasPlan:
               structured.some((p) => p.student_id === s.id) ||
               trainingPlans.some((p) => p.student_id === s.id) ||
@@ -217,8 +192,6 @@ export const getStudentBordo = createServerFn({ method: "POST" })
     const [
       { data: crm },
       { data: notes },
-      { data: checkins },
-      { data: reminders },
       { data: logs },
       { data: weight },
       { data: streak },
@@ -234,19 +207,6 @@ export const getStudentBordo = createServerFn({ method: "POST" })
         .order("data", { ascending: false })
         .order("created_at", { ascending: false })
         .limit(300),
-      supabase
-        .from("checkins")
-        .select("*")
-        .eq("student_id", studentId)
-        .order("data_recebida", { ascending: false })
-        .limit(50),
-      supabase
-        .from("reminders")
-        .select("*")
-        .eq("student_id", studentId)
-        .order("concluido")
-        .order("data_alvo")
-        .limit(50),
       supabase
         .from("daily_logs")
         .select("log_date,daily_score")
@@ -297,21 +257,16 @@ export const getStudentBordo = createServerFn({ method: "POST" })
       allLogs[0]?.log_date ?? null,
       weight?.entry_date ?? null,
     );
-    const lastCheckin = (checkins ?? [])[0] ?? null;
     const lastNote = (notes ?? [])[0]?.data ?? null;
-    const openReminder = (reminders ?? []).find((r: any) => !r.concluido) ?? null;
     const hasPlan = Boolean(structured || trainingPlan || diet);
 
     const alerts = computeAlerts(
       {
         lastActivity,
-        lastFeedback: maxIso(lastNote, lastCheckin?.data_recebida ?? null),
+        lastFeedback: lastNote,
         adesao7,
-        lastCheckinDate: lastCheckin?.data_recebida ?? null,
-        dataVencimento: crm?.data_vencimento ?? null,
+        proximoCheckin: (crm as any)?.proximo_checkin ?? null,
         hasPlan,
-        reminderVencido:
-          openReminder && openReminder.data_alvo <= today ? openReminder.texto : null,
       },
       today,
     );
@@ -320,8 +275,6 @@ export const getStudentBordo = createServerFn({ method: "POST" })
       today,
       crm: crm ?? null,
       notes: notes ?? [],
-      checkins: checkins ?? [],
-      reminders: reminders ?? [],
       alerts,
       resumo: {
         streak: Number(streak?.current_streak ?? 0) || 0,
@@ -347,14 +300,13 @@ export const saveStudentCrm = createServerFn({ method: "POST" })
         restricoes: z.string().max(2000).nullable().optional(),
         plano_tipo: z.enum(["mensal", "trimestral", "semestral"]).nullable().optional(),
         data_inicio: z.string().max(10).nullable().optional(),
-        data_vencimento: z.string().max(10).nullable().optional(),
+        proximo_checkin: z.string().max(10).nullable().optional(),
         status: z
           .enum([
             "ativo",
             "aguardando_checkin",
             "aguardando_resposta",
             "plano_a_montar",
-            "renovacao_proxima",
           ])
           .optional(),
         whatsapp_grupo_url: z.string().trim().max(500).nullable().optional(),
@@ -417,105 +369,6 @@ export const deleteStudentNote = createServerFn({ method: "POST" })
     const { error } = await context.supabase
       .from("student_notes")
       .delete()
-      .eq("id", data.id)
-      .eq("student_id", data.studentId);
-    if (error) throw new Error(error.message);
-    return { ok: true };
-  });
-
-export const saveCheckin = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
-  .inputValidator((d: unknown) =>
-    z
-      .object({
-        studentId: z.string().uuid(),
-        id: z.string().uuid().optional(),
-        data_recebida: z.string().max(10).optional(),
-        peso_medio: z.number().min(0).max(600).nullable().optional(),
-        fotos_ok: z.boolean().default(false),
-        medidas: z.string().max(2000).nullable().optional(),
-        adesao: z.string().max(2000).nullable().optional(),
-        fome_sono_energia: z.string().max(2000).nullable().optional(),
-        o_que_mudou: z.string().max(4000).nullable().optional(),
-        explicacao: z.string().max(4000).nullable().optional(),
-        responder: z.boolean().default(false),
-      })
-      .parse(d),
-  )
-  .handler(async ({ data, context }) => {
-    await crmAssertStudent(context, data.studentId);
-    const today = todayInBrasilia();
-    const payload: Record<string, unknown> = {
-      student_id: data.studentId,
-      trainer_id: context.userId,
-      data_recebida: data.data_recebida || today,
-      peso_medio: data.peso_medio ?? null,
-      fotos_ok: data.fotos_ok,
-      medidas: data.medidas || null,
-      adesao: data.adesao || null,
-      fome_sono_energia: data.fome_sono_energia || null,
-      o_que_mudou: data.o_que_mudou || null,
-      explicacao: data.explicacao || null,
-      status: data.responder ? "respondido" : "recebido",
-      data_respondida: data.responder ? today : null,
-    };
-    if (data.id) {
-      const { error } = await context.supabase
-        .from("checkins")
-        .update(payload as any)
-        .eq("id", data.id)
-        .eq("student_id", data.studentId);
-      if (error) throw new Error(error.message);
-      return { ok: true, id: data.id };
-    }
-    const { data: inserted, error } = await context.supabase
-      .from("checkins")
-      .insert(payload as any)
-      .select("id")
-      .maybeSingle();
-    if (error) throw new Error(error.message);
-    return { ok: true, id: inserted?.id ?? null };
-  });
-
-export const addReminder = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
-  .inputValidator((d: unknown) =>
-    z
-      .object({
-        studentId: z.string().uuid(),
-        texto: z.string().trim().min(1).max(500),
-        data_alvo: z.string().min(10).max(10),
-      })
-      .parse(d),
-  )
-  .handler(async ({ data, context }) => {
-    await crmAssertStudent(context, data.studentId);
-    const { error } = await context.supabase.from("reminders").insert({
-      student_id: data.studentId,
-      trainer_id: context.userId,
-      texto: data.texto,
-      data_alvo: data.data_alvo,
-    } as any);
-    if (error) throw new Error(error.message);
-    return { ok: true };
-  });
-
-export const setReminderDone = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
-  .inputValidator((d: unknown) =>
-    z
-      .object({
-        studentId: z.string().uuid(),
-        id: z.string().uuid(),
-        concluido: z.boolean(),
-      })
-      .parse(d),
-  )
-  .handler(async ({ data, context }) => {
-    await crmAssertStudent(context, data.studentId);
-    const { error } = await context.supabase
-      .from("reminders")
-      .update({ concluido: data.concluido })
       .eq("id", data.id)
       .eq("student_id", data.studentId);
     if (error) throw new Error(error.message);

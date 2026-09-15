@@ -39,7 +39,6 @@ const FILTROS: { key: FilterKey; label: string }[] = [
   { key: "checkin_vencido", label: "Check-in vencido" },
   { key: "feedback_antigo", label: "Feedback antigo" },
   { key: "adesao_queda", label: "Adesão em queda" },
-  { key: "renovacao", label: "Renovação próxima" },
   { key: "plano_a_montar", label: "Plano a montar" },
 ];
 
@@ -79,12 +78,9 @@ function PainelTreinador() {
     const has = (k: AlertKey) => list.filter((r) => r.alerts.some((a) => a.key === k)).length;
     return {
       total: list.length,
-      responder: list.filter(
-        (r) => r.status === "aguardando_resposta" || r.lastCheckin?.status === "recebido",
-      ).length,
+      responder: list.filter((r) => r.status === "aguardando_resposta").length,
       checkin: has("checkin_vencido"),
       sumidos: has("sumido"),
-      renovacao: has("renovacao") + has("renovacao_vencida"),
       plano: has("plano_a_montar"),
     };
   };
@@ -104,8 +100,7 @@ function PainelTreinador() {
     }
     return groups.sort(
       (a, b) =>
-        b.responder + b.checkin + b.sumidos + b.renovacao -
-        (a.responder + a.checkin + a.sumidos + a.renovacao),
+        b.responder + b.checkin + b.sumidos - (a.responder + a.checkin + a.sumidos),
     );
   }, [allRows, trainers, isAdmin]);
 
@@ -114,10 +109,6 @@ function PainelTreinador() {
     return rows.filter((r) => {
       if (q && !`${r.full_name} ${r.email}`.toLowerCase().includes(q)) return false;
       if (filter === "todos") return true;
-      if (filter === "renovacao")
-        return r.alerts.some(
-          (a) => a.key === "renovacao" || a.key === "renovacao_vencida",
-        );
       return r.alerts.some((a) => a.key === filter);
     });
   }, [rows, search, filter]);
@@ -203,7 +194,7 @@ function PainelTreinador() {
                 </p>
                 <p className="text-[11px] text-muted-foreground">
                   A responder {t.responder} · Check-in vencido {t.checkin} · Sumidos{" "}
-                  {t.sumidos} · Renovação {t.renovacao}
+                  {t.sumidos}
                 </p>
               </button>
             ))}
@@ -211,11 +202,10 @@ function PainelTreinador() {
         </div>
       )}
 
-      <div className="grid grid-cols-2 sm:grid-cols-5 gap-2">
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
         <CountCard label="A RESPONDER" value={counts.responder} />
         <CountCard label="CHECK-IN VENCIDO" value={counts.checkin} />
         <CountCard label="SUMIDOS" value={counts.sumidos} />
-        <CountCard label="RENOVAÇÃO" value={counts.renovacao} />
         <CountCard label="PLANO A MONTAR" value={counts.plano} />
       </div>
 
@@ -279,9 +269,10 @@ function PainelTreinador() {
                         : `há ${dias} d`}
                     {r.adesao7 !== null ? ` · adesão ${Math.round(r.adesao7)}%` : ""}
                   </p>
-                  {r.nextReminder && (
+                  {r.proximoCheckin && (
                     <p className="text-[11px] text-muted-foreground">
-                      Próxima ação: {r.nextReminder.texto}
+                      Próximo check-in: {r.proximoCheckin.slice(8, 10)}/
+                      {r.proximoCheckin.slice(5, 7)}/{r.proximoCheckin.slice(0, 4)}
                     </p>
                   )}
                 </Link>
