@@ -33,6 +33,7 @@ import {
   Shield,
   Moon,
   X,
+  CalendarCheck,
 } from "lucide-react";
 import {
   LineChart,
