@@ -2,7 +2,7 @@ import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 
-const PeriodSchema = z.object({ period: z.enum(["weekly", "monthly"]) });
+const PeriodSchema = z.object({ period: z.enum(["weekly", "monthly", "quarterly"]) });
 
 type LeaderboardRow = {
   student_id: string;

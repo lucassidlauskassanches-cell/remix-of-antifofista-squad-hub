@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Trophy, Medal, Flame } from "lucide-react";
 import { getLeaderboard } from "@/lib/leaderboard.functions";
 
-type Period = "weekly" | "monthly";
+type Period = "weekly" | "monthly" | "quarterly";
 
 function motivPhrase(pct: number | null, points: number) {
   if (points <= 0) return "Você ainda não pontuou no período — registre hoje para entrar no ranking.";
@@ -55,6 +55,14 @@ export function RankingCard() {
           >
             MENSAL
           </Button>
+          <Button
+            size="sm"
+            variant={period === "quarterly" ? "default" : "ghost"}
+            className="rounded-none text-xs tactical-heading"
+            onClick={() => setPeriod("quarterly")}
+          >
+            TRIMESTRAL
+          </Button>
         </div>
       </div>
 
@@ -64,7 +72,7 @@ export function RankingCard() {
       {!isPending && !error && (!row || Number(row.points) <= 0) && (
         <div className="rounded-md border border-dashed border-border p-4 text-center">
           <p className="text-sm text-muted-foreground">
-            Você ainda não pontuou {period === "weekly" ? "esta semana" : "este mês"} — registre hoje para entrar no ranking.
+            Você ainda não pontuou {period === "weekly" ? "esta semana" : period === "monthly" ? "este mês" : "neste trimestre"} — registre hoje para entrar no ranking.
           </p>
         </div>
       )}

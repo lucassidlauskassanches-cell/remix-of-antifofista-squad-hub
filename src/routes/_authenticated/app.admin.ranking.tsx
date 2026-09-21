@@ -9,7 +9,7 @@ import { Trophy, Flame, Users } from "lucide-react";
 import { getLeaderboard, getTrainerLeaderboard } from "@/lib/leaderboard.functions";
 import { getMyContext } from "@/lib/access.functions";
 
-type Period = "weekly" | "monthly";
+type Period = "weekly" | "monthly" | "quarterly";
 
 export const Route = createFileRoute("/_authenticated/app/admin/ranking")({
   component: RankingPage,
@@ -96,6 +96,14 @@ function RankingPage() {
             onClick={() => setPeriod("monthly")}
           >
             MENSAL
+          </Button>
+          <Button
+            size="sm"
+            variant={period === "quarterly" ? "default" : "ghost"}
+            className="rounded-none text-xs tactical-heading"
+            onClick={() => setPeriod("quarterly")}
+          >
+            TRIMESTRAL
           </Button>
         </div>
         {tab === "alunos" && (
