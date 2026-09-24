@@ -1125,6 +1125,31 @@ export const saveLogbookEntry = createServerFn({ method: "POST" })
         month: "2-digit",
         day: "2-digit",
       }).format(new Date());
+    // Nunca sobrescrever registro de outro dia: se o id pertence a uma data
+    // diferente (ex.: app aberto desde ontem), cria um novo registro.
+    let updateId = data.id;
+    if (updateId) {
+      const { data: existing } = await supabase
+        .from("logbook_entries")
+        .select("entry_date")
+        .eq("id", updateId)
+        .eq("student_id", userId)
+        .maybeSingle();
+      if (!existing || existing.entry_date !== entryDate) updateId = undefined;
+    }
+    if (!updateId) {
+      // Evita duplicar se já existe registro do mesmo exercício no mesmo dia.
+      const { data: sameDay } = await supabase
+        .from("logbook_entries")
+        .select("id")
+        .eq("student_id", userId)
+        .eq("entry_date", entryDate)
+        .eq("exercise", data.exercise)
+        .limit(1)
+        .maybeSingle();
+      if (sameDay) updateId = sameDay.id;
+    }
+    data = { ...data, id: updateId };
     if (data.id) {
       const { error } = await supabase
         .from("logbook_entries")
