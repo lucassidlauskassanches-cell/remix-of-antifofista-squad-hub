@@ -374,22 +374,29 @@ export const getAdminOverview = createServerFn({ method: "GET" })
           .order("full_name")
       : { data: [] as any[] };
 
-    const { data: staffRoles } = await context.supabase
-      .from("user_roles")
-      .select("user_id")
-      .in("role", ["treinador", "admin"]);
+    const { fetchAll } = await import("@/lib/crm-data");
+    const staffRoles = await fetchAll((from, to) =>
+      context.supabase
+        .from("user_roles")
+        .select("user_id")
+        .in("role", ["treinador", "admin"])
+        .range(from, to),
+    );
     const staffIds = Array.from(
       new Set((staffRoles ?? []).map((r: any) => r.user_id)),
     );
 
-    let studentsQ = context.supabase
-      .from("profiles")
-      .select("id,full_name,email,trainer_id,active")
-      .order("full_name");
-    if (staffIds.length) {
-      studentsQ = studentsQ.not("id", "in", `("${staffIds.join('","')}")`);
-    }
-    const { data: students } = await studentsQ;
+    const students = await fetchAll((from, to) => {
+      let q = context.supabase
+        .from("profiles")
+        .select("id,full_name,email,trainer_id,active")
+        .order("full_name")
+        .order("id");
+      if (staffIds.length) {
+        q = q.not("id", "in", `("${staffIds.join('","')}")`);
+      }
+      return q.range(from, to);
+    });
 
     const grouped = (trainers ?? []).map((t: any) => ({
       trainer: t,

@@ -21,26 +21,30 @@ export const getTrainerPanel = createServerFn({ method: "GET" })
     const since30 = addDaysIso(today, -29);
     const since7 = addDaysIso(today, -6);
 
-    let studentsQ = supabase
-      .from("profiles")
-      .select("id,full_name,email,trainer_id")
-      .order("full_name");
-    if (!isAdmin) {
-      studentsQ = studentsQ.eq("trainer_id", userId);
-    } else {
-      const { data: staffRoles } = await supabase
-        .from("user_roles")
-        .select("user_id")
-        .in("role", ["treinador", "admin"]);
-      const staffIds = Array.from(
-        new Set((staffRoles ?? []).map((r: any) => r.user_id)),
+    let staffIds: string[] = [];
+    if (isAdmin) {
+      const staffRoles = await fetchAll((from, to) =>
+        supabase
+          .from("user_roles")
+          .select("user_id")
+          .in("role", ["treinador", "admin"])
+          .range(from, to),
       );
-      if (staffIds.length) {
-        studentsQ = studentsQ.not("id", "in", `("${staffIds.join('","')}")`);
-      }
+      staffIds = Array.from(new Set(staffRoles.map((r: any) => r.user_id as string)));
     }
-    const { data: students, error: studentsError } = await studentsQ;
-    if (studentsError) throw new Error(studentsError.message);
+    const students = await fetchAll((from, to) => {
+      let q = supabase
+        .from("profiles")
+        .select("id,full_name,email,trainer_id")
+        .order("full_name")
+        .order("id");
+      if (!isAdmin) {
+        q = q.eq("trainer_id", userId);
+      } else if (staffIds.length) {
+        q = q.not("id", "in", `("${staffIds.join('","')}")`);
+      }
+      return q.range(from, to);
+    });
     const ids = (students ?? []).map((s: any) => s.id);
 
     const trainerNames = new Map<string, string>();
