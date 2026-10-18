@@ -9,37 +9,41 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
-import { Route as ResetPasswordRouteImport } from './routes/reset-password'
-import { Route as AuthRouteImport } from './routes/auth'
-import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/route'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/route'
+import { Route as AuthRouteImport } from './routes/auth'
+import { Route as ResetPasswordRouteImport } from './routes/reset-password'
 import { Route as AuthenticatedAppRouteImport } from './routes/_authenticated/app'
 import { Route as AuthenticatedAppIndexRouteImport } from './routes/_authenticated/app.index'
-import { Route as AuthenticatedAppTreinoRouteImport } from './routes/_authenticated/app.treino'
-import { Route as AuthenticatedAppRegistroRouteImport } from './routes/_authenticated/app.registro'
-import { Route as AuthenticatedAppNutricionalRouteImport } from './routes/_authenticated/app.nutricional'
-import { Route as AuthenticatedAppLogbookRouteImport } from './routes/_authenticated/app.logbook'
-import { Route as AuthenticatedAppGaleriaRouteImport } from './routes/_authenticated/app.galeria'
 import { Route as AuthenticatedAppAcaoRouteImport } from './routes/_authenticated/app.acao'
-import { Route as AuthenticatedAppTreinoIndexRouteImport } from './routes/_authenticated/app.treino.index'
-import { Route as AuthenticatedAppNutricionalIndexRouteImport } from './routes/_authenticated/app.nutricional.index'
-import { Route as ApiPublicCronWaterGapRouteImport } from './routes/api/public/cron/water-gap'
-import { Route as ApiPublicCronReengagementRouteImport } from './routes/api/public/cron/reengagement'
-import { Route as ApiPublicCronMorningWaterRouteImport } from './routes/api/public/cron/morning-water'
-import { Route as AuthenticatedAppNutricionalSubstituicoesRouteImport } from './routes/_authenticated/app.nutricional.substituicoes'
-import { Route as AuthenticatedAppAdminVisaoRouteImport } from './routes/_authenticated/app.admin.visao'
-import { Route as AuthenticatedAppAdminTreinadoresRouteImport } from './routes/_authenticated/app.admin.treinadores'
-import { Route as AuthenticatedAppAdminRankingRouteImport } from './routes/_authenticated/app.admin.ranking'
-import { Route as AuthenticatedAppAdminPainelRouteImport } from './routes/_authenticated/app.admin.painel'
-import { Route as AuthenticatedAppAdminGaleriaRouteImport } from './routes/_authenticated/app.admin.galeria'
+import { Route as AuthenticatedAppGaleriaRouteImport } from './routes/_authenticated/app.galeria'
+import { Route as AuthenticatedAppLogbookRouteImport } from './routes/_authenticated/app.logbook'
+import { Route as AuthenticatedAppNutricionalRouteImport } from './routes/_authenticated/app.nutricional'
+import { Route as AuthenticatedAppRegistroRouteImport } from './routes/_authenticated/app.registro'
+import { Route as AuthenticatedAppTreinoRouteImport } from './routes/_authenticated/app.treino'
 import { Route as AuthenticatedAppAdminAlunosRouteImport } from './routes/_authenticated/app.admin.alunos'
+import { Route as AuthenticatedAppAdminGaleriaRouteImport } from './routes/_authenticated/app.admin.galeria'
+import { Route as AuthenticatedAppAdminPainelRouteImport } from './routes/_authenticated/app.admin.painel'
+import { Route as AuthenticatedAppAdminRankingRouteImport } from './routes/_authenticated/app.admin.ranking'
+import { Route as AuthenticatedAppAdminTreinadoresRouteImport } from './routes/_authenticated/app.admin.treinadores'
+import { Route as AuthenticatedAppAdminVisaoRouteImport } from './routes/_authenticated/app.admin.visao'
+import { Route as AuthenticatedAppNutricionalIndexRouteImport } from './routes/_authenticated/app.nutricional.index'
+import { Route as AuthenticatedAppNutricionalSubstituicoesRouteImport } from './routes/_authenticated/app.nutricional.substituicoes'
+import { Route as AuthenticatedAppTreinoIndexRouteImport } from './routes/_authenticated/app.treino.index'
+import { Route as ApiPublicCronMorningWaterRouteImport } from './routes/api/public/cron/morning-water'
+import { Route as ApiPublicCronReengagementRouteImport } from './routes/api/public/cron/reengagement'
+import { Route as ApiPublicCronWaterGapRouteImport } from './routes/api/public/cron/water-gap'
 import { Route as AuthenticatedAppAdminAlunosIndexRouteImport } from './routes/_authenticated/app.admin.alunos.index'
-import { Route as AuthenticatedAppAdminAlunosNovoRouteImport } from './routes/_authenticated/app.admin.alunos.novo'
 import { Route as AuthenticatedAppAdminAlunosIdRouteImport } from './routes/_authenticated/app.admin.alunos.$id'
+import { Route as AuthenticatedAppAdminAlunosNovoRouteImport } from './routes/_authenticated/app.admin.alunos.novo'
 
-const ResetPasswordRoute = ResetPasswordRouteImport.update({
-  id: '/reset-password',
-  path: '/reset-password',
+const IndexRoute = IndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AuthenticatedRouteRoute = AuthenticatedRouteRouteImport.update({
+  id: '/_authenticated',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AuthRoute = AuthRouteImport.update({
@@ -47,13 +51,9 @@ const AuthRoute = AuthRouteImport.update({
   path: '/auth',
   getParentRoute: () => rootRouteImport,
 } as any)
-const AuthenticatedRouteRoute = AuthenticatedRouteRouteImport.update({
-  id: '/_authenticated',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const IndexRoute = IndexRouteImport.update({
-  id: '/',
-  path: '/',
+const ResetPasswordRoute = ResetPasswordRouteImport.update({
+  id: '/reset-password',
+  path: '/reset-password',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AuthenticatedAppRoute = AuthenticatedAppRouteImport.update({
@@ -66,26 +66,9 @@ const AuthenticatedAppIndexRoute = AuthenticatedAppIndexRouteImport.update({
   path: '/',
   getParentRoute: () => AuthenticatedAppRoute,
 } as any)
-const AuthenticatedAppTreinoRoute = AuthenticatedAppTreinoRouteImport.update({
-  id: '/treino',
-  path: '/treino',
-  getParentRoute: () => AuthenticatedAppRoute,
-} as any)
-const AuthenticatedAppRegistroRoute =
-  AuthenticatedAppRegistroRouteImport.update({
-    id: '/registro',
-    path: '/registro',
-    getParentRoute: () => AuthenticatedAppRoute,
-  } as any)
-const AuthenticatedAppNutricionalRoute =
-  AuthenticatedAppNutricionalRouteImport.update({
-    id: '/nutricional',
-    path: '/nutricional',
-    getParentRoute: () => AuthenticatedAppRoute,
-  } as any)
-const AuthenticatedAppLogbookRoute = AuthenticatedAppLogbookRouteImport.update({
-  id: '/logbook',
-  path: '/logbook',
+const AuthenticatedAppAcaoRoute = AuthenticatedAppAcaoRouteImport.update({
+  id: '/acao',
+  path: '/acao',
   getParentRoute: () => AuthenticatedAppRoute,
 } as any)
 const AuthenticatedAppGaleriaRoute = AuthenticatedAppGaleriaRouteImport.update({
@@ -93,68 +76,32 @@ const AuthenticatedAppGaleriaRoute = AuthenticatedAppGaleriaRouteImport.update({
   path: '/galeria',
   getParentRoute: () => AuthenticatedAppRoute,
 } as any)
-const AuthenticatedAppAcaoRoute = AuthenticatedAppAcaoRouteImport.update({
-  id: '/acao',
-  path: '/acao',
+const AuthenticatedAppLogbookRoute = AuthenticatedAppLogbookRouteImport.update({
+  id: '/logbook',
+  path: '/logbook',
   getParentRoute: () => AuthenticatedAppRoute,
 } as any)
-const AuthenticatedAppTreinoIndexRoute =
-  AuthenticatedAppTreinoIndexRouteImport.update({
-    id: '/',
-    path: '/',
-    getParentRoute: () => AuthenticatedAppTreinoRoute,
+const AuthenticatedAppNutricionalRoute =
+  AuthenticatedAppNutricionalRouteImport.update({
+    id: '/nutricional',
+    path: '/nutricional',
+    getParentRoute: () => AuthenticatedAppRoute,
   } as any)
-const AuthenticatedAppNutricionalIndexRoute =
-  AuthenticatedAppNutricionalIndexRouteImport.update({
-    id: '/',
-    path: '/',
-    getParentRoute: () => AuthenticatedAppNutricionalRoute,
+const AuthenticatedAppRegistroRoute =
+  AuthenticatedAppRegistroRouteImport.update({
+    id: '/registro',
+    path: '/registro',
+    getParentRoute: () => AuthenticatedAppRoute,
   } as any)
-const ApiPublicCronWaterGapRoute = ApiPublicCronWaterGapRouteImport.update({
-  id: '/api/public/cron/water-gap',
-  path: '/api/public/cron/water-gap',
-  getParentRoute: () => rootRouteImport,
+const AuthenticatedAppTreinoRoute = AuthenticatedAppTreinoRouteImport.update({
+  id: '/treino',
+  path: '/treino',
+  getParentRoute: () => AuthenticatedAppRoute,
 } as any)
-const ApiPublicCronReengagementRoute =
-  ApiPublicCronReengagementRouteImport.update({
-    id: '/api/public/cron/reengagement',
-    path: '/api/public/cron/reengagement',
-    getParentRoute: () => rootRouteImport,
-  } as any)
-const ApiPublicCronMorningWaterRoute =
-  ApiPublicCronMorningWaterRouteImport.update({
-    id: '/api/public/cron/morning-water',
-    path: '/api/public/cron/morning-water',
-    getParentRoute: () => rootRouteImport,
-  } as any)
-const AuthenticatedAppNutricionalSubstituicoesRoute =
-  AuthenticatedAppNutricionalSubstituicoesRouteImport.update({
-    id: '/substituicoes',
-    path: '/substituicoes',
-    getParentRoute: () => AuthenticatedAppNutricionalRoute,
-  } as any)
-const AuthenticatedAppAdminVisaoRoute =
-  AuthenticatedAppAdminVisaoRouteImport.update({
-    id: '/admin/visao',
-    path: '/admin/visao',
-    getParentRoute: () => AuthenticatedAppRoute,
-  } as any)
-const AuthenticatedAppAdminTreinadoresRoute =
-  AuthenticatedAppAdminTreinadoresRouteImport.update({
-    id: '/admin/treinadores',
-    path: '/admin/treinadores',
-    getParentRoute: () => AuthenticatedAppRoute,
-  } as any)
-const AuthenticatedAppAdminRankingRoute =
-  AuthenticatedAppAdminRankingRouteImport.update({
-    id: '/admin/ranking',
-    path: '/admin/ranking',
-    getParentRoute: () => AuthenticatedAppRoute,
-  } as any)
-const AuthenticatedAppAdminPainelRoute =
-  AuthenticatedAppAdminPainelRouteImport.update({
-    id: '/admin/painel',
-    path: '/admin/painel',
+const AuthenticatedAppAdminAlunosRoute =
+  AuthenticatedAppAdminAlunosRouteImport.update({
+    id: '/admin/alunos',
+    path: '/admin/alunos',
     getParentRoute: () => AuthenticatedAppRoute,
   } as any)
 const AuthenticatedAppAdminGaleriaRoute =
@@ -163,28 +110,81 @@ const AuthenticatedAppAdminGaleriaRoute =
     path: '/admin/galeria',
     getParentRoute: () => AuthenticatedAppRoute,
   } as any)
-const AuthenticatedAppAdminAlunosRoute =
-  AuthenticatedAppAdminAlunosRouteImport.update({
-    id: '/admin/alunos',
-    path: '/admin/alunos',
+const AuthenticatedAppAdminPainelRoute =
+  AuthenticatedAppAdminPainelRouteImport.update({
+    id: '/admin/painel',
+    path: '/admin/painel',
     getParentRoute: () => AuthenticatedAppRoute,
   } as any)
+const AuthenticatedAppAdminRankingRoute =
+  AuthenticatedAppAdminRankingRouteImport.update({
+    id: '/admin/ranking',
+    path: '/admin/ranking',
+    getParentRoute: () => AuthenticatedAppRoute,
+  } as any)
+const AuthenticatedAppAdminTreinadoresRoute =
+  AuthenticatedAppAdminTreinadoresRouteImport.update({
+    id: '/admin/treinadores',
+    path: '/admin/treinadores',
+    getParentRoute: () => AuthenticatedAppRoute,
+  } as any)
+const AuthenticatedAppAdminVisaoRoute =
+  AuthenticatedAppAdminVisaoRouteImport.update({
+    id: '/admin/visao',
+    path: '/admin/visao',
+    getParentRoute: () => AuthenticatedAppRoute,
+  } as any)
+const AuthenticatedAppNutricionalIndexRoute =
+  AuthenticatedAppNutricionalIndexRouteImport.update({
+    id: '/',
+    path: '/',
+    getParentRoute: () => AuthenticatedAppNutricionalRoute,
+  } as any)
+const AuthenticatedAppNutricionalSubstituicoesRoute =
+  AuthenticatedAppNutricionalSubstituicoesRouteImport.update({
+    id: '/substituicoes',
+    path: '/substituicoes',
+    getParentRoute: () => AuthenticatedAppNutricionalRoute,
+  } as any)
+const AuthenticatedAppTreinoIndexRoute =
+  AuthenticatedAppTreinoIndexRouteImport.update({
+    id: '/',
+    path: '/',
+    getParentRoute: () => AuthenticatedAppTreinoRoute,
+  } as any)
+const ApiPublicCronMorningWaterRoute =
+  ApiPublicCronMorningWaterRouteImport.update({
+    id: '/api/public/cron/morning-water',
+    path: '/api/public/cron/morning-water',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const ApiPublicCronReengagementRoute =
+  ApiPublicCronReengagementRouteImport.update({
+    id: '/api/public/cron/reengagement',
+    path: '/api/public/cron/reengagement',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const ApiPublicCronWaterGapRoute = ApiPublicCronWaterGapRouteImport.update({
+  id: '/api/public/cron/water-gap',
+  path: '/api/public/cron/water-gap',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const AuthenticatedAppAdminAlunosIndexRoute =
   AuthenticatedAppAdminAlunosIndexRouteImport.update({
     id: '/',
     path: '/',
     getParentRoute: () => AuthenticatedAppAdminAlunosRoute,
   } as any)
-const AuthenticatedAppAdminAlunosNovoRoute =
-  AuthenticatedAppAdminAlunosNovoRouteImport.update({
-    id: '/novo',
-    path: '/novo',
-    getParentRoute: () => AuthenticatedAppAdminAlunosRoute,
-  } as any)
 const AuthenticatedAppAdminAlunosIdRoute =
   AuthenticatedAppAdminAlunosIdRouteImport.update({
     id: '/$id',
     path: '/$id',
+    getParentRoute: () => AuthenticatedAppAdminAlunosRoute,
+  } as any)
+const AuthenticatedAppAdminAlunosNovoRoute =
+  AuthenticatedAppAdminAlunosNovoRouteImport.update({
+    id: '/novo',
+    path: '/novo',
     getParentRoute: () => AuthenticatedAppAdminAlunosRoute,
   } as any)
 
@@ -366,18 +366,11 @@ export interface RootRouteChildren {
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
-    '/reset-password': {
-      id: '/reset-password'
-      path: '/reset-password'
-      fullPath: '/reset-password'
-      preLoaderRoute: typeof ResetPasswordRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/auth': {
-      id: '/auth'
-      path: '/auth'
-      fullPath: '/auth'
-      preLoaderRoute: typeof AuthRouteImport
+    '/': {
+      id: '/'
+      path: '/'
+      fullPath: '/'
+      preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/_authenticated': {
@@ -387,11 +380,18 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedRouteRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/': {
-      id: '/'
-      path: '/'
-      fullPath: '/'
-      preLoaderRoute: typeof IndexRouteImport
+    '/auth': {
+      id: '/auth'
+      path: '/auth'
+      fullPath: '/auth'
+      preLoaderRoute: typeof AuthRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/reset-password': {
+      id: '/reset-password'
+      path: '/reset-password'
+      fullPath: '/reset-password'
+      preLoaderRoute: typeof ResetPasswordRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/_authenticated/app': {
@@ -408,32 +408,11 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedAppIndexRouteImport
       parentRoute: typeof AuthenticatedAppRoute
     }
-    '/_authenticated/app/treino': {
-      id: '/_authenticated/app/treino'
-      path: '/treino'
-      fullPath: '/app/treino'
-      preLoaderRoute: typeof AuthenticatedAppTreinoRouteImport
-      parentRoute: typeof AuthenticatedAppRoute
-    }
-    '/_authenticated/app/registro': {
-      id: '/_authenticated/app/registro'
-      path: '/registro'
-      fullPath: '/app/registro'
-      preLoaderRoute: typeof AuthenticatedAppRegistroRouteImport
-      parentRoute: typeof AuthenticatedAppRoute
-    }
-    '/_authenticated/app/nutricional': {
-      id: '/_authenticated/app/nutricional'
-      path: '/nutricional'
-      fullPath: '/app/nutricional'
-      preLoaderRoute: typeof AuthenticatedAppNutricionalRouteImport
-      parentRoute: typeof AuthenticatedAppRoute
-    }
-    '/_authenticated/app/logbook': {
-      id: '/_authenticated/app/logbook'
-      path: '/logbook'
-      fullPath: '/app/logbook'
-      preLoaderRoute: typeof AuthenticatedAppLogbookRouteImport
+    '/_authenticated/app/acao': {
+      id: '/_authenticated/app/acao'
+      path: '/acao'
+      fullPath: '/app/acao'
+      preLoaderRoute: typeof AuthenticatedAppAcaoRouteImport
       parentRoute: typeof AuthenticatedAppRoute
     }
     '/_authenticated/app/galeria': {
@@ -443,88 +422,32 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedAppGaleriaRouteImport
       parentRoute: typeof AuthenticatedAppRoute
     }
-    '/_authenticated/app/acao': {
-      id: '/_authenticated/app/acao'
-      path: '/acao'
-      fullPath: '/app/acao'
-      preLoaderRoute: typeof AuthenticatedAppAcaoRouteImport
+    '/_authenticated/app/logbook': {
+      id: '/_authenticated/app/logbook'
+      path: '/logbook'
+      fullPath: '/app/logbook'
+      preLoaderRoute: typeof AuthenticatedAppLogbookRouteImport
       parentRoute: typeof AuthenticatedAppRoute
     }
-    '/_authenticated/app/treino/': {
-      id: '/_authenticated/app/treino/'
-      path: '/'
-      fullPath: '/app/treino/'
-      preLoaderRoute: typeof AuthenticatedAppTreinoIndexRouteImport
-      parentRoute: typeof AuthenticatedAppTreinoRoute
-    }
-    '/_authenticated/app/nutricional/': {
-      id: '/_authenticated/app/nutricional/'
-      path: '/'
-      fullPath: '/app/nutricional/'
-      preLoaderRoute: typeof AuthenticatedAppNutricionalIndexRouteImport
-      parentRoute: typeof AuthenticatedAppNutricionalRoute
-    }
-    '/api/public/cron/water-gap': {
-      id: '/api/public/cron/water-gap'
-      path: '/api/public/cron/water-gap'
-      fullPath: '/api/public/cron/water-gap'
-      preLoaderRoute: typeof ApiPublicCronWaterGapRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/api/public/cron/reengagement': {
-      id: '/api/public/cron/reengagement'
-      path: '/api/public/cron/reengagement'
-      fullPath: '/api/public/cron/reengagement'
-      preLoaderRoute: typeof ApiPublicCronReengagementRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/api/public/cron/morning-water': {
-      id: '/api/public/cron/morning-water'
-      path: '/api/public/cron/morning-water'
-      fullPath: '/api/public/cron/morning-water'
-      preLoaderRoute: typeof ApiPublicCronMorningWaterRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/_authenticated/app/nutricional/substituicoes': {
-      id: '/_authenticated/app/nutricional/substituicoes'
-      path: '/substituicoes'
-      fullPath: '/app/nutricional/substituicoes'
-      preLoaderRoute: typeof AuthenticatedAppNutricionalSubstituicoesRouteImport
-      parentRoute: typeof AuthenticatedAppNutricionalRoute
-    }
-    '/_authenticated/app/admin/visao': {
-      id: '/_authenticated/app/admin/visao'
-      path: '/admin/visao'
-      fullPath: '/app/admin/visao'
-      preLoaderRoute: typeof AuthenticatedAppAdminVisaoRouteImport
+    '/_authenticated/app/nutricional': {
+      id: '/_authenticated/app/nutricional'
+      path: '/nutricional'
+      fullPath: '/app/nutricional'
+      preLoaderRoute: typeof AuthenticatedAppNutricionalRouteImport
       parentRoute: typeof AuthenticatedAppRoute
     }
-    '/_authenticated/app/admin/treinadores': {
-      id: '/_authenticated/app/admin/treinadores'
-      path: '/admin/treinadores'
-      fullPath: '/app/admin/treinadores'
-      preLoaderRoute: typeof AuthenticatedAppAdminTreinadoresRouteImport
+    '/_authenticated/app/registro': {
+      id: '/_authenticated/app/registro'
+      path: '/registro'
+      fullPath: '/app/registro'
+      preLoaderRoute: typeof AuthenticatedAppRegistroRouteImport
       parentRoute: typeof AuthenticatedAppRoute
     }
-    '/_authenticated/app/admin/ranking': {
-      id: '/_authenticated/app/admin/ranking'
-      path: '/admin/ranking'
-      fullPath: '/app/admin/ranking'
-      preLoaderRoute: typeof AuthenticatedAppAdminRankingRouteImport
-      parentRoute: typeof AuthenticatedAppRoute
-    }
-    '/_authenticated/app/admin/painel': {
-      id: '/_authenticated/app/admin/painel'
-      path: '/admin/painel'
-      fullPath: '/app/admin/painel'
-      preLoaderRoute: typeof AuthenticatedAppAdminPainelRouteImport
-      parentRoute: typeof AuthenticatedAppRoute
-    }
-    '/_authenticated/app/admin/galeria': {
-      id: '/_authenticated/app/admin/galeria'
-      path: '/admin/galeria'
-      fullPath: '/app/admin/galeria'
-      preLoaderRoute: typeof AuthenticatedAppAdminGaleriaRouteImport
+    '/_authenticated/app/treino': {
+      id: '/_authenticated/app/treino'
+      path: '/treino'
+      fullPath: '/app/treino'
+      preLoaderRoute: typeof AuthenticatedAppTreinoRouteImport
       parentRoute: typeof AuthenticatedAppRoute
     }
     '/_authenticated/app/admin/alunos': {
@@ -534,6 +457,83 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedAppAdminAlunosRouteImport
       parentRoute: typeof AuthenticatedAppRoute
     }
+    '/_authenticated/app/admin/galeria': {
+      id: '/_authenticated/app/admin/galeria'
+      path: '/admin/galeria'
+      fullPath: '/app/admin/galeria'
+      preLoaderRoute: typeof AuthenticatedAppAdminGaleriaRouteImport
+      parentRoute: typeof AuthenticatedAppRoute
+    }
+    '/_authenticated/app/admin/painel': {
+      id: '/_authenticated/app/admin/painel'
+      path: '/admin/painel'
+      fullPath: '/app/admin/painel'
+      preLoaderRoute: typeof AuthenticatedAppAdminPainelRouteImport
+      parentRoute: typeof AuthenticatedAppRoute
+    }
+    '/_authenticated/app/admin/ranking': {
+      id: '/_authenticated/app/admin/ranking'
+      path: '/admin/ranking'
+      fullPath: '/app/admin/ranking'
+      preLoaderRoute: typeof AuthenticatedAppAdminRankingRouteImport
+      parentRoute: typeof AuthenticatedAppRoute
+    }
+    '/_authenticated/app/admin/treinadores': {
+      id: '/_authenticated/app/admin/treinadores'
+      path: '/admin/treinadores'
+      fullPath: '/app/admin/treinadores'
+      preLoaderRoute: typeof AuthenticatedAppAdminTreinadoresRouteImport
+      parentRoute: typeof AuthenticatedAppRoute
+    }
+    '/_authenticated/app/admin/visao': {
+      id: '/_authenticated/app/admin/visao'
+      path: '/admin/visao'
+      fullPath: '/app/admin/visao'
+      preLoaderRoute: typeof AuthenticatedAppAdminVisaoRouteImport
+      parentRoute: typeof AuthenticatedAppRoute
+    }
+    '/_authenticated/app/nutricional/': {
+      id: '/_authenticated/app/nutricional/'
+      path: '/'
+      fullPath: '/app/nutricional/'
+      preLoaderRoute: typeof AuthenticatedAppNutricionalIndexRouteImport
+      parentRoute: typeof AuthenticatedAppNutricionalRoute
+    }
+    '/_authenticated/app/nutricional/substituicoes': {
+      id: '/_authenticated/app/nutricional/substituicoes'
+      path: '/substituicoes'
+      fullPath: '/app/nutricional/substituicoes'
+      preLoaderRoute: typeof AuthenticatedAppNutricionalSubstituicoesRouteImport
+      parentRoute: typeof AuthenticatedAppNutricionalRoute
+    }
+    '/_authenticated/app/treino/': {
+      id: '/_authenticated/app/treino/'
+      path: '/'
+      fullPath: '/app/treino/'
+      preLoaderRoute: typeof AuthenticatedAppTreinoIndexRouteImport
+      parentRoute: typeof AuthenticatedAppTreinoRoute
+    }
+    '/api/public/cron/morning-water': {
+      id: '/api/public/cron/morning-water'
+      path: '/api/public/cron/morning-water'
+      fullPath: '/api/public/cron/morning-water'
+      preLoaderRoute: typeof ApiPublicCronMorningWaterRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/public/cron/reengagement': {
+      id: '/api/public/cron/reengagement'
+      path: '/api/public/cron/reengagement'
+      fullPath: '/api/public/cron/reengagement'
+      preLoaderRoute: typeof ApiPublicCronReengagementRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/public/cron/water-gap': {
+      id: '/api/public/cron/water-gap'
+      path: '/api/public/cron/water-gap'
+      fullPath: '/api/public/cron/water-gap'
+      preLoaderRoute: typeof ApiPublicCronWaterGapRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/_authenticated/app/admin/alunos/': {
       id: '/_authenticated/app/admin/alunos/'
       path: '/'
@@ -541,18 +541,18 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedAppAdminAlunosIndexRouteImport
       parentRoute: typeof AuthenticatedAppAdminAlunosRoute
     }
-    '/_authenticated/app/admin/alunos/novo': {
-      id: '/_authenticated/app/admin/alunos/novo'
-      path: '/novo'
-      fullPath: '/app/admin/alunos/novo'
-      preLoaderRoute: typeof AuthenticatedAppAdminAlunosNovoRouteImport
-      parentRoute: typeof AuthenticatedAppAdminAlunosRoute
-    }
     '/_authenticated/app/admin/alunos/$id': {
       id: '/_authenticated/app/admin/alunos/$id'
       path: '/$id'
       fullPath: '/app/admin/alunos/$id'
       preLoaderRoute: typeof AuthenticatedAppAdminAlunosIdRouteImport
+      parentRoute: typeof AuthenticatedAppAdminAlunosRoute
+    }
+    '/_authenticated/app/admin/alunos/novo': {
+      id: '/_authenticated/app/admin/alunos/novo'
+      path: '/novo'
+      fullPath: '/app/admin/alunos/novo'
+      preLoaderRoute: typeof AuthenticatedAppAdminAlunosNovoRouteImport
       parentRoute: typeof AuthenticatedAppAdminAlunosRoute
     }
   }
