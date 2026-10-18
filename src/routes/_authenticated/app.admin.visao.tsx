@@ -7,7 +7,7 @@ import { Users, ShieldCheck } from "lucide-react";
 
 export const Route = createFileRoute("/_authenticated/app/admin/visao")({
   component: VisaoGeral,
-  errorComponent: ({ error }) => (
+  errorComponent: ({ error }: { error: Error }) => (
     <p className="text-destructive">{error.message}</p>
   ),
 });

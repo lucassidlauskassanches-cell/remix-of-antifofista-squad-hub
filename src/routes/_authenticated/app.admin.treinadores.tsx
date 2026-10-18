@@ -17,7 +17,7 @@ import { toast } from "sonner";
 
 export const Route = createFileRoute("/_authenticated/app/admin/treinadores")({
   component: TrainersPage,
-  errorComponent: ({ error }) => (
+  errorComponent: ({ error }: { error: Error }) => (
     <p className="text-destructive">{error.message}</p>
   ),
 });
