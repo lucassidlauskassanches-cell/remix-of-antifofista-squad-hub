@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { canEditTrainingWeek, currentTrainingWeek, LOGBOOK_CONFLICT, prescribedSetCount, sameWeekEntries, weeklyLogPayload, type WeekLogRow } from "./training-logbook";
+import { describeCell } from "./training-xlsx-parser";
 
 describe("periodization logbook", () => {
   const rows: WeekLogRow[] = [
@@ -28,6 +29,7 @@ describe("periodization logbook", () => {
   it("uses the selected week's prescribed set count", () => {
     expect(prescribedSetCount("3")).toBe(3);
     expect(prescribedSetCount("4")).toBe(4);
+    expect(prescribedSetCount(describeCell("2x(4x4)").sets ?? "")).toBe(2);
   });
   it("never carries an old row id into an upsert for a different week", () => {
     const payload = weeklyLogPayload("student", { exercise: "Supino", load: "22", reps: "8", week_number: 2, set_index: 1, entry_date: "2026-10-20", order_index: 0 });

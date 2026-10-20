@@ -180,7 +180,7 @@ function ExerciseProgress({
           <div className="big">
             <span className="v">{latest}</span>
             <span className="u"> kg</span>
-            {delta !== null && delta !== 0 && (
+             {group.week === null && delta !== null && delta !== 0 && (
               <div className="up" style={delta < 0 ? { color: "var(--color-muted-foreground)" } : undefined}>
                 {delta > 0 ? "▲ +" : "▼ "}
                 {delta}kg

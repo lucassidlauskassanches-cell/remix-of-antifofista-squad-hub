@@ -1,3 +1,3 @@
-- [ ] Separar cargas por semana/série sem apagar registros antigos.
-- [ ] Semana pelo início do plano, edição apenas da vigente e séries conforme prescrição.
-- [ ] Histórico independente do plano e validação com testes e tela autenticada.
+- [x] Separar cargas por semana/série sem apagar registros antigos.
+- [x] Semana pelo início do plano, edição apenas da vigente e séries conforme prescrição.
+- [x] Histórico independente do plano e validação com testes e tela autenticada.
