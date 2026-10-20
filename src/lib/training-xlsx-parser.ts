@@ -173,6 +173,8 @@ export function describeCell(value: string): {
 } {
   const raw = value.trim();
   if (!raw) return { raw };
+  const cluster = raw.match(/^(\d+)\s*x\s*\((.+)\)\s*$/i);
+  if (cluster) return { sets: cluster[1], reps: cluster[2], raw };
 
   // Technique in parens: 3x10(DSDN)
   const parenMatch = raw.match(/^(.*?)\s*\(([^)]+)\)\s*$/);

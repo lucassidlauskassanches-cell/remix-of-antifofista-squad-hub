@@ -1,0 +1,2 @@
+UPDATE public.structured_training_plans SET start_date = (created_at AT TIME ZONE 'America/Sao_Paulo')::date WHERE start_date = ((now() AT TIME ZONE 'America/Sao_Paulo')::date) AND (created_at AT TIME ZONE 'America/Sao_Paulo')::date < start_date;
+COMMENT ON COLUMN public.structured_training_plans.start_date IS 'Calendar start, initially the original creation date for existing plans. Preserved on plan replacement unless explicitly changed by trainer.';

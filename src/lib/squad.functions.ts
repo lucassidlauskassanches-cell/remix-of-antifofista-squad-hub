@@ -3,6 +3,8 @@ import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 // type-only: apagado no build, não vai pro bundle do cliente.
 import type { GenerateInputs } from "@/lib/plano/anthropic";
+import { canEditTrainingWeek, LOGBOOK_CONFLICT, weeklyLogPayload } from "@/lib/training-logbook";
+import { todayInBrasilia } from "@/lib/tz";
 
 // ===== Role / profile =====
 
@@ -1101,6 +1103,7 @@ export const getMyLogbook = createServerFn({ method: "GET" })
         .eq("student_id", context.userId)
         .order("exercise", { ascending: true })
         .order("entry_date", { ascending: true })
+        .order("id", { ascending: true })
         .range(page * pageSize, page * pageSize + pageSize - 1);
       if (error) throw new Error(error.message);
       rows.push(...(data ?? []));
@@ -1117,6 +1120,9 @@ const logbookEntryInput = z.object({
   reps: z.string().trim().max(200).default(""),
   entry_date: z.string().trim().max(10).default(""),
   order_index: z.number().int().default(0),
+  week_number: z.number().int().min(1).max(20).nullable().optional(),
+  set_index: z.number().int().min(1).max(200).nullable().optional(),
+  block_label: z.string().trim().max(60).nullable().optional(),
 });
 
 export const saveLogbookEntry = createServerFn({ method: "POST" })
@@ -1132,17 +1138,40 @@ export const saveLogbookEntry = createServerFn({ method: "POST" })
         month: "2-digit",
         day: "2-digit",
       }).format(new Date());
+    if (data.week_number != null || data.set_index != null) {
+      if (data.week_number == null || data.set_index == null) {
+        throw new Error("Informe a semana e a série.");
+      }
+      const { data: training, error: planError } = await supabase
+        .from("structured_training_plans").select("plan,start_date")
+        .eq("student_id", userId).maybeSingle();
+      if (planError) throw new Error(planError.message);
+      const plan = training?.plan as { weeks?: string[] } | undefined;
+      if (!training?.start_date || !canEditTrainingWeek(data.week_number, training.start_date, plan?.weeks?.length ?? 0)) {
+        throw new Error("Somente a semana vigente pode ser alterada.");
+      }
+      const payload = weeklyLogPayload(userId, {
+        exercise: data.exercise, load: data.load, reps: data.reps,
+        week_number: data.week_number, set_index: data.set_index,
+        block_label: data.block_label ?? null, entry_date: todayInBrasilia(),
+        order_index: data.order_index,
+      });
+      const { data: row, error } = await supabase.from("logbook_entries")
+        .upsert(payload, { onConflict: LOGBOOK_CONFLICT }).select("id").single();
+      if (error) throw new Error(error.message);
+      return { id: row.id };
+    }
     // Nunca sobrescrever registro de outro dia: se o id pertence a uma data
     // diferente (ex.: app aberto desde ontem), cria um novo registro.
     let updateId = data.id;
     if (updateId) {
       const { data: existing } = await supabase
         .from("logbook_entries")
-        .select("entry_date")
+        .select("entry_date,week_number,set_index")
         .eq("id", updateId)
         .eq("student_id", userId)
         .maybeSingle();
-      if (!existing || existing.entry_date !== entryDate) updateId = undefined;
+      if (!existing || existing.entry_date !== entryDate || existing.week_number !== null || existing.set_index !== null) updateId = undefined;
     }
     if (!updateId) {
       // Evita duplicar se já existe registro do mesmo exercício no mesmo dia.
@@ -1152,6 +1181,8 @@ export const saveLogbookEntry = createServerFn({ method: "POST" })
         .eq("student_id", userId)
         .eq("entry_date", entryDate)
         .eq("exercise", data.exercise)
+        .is("week_number", null)
+        .is("set_index", null)
         .limit(1)
         .maybeSingle();
       if (sameDay) updateId = sameDay.id;
@@ -1192,6 +1223,13 @@ export const deleteLogbookEntry = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((d: unknown) => z.object({ id: z.string().uuid() }).parse(d))
   .handler(async ({ data, context }) => {
+    const { data: entry, error: readError } = await context.supabase
+      .from("logbook_entries").select("week_number").eq("id", data.id)
+      .eq("student_id", context.userId).maybeSingle();
+    if (readError) throw new Error(readError.message);
+    if (entry?.week_number != null) {
+      throw new Error("Registros por semana são preservados. Edite a carga na semana vigente.");
+    }
     const { error } = await context.supabase
       .from("logbook_entries")
       .delete()
@@ -1248,7 +1286,7 @@ export const getMyStructuredTrainingPlan = createServerFn({ method: "GET" })
   .handler(async ({ context }) => {
     const { data } = await context.supabase
       .from("structured_training_plans")
-      .select("plan,source_name,updated_at")
+      .select("plan,source_name,updated_at,start_date")
       .eq("student_id", context.userId)
       .maybeSingle();
     return data ?? null;
@@ -1263,7 +1301,7 @@ export const getStudentStructuredTrainingPlan = createServerFn({ method: "POST" 
     await assertTrainerOrAdmin(context);
     const { data: row } = await context.supabase
       .from("structured_training_plans")
-      .select("plan,source_name,updated_at")
+      .select("plan,source_name,updated_at,start_date")
       .eq("student_id", data.studentId)
       .maybeSingle();
     return row ?? null;
@@ -1277,11 +1315,16 @@ export const saveStructuredTrainingPlan = createServerFn({ method: "POST" })
         studentId: z.string().uuid(),
         sourceName: z.string().max(255),
         plan: structuredPlanSchema,
+        startDate: z.string().date().optional(),
       })
       .parse(d),
   )
   .handler(async ({ data, context }) => {
     await assertTrainerOrAdmin(context);
+    const { data: previous, error: previousError } = await context.supabase
+      .from("structured_training_plans").select("start_date")
+      .eq("student_id", data.studentId).maybeSingle();
+    if (previousError) throw new Error(previousError.message);
     const { error } = await context.supabase
       .from("structured_training_plans")
       .upsert(
@@ -1289,6 +1332,7 @@ export const saveStructuredTrainingPlan = createServerFn({ method: "POST" })
           student_id: data.studentId,
           source_name: data.sourceName,
           plan: data.plan,
+          start_date: data.startDate ?? previous?.start_date ?? todayInBrasilia(),
           updated_at: new Date().toISOString(),
         },
         { onConflict: "student_id" },

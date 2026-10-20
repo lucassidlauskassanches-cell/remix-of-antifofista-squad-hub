@@ -8,6 +8,13 @@ import { Search, Trash2, TrendingUp } from "lucide-react";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/_authenticated/app/logbook")({
+  head: () => ({ meta: [
+    { title: "Progressão por semana — Antifofista Squad" },
+    { name: "description", content: "Histórico independente de cargas por semana e série." },
+    { property: "og:title", content: "Progressão por semana — Antifofista Squad" },
+    { property: "og:description", content: "Seus registros de cargas, incluindo planos anteriores." },
+    { property: "og:type", content: "website" }, { name: "twitter:card", content: "summary" },
+  ] }),
   component: EvolucaoPage,
 });
 
@@ -18,6 +25,9 @@ type Row = {
   reps: string;
   entry_date: string;
   order_index: number;
+  week_number: number | null;
+  set_index: number | null;
+  block_label: string | null;
 };
 
 type Group = {
@@ -25,6 +35,8 @@ type Group = {
   entries: Row[]; // ordenado por data crescente
   numeric: { value: number; date: string }[];
   lastDate: string;
+  week: number | null;
+  block: string | null;
 };
 
 function normalize(s: string) {
@@ -59,11 +71,11 @@ function EvolucaoPage() {
   const groups = useMemo(() => {
     const byKey = new Map<string, Group>();
     rawRows.forEach((r) => {
-      const key = normalize(r.exercise);
-      if (!key) return;
+      if (!normalize(r.exercise)) return;
+      const key = `${normalize(r.exercise)}:${r.week_number ?? "legacy"}:${r.block_label ?? ""}`;
       let g = byKey.get(key);
       if (!g) {
-        g = { exercise: r.exercise, entries: [], numeric: [], lastDate: "" };
+        g = { exercise: r.exercise, week: r.week_number, block: r.block_label, entries: [], numeric: [], lastDate: "" };
         byKey.set(key, g);
       }
       g.entries.push(r);
@@ -132,7 +144,7 @@ function EvolucaoPage() {
       ) : (
         <div>
           {groups.map((g) => (
-            <ExerciseProgress key={g.exercise} group={g} onDelete={handleDelete} />
+            <ExerciseProgress key={`${g.exercise}:${g.week}:${g.block}`} group={g} onDelete={handleDelete} />
           ))}
         </div>
       )}
@@ -158,12 +170,17 @@ function ExerciseProgress({
   return (
     <div className="af-evo">
       <div className="eh">
-        <div className="e">{group.exercise}</div>
+        <div className="e">{group.exercise}
+          <div className="text-xs text-muted-foreground mt-1">
+            {group.week === null ? "Histórico anterior · sem semana" : `Semana ${group.week}`}
+            {group.block ? ` · ${group.block}` : ""}
+          </div>
+        </div>
         {latest !== null && (
           <div className="big">
             <span className="v">{latest}</span>
             <span className="u"> kg</span>
-            {delta !== null && delta !== 0 && (
+             {group.week === null && delta !== null && delta !== 0 && (
               <div className="up" style={delta < 0 ? { color: "var(--color-muted-foreground)" } : undefined}>
                 {delta > 0 ? "▲ +" : "▼ "}
                 {delta}kg
@@ -173,7 +190,7 @@ function ExerciseProgress({
         )}
       </div>
 
-      {numeric.length >= 2 && (
+      {group.week === null && numeric.length >= 2 && (
         <div className="af-spark">
           <Sparkline points={numeric.map((n) => n.value)} />
         </div>
@@ -187,17 +204,18 @@ function ExerciseProgress({
           >
             <span className="text-xs text-muted-foreground w-12">{formatDate(e.entry_date)}</span>
             <span className="truncate">
+              {e.set_index !== null && <span className="text-muted-foreground">Série {e.set_index} · </span>}
               {e.load || "—"}
               {e.reps ? <span className="text-muted-foreground"> · {e.reps} reps</span> : null}
             </span>
-            <button
+             {e.week_number === null && <button
               type="button"
               className="h-7 w-7 grid place-items-center text-muted-foreground hover:text-foreground"
               onClick={() => onDelete(e.id)}
               aria-label="Remover registro"
             >
               <Trash2 className="w-3.5 h-3.5" />
-            </button>
+             </button>}
           </li>
         ))}
       </ul>

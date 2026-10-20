@@ -266,6 +266,7 @@ export type Database = {
       }
       logbook_entries: {
         Row: {
+          block_label: string | null
           created_at: string
           entry_date: string
           exercise: string
@@ -273,10 +274,13 @@ export type Database = {
           load: string
           order_index: number
           reps: string
+          set_index: number | null
           student_id: string
           updated_at: string
+          week_number: number | null
         }
         Insert: {
+          block_label?: string | null
           created_at?: string
           entry_date?: string
           exercise?: string
@@ -284,10 +288,13 @@ export type Database = {
           load?: string
           order_index?: number
           reps?: string
+          set_index?: number | null
           student_id: string
           updated_at?: string
+          week_number?: number | null
         }
         Update: {
+          block_label?: string | null
           created_at?: string
           entry_date?: string
           exercise?: string
@@ -295,8 +302,10 @@ export type Database = {
           load?: string
           order_index?: number
           reps?: string
+          set_index?: number | null
           student_id?: string
           updated_at?: string
+          week_number?: number | null
         }
         Relationships: []
       }
@@ -662,6 +671,7 @@ export type Database = {
           created_at: string
           plan: Json
           source_name: string | null
+          start_date: string | null
           student_id: string
           updated_at: string
         }
@@ -669,6 +679,7 @@ export type Database = {
           created_at?: string
           plan?: Json
           source_name?: string | null
+          start_date?: string | null
           student_id: string
           updated_at?: string
         }
@@ -676,6 +687,7 @@ export type Database = {
           created_at?: string
           plan?: Json
           source_name?: string | null
+          start_date?: string | null
           student_id?: string
           updated_at?: string
         }
