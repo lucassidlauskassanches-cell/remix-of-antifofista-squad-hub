@@ -17,6 +17,8 @@ import {
 import { YouTubePlayer } from "@/lib/youtube";
 import { Play, Check, Table2, LayoutList, Plus, Minus, Timer, Pause, RotateCcw, GripVertical } from "lucide-react";
 import { toast } from "sonner";
+import { Button } from "@/components/ui/button";
+import { canEditTrainingWeek, currentTrainingWeek, prescribedSetCount, sameWeekEntries, type WeekLogRow } from "@/lib/training-logbook";
 import {
   describeCell,
   type StructuredPlan,
@@ -34,19 +36,19 @@ function todayStr() {
   }).format(new Date());
 }
 
-type LastEntry = { load: string; reps: string; date: string };
+type LastEntry = { load: string; reps: string; date: string; sets: { load: string; reps: string }[] };
 type SaveCarga = (v: {
-  id?: string;
   exercise: string;
-  load: string;
-  reps: string;
+  week_number: number;
+  block_label: string;
+  sets: { load: string; reps: string }[];
 }) => Promise<void>;
 
 // ---- Rascunho local do editor de série (por exercício + dia) ----
 type LogDraft = { loads: string[]; reps: string[] };
 
 function draftKey(exercise: string) {
-  return `treino:draft:${todayStr()}:${normalize(exercise)}`;
+  return `treino:draft:${todayStr()}:${exercise}`;
 }
 function readDraft(exercise: string): LogDraft | null {
   if (typeof window === "undefined") return null;
@@ -82,6 +84,13 @@ function clearDraft(exercise: string) {
 
 
 export const Route = createFileRoute("/_authenticated/app/treino/")({
+  head: () => ({ meta: [
+    { title: "Treino por semana — Antifofista Squad" },
+    { name: "description", content: "Treinos e cargas por semana e série no Antifofista Squad." },
+    { property: "og:title", content: "Treino por semana — Antifofista Squad" },
+    { property: "og:description", content: "Sua periodização e registros de cargas por série." },
+    { property: "og:type", content: "website" }, { name: "twitter:card", content: "summary" },
+  ] }),
   component: EstruturadoPage,
 });
 
@@ -129,28 +138,21 @@ function EstruturadoPage() {
   const saveMutation = useMutation({
     retry: 2,
     retryDelay: (attempt) => 400 * (attempt + 1),
-    mutationFn: (v: {
-      id?: string;
-      exercise: string;
-      load: string;
-      reps: string;
-    }) =>
-      save({
-        data: {
-          id: v.id,
-          exercise: v.exercise,
-          // Limites do servidor: evita erro de validação em treinos com muitas séries.
-          load: v.load.slice(0, 200),
-          reps: v.reps.slice(0, 200),
-          entry_date: todayStr(),
-          order_index: 0,
-        },
-      }),
+    mutationFn: async (v: Parameters<SaveCarga>[0]) => {
+      // Keep the draft until every prescribed set has been confirmed.
+      for (let i = 0; i < v.sets.length; i++) {
+        await save({ data: {
+          exercise: v.exercise, week_number: v.week_number, set_index: i + 1,
+          block_label: v.block_label, load: v.sets[i].load,
+          reps: v.sets[i].reps, entry_date: todayStr(), order_index: i,
+        } });
+      }
+    },
     onSuccess: (_d, v) => {
-      clearDraft(v.exercise);
+      clearDraft(`${v.week_number}:${v.block_label}:${normalize(v.exercise)}`);
       queryClient.invalidateQueries({ queryKey: ["my-logbook"] });
       toast.success("Carga registrada");
-      setActiveKey((cur) => (cur === normalize(v.exercise) ? null : cur));
+      setActiveKey(null);
     },
 
     onError: (e: unknown) => {
@@ -165,31 +167,6 @@ function EstruturadoPage() {
   const saveCarga: SaveCarga = async (v) => {
     await saveMutation.mutateAsync(v);
   };
-
-  const today = todayStr();
-  const lastByExercise = useMemo(() => {
-    const m = new Map<string, LastEntry>();
-    ((logData?.rows ?? []) as any[]).forEach((r) => {
-      const key = normalize(r.exercise);
-      if (!key) return;
-      const prev = m.get(key);
-      if (!prev || (r.entry_date || "") >= prev.date)
-        m.set(key, {
-          load: r.load || "",
-          reps: r.reps || "",
-          date: r.entry_date || "",
-        });
-    });
-    return m;
-  }, [logData]);
-
-  const todayIdByExercise = useMemo(() => {
-    const m = new Map<string, string>();
-    ((logData?.rows ?? []) as any[]).forEach((r) => {
-      if ((r.entry_date || "") === today) m.set(normalize(r.exercise), r.id);
-    });
-    return m;
-  }, [logData, today]);
 
   const galleryMap = useMemo(() => {
     const m = new Map<string, { title: string; url: string }>();
@@ -208,24 +185,27 @@ function EstruturadoPage() {
   const [restored, setRestored] = useState(false);
 
   useEffect(() => {
-    const w = Number(localStorage.getItem("treino:weekIdx"));
     const b = Number(localStorage.getItem("treino:blockIdx"));
-    if (Number.isFinite(w) && w >= 0) setWeekIdx(w);
     if (Number.isFinite(b) && b >= 0) setBlockIdx(b);
     setRestored(true);
   }, []);
 
   useEffect(() => {
     if (!restored) return;
-    localStorage.setItem("treino:weekIdx", String(weekIdx));
     localStorage.setItem("treino:blockIdx", String(blockIdx));
   }, [weekIdx, blockIdx, restored]);
 
+  const [calendarDate, setCalendarDate] = useState(todayStr);
+  useEffect(() => {
+    const tick = window.setInterval(() => setCalendarDate(todayStr()), 30000);
+    return () => window.clearInterval(tick);
+  }, []);
+  const currentWeek = currentTrainingWeek(data?.start_date ?? "", calendarDate);
   useEffect(() => {
     if (!plan) return;
-    setWeekIdx((i) => Math.min(Math.max(i, 0), plan.weeks.length - 1));
+    setWeekIdx(Math.min(Math.max(currentWeek - 1, 0), plan.weeks.length - 1));
     setBlockIdx((i) => Math.min(Math.max(i, 0), plan.blocks.length - 1));
-  }, [plan?.weeks?.length, plan?.blocks?.length]);
+  }, [data?.start_date, currentWeek, plan?.weeks?.length, plan?.blocks?.length]);
 
   // Trocar bloco/semana fecha o exercício em edição pra não perder foco.
   useEffect(() => {
@@ -262,8 +242,9 @@ function EstruturadoPage() {
   }
 
   const cargaProps = {
-    lastByExercise,
-    todayIdByExercise,
+    logRows: (logData?.rows ?? []) as WeekLogRow[],
+    blockLabel: block.name,
+    readOnly: !canEditTrainingWeek(safeWeekIdx + 1, data?.start_date ?? "", plan.weeks.length, calendarDate),
     onSaveCarga: saveCarga,
     savingCarga: saveMutation.isPending,
     activeKey,
@@ -310,6 +291,9 @@ function EstruturadoPage() {
           </div>
         </div>
       </div>
+      <p className="text-xs text-muted-foreground mb-3">
+        {currentWeek > plan.weeks.length ? "Ciclo concluído · somente leitura" : currentWeek < 1 ? "Plano ainda não iniciado · somente leitura" : safeWeekIdx + 1 === currentWeek ? "Semana vigente" : "Somente leitura"}
+      </p>
       <RestTimer />
 
 
@@ -434,8 +418,9 @@ type ListProps = {
   weekIdx: number;
   lookup: (name: string) => { title: string; url: string } | null;
   onPlay: (v: { title: string; url: string }) => void;
-  lastByExercise?: Map<string, LastEntry>;
-  todayIdByExercise?: Map<string, string>;
+  logRows?: WeekLogRow[];
+  blockLabel?: string;
+  readOnly?: boolean;
   onSaveCarga?: SaveCarga;
   savingCarga?: boolean;
   activeKey?: string | null;
@@ -447,8 +432,9 @@ function ExerciseList({
   weekIdx,
   lookup,
   onPlay,
-  lastByExercise,
-  todayIdByExercise,
+  logRows,
+  blockLabel = "",
+  readOnly = true,
   onSaveCarga,
   savingCarga,
   activeKey,
@@ -468,11 +454,21 @@ function ExerciseList({
         const parsed = describeCell(raw);
         const video = ex.name ? lookup(ex.name) : null;
         const key = normalize(ex.name || "");
-        const last = lastByExercise?.get(key) ?? null;
-        const todayId = todayIdByExercise?.get(key);
+        const weekRows = sameWeekEntries(logRows ?? [], weekIdx + 1)
+          .filter((r) => normalize(r.exercise) === key && (!r.block_label || r.block_label === blockLabel));
+        const last: LastEntry | null = weekRows.length ? {
+          load: weekRows.map((r) => r.load).join("/"),
+          reps: weekRows.map((r) => r.reps).join("/"),
+          date: weekRows.reduce((d, r) => r.entry_date > d ? r.entry_date : d, ""),
+          sets: Array.from({ length: Math.max(...weekRows.map((r) => r.set_index ?? 0)) }, (_, i) => {
+            const row = weekRows.find((r) => r.set_index === i + 1);
+            return { load: row?.load ?? "", reps: row?.reps ?? "" };
+          }),
+        } : null;
+        const todayId = weekRows[0]?.id;
         const isActive = !!key && activeKey === key;
         const cls = "af-ex" + (isActive ? " af-ex--active" : "");
-        const canRegister = !!(onSaveCarga && onActivate && ex.name);
+        const canRegister = !!(onSaveCarga && onActivate && ex.name && raw.trim() && !readOnly);
         return (
           <div key={i} className={cls}>
             <div className="nm">
@@ -512,12 +508,12 @@ function ExerciseList({
                 <LogChip
                   todayId={todayId}
                   last={last}
-                  onOpen={() => onActivate!(key)}
+                  onOpen={() => onActivate?.(key)}
                 />
               )}
             </div>
             {ex.note && <div className="af-note">{ex.note}</div>}
-            {canRegister && !isActive && !todayId && last?.date && (
+            {!isActive && last?.date && (
               <div className="af-loghint">
                 ↳ última: {last.load || "—"}
                 {last.reps ? ` × ${last.reps}` : ""} · {formatBR(last.date)}
@@ -525,14 +521,16 @@ function ExerciseList({
             )}
             {canRegister && isActive && (
               <LogEdit
-                exercise={ex.name!}
+                exercise={ex.name}
+                weekNumber={weekIdx + 1}
+                blockLabel={blockLabel}
                 last={last}
                 todayId={todayId}
                 prescribedReps={parsed.reps ?? ""}
                 prescribedSets={parsed.sets ?? ""}
-                onSave={onSaveCarga!}
+                onSave={async (value) => { if (onSaveCarga) await onSaveCarga(value); }}
                 saving={!!savingCarga}
-                onClose={() => onActivate!(null)}
+                onClose={() => onActivate?.(null)}
               />
             )}
           </div>
@@ -555,6 +553,7 @@ function LogChip({
   const load = last?.load?.trim() || "";
   const reps = last?.reps?.trim() || "";
   return (
+    <Button asChild>
     <button
       type="button"
       className={`af-logchip${filled ? " filled" : ""}`}
@@ -573,6 +572,7 @@ function LogChip({
         </>
       )}
     </button>
+    </Button>
   );
 }
 
@@ -588,6 +588,8 @@ function LogEdit({
   todayId,
   prescribedReps,
   prescribedSets,
+  weekNumber,
+  blockLabel,
   onSave,
   saving,
   onClose,
@@ -597,40 +599,19 @@ function LogEdit({
   todayId?: string;
   prescribedReps: string;
   prescribedSets: string;
+  weekNumber: number;
+  blockLabel: string;
   onSave: SaveCarga;
   saving: boolean;
   onClose: () => void;
 }) {
-  const initialSetCount = (() => {
-    const fromLast = Math.max(
-      (last?.load ?? "").split("/").length,
-      (last?.reps ?? "").split("/").length,
-    );
-    if (last?.load && fromLast > 0) return fromLast;
-    const p = parseInt(prescribedSets, 10);
-    if (Number.isFinite(p) && p > 0) return p;
-    return 1;
-  })();
-
-  const initialLoads = (() => {
-    const arr = (last?.load ?? "").split("/").map((s) => s.trim());
-    while (arr.length < initialSetCount) arr.push("");
-    return arr.slice(0, initialSetCount);
-  })();
-
-  const initialReps = (() => {
-    const arr = (last?.reps ?? "").split("/").map((s) => s.trim());
-    if (arr.filter(Boolean).length === 0 && prescribedReps) {
-      return Array(initialSetCount).fill(prescribedReps.trim());
-    }
-    while (arr.length < initialSetCount) arr.push(prescribedReps.trim());
-    return arr.slice(0, initialSetCount);
-  })();
-
-  // Rascunho de hoje tem prioridade sobre o último registro salvo.
-  const draft = readDraft(exercise);
-  const [loads, setLoads] = useState<string[]>(draft?.loads ?? initialLoads);
-  const [reps, setReps] = useState<string[]>(draft?.reps ?? initialReps);
+  const initialSetCount = prescribedSetCount(prescribedSets);
+  const draftScope = `${weekNumber}:${blockLabel}:${normalize(exercise)}`;
+  const draft = readDraft(draftScope);
+  const [loads, setLoads] = useState<string[]>(() => Array.from({ length: initialSetCount }, (_, i) =>
+    draft?.loads[i] ?? last?.sets[i]?.load ?? ""));
+  const [reps, setReps] = useState<string[]>(() => Array.from({ length: initialSetCount }, (_, i) =>
+    draft?.reps[i] ?? last?.sets[i]?.reps ?? prescribedReps.trim()));
   const wrapRef = useRef<HTMLDivElement>(null);
   const dirtyRef = useRef(false);
   const submittedRef = useRef(false);
@@ -638,19 +619,19 @@ function LogEdit({
   // Persiste o rascunho a cada alteração.
   useEffect(() => {
     if (!dirtyRef.current || submittedRef.current) return;
-    writeDraft(exercise, { loads, reps });
-  }, [exercise, loads, reps]);
+    writeDraft(draftScope, { loads, reps });
+  }, [draftScope, loads, reps]);
 
   async function submit() {
     const hasAny = loads.some((l) => l.trim());
     if (!hasAny || saving || submittedRef.current) return;
     submittedRef.current = true;
-    const load = loads.map((l) => l.trim() || "-").join("/");
-    const rep = reps.map((r) => r.trim() || "-").join("/");
+
     // Garante que o rascunho está gravado antes de tentar salvar no servidor.
-    writeDraft(exercise, { loads, reps });
+    writeDraft(draftScope, { loads, reps });
     try {
-      await onSave({ id: todayId, exercise, load, reps: rep });
+      await onSave({ exercise, week_number: weekNumber, block_label: blockLabel,
+        sets: loads.map((l, i) => ({ load: l.trim() || "-", reps: reps[i]?.trim() || "-" })) });
     } catch {
       // Falhou: libera para o aluno tentar registrar de novo sem perder nada.
       submittedRef.current = false;
@@ -700,17 +681,6 @@ function LogEdit({
     };
   }, [loads]);
 
-  function addSet() {
-    dirtyRef.current = true;
-    setLoads((a) => [...a, ""]);
-    setReps((a) => [...a, prescribedReps.trim()]);
-  }
-  function removeSet(i: number) {
-    if (loads.length <= 1) return;
-    dirtyRef.current = true;
-    setLoads((a) => a.filter((_, k) => k !== i));
-    setReps((a) => a.filter((_, k) => k !== i));
-  }
   function updateLoad(i: number, v: string) {
     dirtyRef.current = true;
     setLoads((a) => a.map((x, k) => (k === i ? v : x)));
@@ -747,22 +717,11 @@ function LogEdit({
               placeholder="—"
             />
           </label>
-          <button
-            type="button"
-            className="af-setbtn"
-            onClick={() => removeSet(i)}
-            disabled={loads.length <= 1}
-            aria-label="Remover série"
-          >
-            <Minus className="w-3.5 h-3.5" />
-          </button>
+
         </div>
       ))}
       <div className="af-logsetsfoot">
-        <button type="button" className="af-addset" onClick={addSet}>
-          <Plus className="w-3.5 h-3.5" /> Série
-        </button>
-        <button
+        <Button
           type="button"
           className="af-savesets"
           onClick={submit}
@@ -770,7 +729,7 @@ function LogEdit({
         >
           <Check className="w-4 h-4" />
           {todayId ? "Atualizar" : "Registrar"}
-        </button>
+        </Button>
       </div>
     </div>
   );

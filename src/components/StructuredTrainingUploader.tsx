@@ -13,6 +13,8 @@ import {
   deleteStructuredTrainingPlan,
 } from "@/lib/squad.functions";
 import { TrainingEditor } from "@/components/TrainingEditor";
+import { Input } from "@/components/ui/input";
+import { todayInBrasilia } from "@/lib/tz";
 
 export function StructuredTrainingUploader({
   studentId,
@@ -20,7 +22,7 @@ export function StructuredTrainingUploader({
   onChanged,
 }: {
   studentId: string;
-  current: { source_name?: string | null; plan?: StructuredPlan | null; updated_at?: string } | null;
+  current: { source_name?: string | null; plan?: StructuredPlan | null; updated_at?: string; start_date?: string | null } | null;
   onChanged: () => void;
 }) {
   const save = useServerFn(saveStructuredTrainingPlan);
@@ -28,6 +30,8 @@ export function StructuredTrainingUploader({
   const inputRef = useRef<HTMLInputElement>(null);
   const [busy, setBusy] = useState(false);
   const [editing, setEditing] = useState(false);
+  const [startDate, setStartDate] = useState<string | null>(null);
+  const effectiveStart = startDate ?? current?.start_date ?? todayInBrasilia();
 
   async function handleFile(file: File) {
     setBusy(true);
@@ -35,7 +39,7 @@ export function StructuredTrainingUploader({
       const plan = await parseTrainingXlsx(file);
       if (!plan.blocks.length) throw new Error("Nenhum bloco de treino encontrado.");
       await save({
-        data: { studentId, sourceName: file.name, plan },
+        data: { studentId, sourceName: file.name, plan, startDate: effectiveStart },
       });
       toast.success(
         `Planilha lida: ${plan.blocks.length} treino(s), ${plan.weeks.length} semana(s).`,
@@ -62,9 +66,27 @@ export function StructuredTrainingUploader({
 
   const plan = current?.plan as StructuredPlan | undefined;
   const has = !!plan && (plan.blocks?.length ?? 0) > 0;
+  async function saveStartDate() {
+    if (!plan || !effectiveStart) return;
+    setBusy(true);
+    try {
+      await save({ data: { studentId, sourceName: current?.source_name ?? "treino.xlsx", plan, startDate: effectiveStart } });
+      toast.success("Início do plano atualizado");
+      onChanged();
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Não foi possível salvar a data.");
+    } finally { setBusy(false); }
+  }
 
   return (
     <Card className="p-4 space-y-3">
+      <div className="flex flex-wrap items-end gap-2">
+        <label className="space-y-1 text-xs text-muted-foreground">
+          <span>Início do plano</span>
+          <Input type="date" aria-label="Início do plano" value={effectiveStart} onChange={(e) => setStartDate(e.target.value)} />
+        </label>
+        {has && <Button size="sm" variant="outline" disabled={busy || !effectiveStart} onClick={saveStartDate}>Salvar início</Button>}
+      </div>
       <div>
         <p className="tactical-heading text-xs text-primary tracking-widest">
           PLANILHA ESTRUTURADA (XLSX)
@@ -82,9 +104,9 @@ export function StructuredTrainingUploader({
             <div className="flex-1 min-w-0">
               <p className="text-sm truncate">{current?.source_name ?? "planilha.xlsx"}</p>
               <p className="text-[11px] text-muted-foreground">
-                {plan!.blocks.length} treino(s) · {plan!.weeks.length} semana(s)
-                {plan!.abdomen.length > 0 ? " · ABDOMINAL" : ""}
-                {plan!.cardio.length > 0 ? " · Cardio" : ""}
+                {plan?.blocks.length} treino(s) · {plan?.weeks.length} semana(s)
+                {(plan?.abdomen.length ?? 0) > 0 ? " · ABDOMINAL" : ""}
+                {(plan?.cardio.length ?? 0) > 0 ? " · Cardio" : ""}
               </p>
             </div>
             <Button size="sm" variant="ghost" onClick={() => setEditing(true)} title="Editar">
@@ -95,11 +117,11 @@ export function StructuredTrainingUploader({
             </Button>
           </div>
 
-          {editing && (
+          {editing && plan && (
             <TrainingEditor
               studentId={studentId}
               sourceName={current?.source_name ?? "treino.xlsx"}
-              initial={plan!}
+              initial={plan}
               onSaved={() => {
                 setEditing(false);
                 onChanged();
@@ -113,7 +135,7 @@ export function StructuredTrainingUploader({
               VISUALIZAR LEITURA
             </summary>
             <div className="p-3 space-y-4 text-sm">
-              {plan!.blocks.map((b, i) => (
+              {plan?.blocks.map((b, i) => (
                 <div key={i}>
                   <p className="tactical-heading text-[10px] tracking-widest text-muted-foreground mb-1">
                     {b.name.toUpperCase()}{b.day ? ` · ${b.day}` : ""}
@@ -123,7 +145,7 @@ export function StructuredTrainingUploader({
                       <thead>
                         <tr className="bg-secondary/40">
                           <th className="text-left px-2 py-1 border-b border-border">Exercício</th>
-                          {plan!.weeks.map((w, k) => (
+                          {plan?.weeks.map((w, k) => (
                             <th key={k} className="text-left px-2 py-1 border-b border-border whitespace-nowrap">{w}</th>
                           ))}
                           <th className="text-left px-2 py-1 border-b border-border">Obs.</th>
@@ -145,11 +167,11 @@ export function StructuredTrainingUploader({
                 </div>
               ))}
 
-              {plan!.abdomen.length > 0 && (
+              {(plan?.abdomen.length ?? 0) > 0 && (
                 <div>
                   <p className="tactical-heading text-[10px] tracking-widest text-muted-foreground mb-1">ABDOMINAL</p>
                   <ul className="space-y-1">
-                    {plan!.abdomen.map((ex, i) => (
+                    {plan?.abdomen.map((ex, i) => (
                       <li key={i}>
                         <span className="font-medium">{ex.name}</span>
                         {ex.weeks.filter(Boolean).length > 0 ? ` · ${ex.weeks.filter(Boolean).join(" | ")}` : ""}
@@ -160,11 +182,11 @@ export function StructuredTrainingUploader({
                 </div>
               )}
 
-              {plan!.cardio.length > 0 && (
+              {(plan?.cardio.length ?? 0) > 0 && (
                 <div>
                   <p className="tactical-heading text-[10px] tracking-widest text-muted-foreground mb-1">CARDIO</p>
                   <ul className="space-y-1">
-                    {plan!.cardio.map((ex, i) => (
+                    {plan?.cardio.map((ex, i) => (
                       <li key={i}>
                         <span className="font-medium">{ex.name}</span>
                         {ex.weeks.filter(Boolean).length > 0 ? ` · ${ex.weeks.filter(Boolean).join(" | ")}` : ""}
@@ -175,11 +197,11 @@ export function StructuredTrainingUploader({
                 </div>
               )}
 
-              {plan!.tips.length > 0 && (
+              {(plan?.tips.length ?? 0) > 0 && (
                 <div>
                   <p className="tactical-heading text-[10px] tracking-widest text-muted-foreground mb-1">DICAS E CONSIDERAÇÕES</p>
                   <ul className="list-disc pl-5 space-y-1">
-                    {plan!.tips.map((t, i) => (
+                    {plan?.tips.map((t, i) => (
                       <li key={i}>{t}</li>
                     ))}
                   </ul>
