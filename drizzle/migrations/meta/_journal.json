@@ -15,6 +15,13 @@
       "when": 1792536624701,
       "tag": "0001_logbook_week_sets_and_training_start",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1792536805631,
+      "tag": "0002_initialize_existing_training_calendar",
+      "breakpoints": true
     }
   ]
 }

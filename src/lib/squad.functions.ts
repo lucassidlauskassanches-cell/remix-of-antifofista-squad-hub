@@ -1223,6 +1223,13 @@ export const deleteLogbookEntry = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((d: unknown) => z.object({ id: z.string().uuid() }).parse(d))
   .handler(async ({ data, context }) => {
+    const { data: entry, error: readError } = await context.supabase
+      .from("logbook_entries").select("week_number").eq("id", data.id)
+      .eq("student_id", context.userId).maybeSingle();
+    if (readError) throw new Error(readError.message);
+    if (entry?.week_number != null) {
+      throw new Error("Registros por semana são preservados. Edite a carga na semana vigente.");
+    }
     const { error } = await context.supabase
       .from("logbook_entries")
       .delete()
@@ -1314,6 +1321,10 @@ export const saveStructuredTrainingPlan = createServerFn({ method: "POST" })
   )
   .handler(async ({ data, context }) => {
     await assertTrainerOrAdmin(context);
+    const { data: previous, error: previousError } = await context.supabase
+      .from("structured_training_plans").select("start_date")
+      .eq("student_id", data.studentId).maybeSingle();
+    if (previousError) throw new Error(previousError.message);
     const { error } = await context.supabase
       .from("structured_training_plans")
       .upsert(
@@ -1321,7 +1332,7 @@ export const saveStructuredTrainingPlan = createServerFn({ method: "POST" })
           student_id: data.studentId,
           source_name: data.sourceName,
           plan: data.plan,
-          ...(data.startDate ? { start_date: data.startDate } : {}),
+          start_date: data.startDate ?? previous?.start_date ?? todayInBrasilia(),
           updated_at: new Date().toISOString(),
         },
         { onConflict: "student_id" },
