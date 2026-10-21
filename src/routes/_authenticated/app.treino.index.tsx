@@ -18,7 +18,7 @@ import { YouTubePlayer } from "@/lib/youtube";
 import { Play, Check, Table2, LayoutList, Plus, Minus, Timer, Pause, RotateCcw, GripVertical } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
-import { canEditTrainingWeek, currentTrainingWeek, prescribedSetCount, sameWeekEntries, type WeekLogRow } from "@/lib/training-logbook";
+import { currentTrainingWeek, prescribedSetCount, sameWeekEntries, type WeekLogRow } from "@/lib/training-logbook";
 import {
   describeCell,
   type StructuredPlan,
@@ -244,7 +244,6 @@ function EstruturadoPage() {
   const cargaProps = {
     logRows: (logData?.rows ?? []) as WeekLogRow[],
     blockLabel: block.name,
-    readOnly: !canEditTrainingWeek(safeWeekIdx + 1, data?.start_date ?? "", plan.weeks.length, calendarDate),
     onSaveCarga: saveCarga,
     savingCarga: saveMutation.isPending,
     activeKey,
@@ -292,7 +291,7 @@ function EstruturadoPage() {
         </div>
       </div>
       <p className="text-xs text-muted-foreground mb-3">
-        {currentWeek > plan.weeks.length ? "Ciclo concluído · somente leitura" : currentWeek < 1 ? "Plano ainda não iniciado · somente leitura" : safeWeekIdx + 1 === currentWeek ? "Semana vigente" : "Somente leitura"}
+        {currentWeek > plan.weeks.length ? "Ciclo concluído · você ainda pode registrar em qualquer semana" : currentWeek < 1 ? "Plano ainda não iniciado · registro liberado" : safeWeekIdx + 1 === currentWeek ? "Semana vigente" : "Você pode registrar nesta semana"}
       </p>
       <RestTimer />
 
@@ -420,7 +419,6 @@ type ListProps = {
   onPlay: (v: { title: string; url: string }) => void;
   logRows?: WeekLogRow[];
   blockLabel?: string;
-  readOnly?: boolean;
   onSaveCarga?: SaveCarga;
   savingCarga?: boolean;
   activeKey?: string | null;
@@ -434,7 +432,6 @@ function ExerciseList({
   onPlay,
   logRows,
   blockLabel = "",
-  readOnly = true,
   onSaveCarga,
   savingCarga,
   activeKey,
@@ -468,7 +465,7 @@ function ExerciseList({
         const todayId = weekRows[0]?.id;
         const isActive = !!key && activeKey === key;
         const cls = "af-ex" + (isActive ? " af-ex--active" : "");
-        const canRegister = !!(onSaveCarga && onActivate && ex.name && raw.trim() && !readOnly);
+        const canRegister = !!(onSaveCarga && onActivate && ex.name && raw.trim());
         return (
           <div key={i} className={cls}>
             <div className="nm">

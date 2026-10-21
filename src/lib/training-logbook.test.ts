@@ -18,13 +18,15 @@ describe("periodization logbook", () => {
     expect(currentTrainingWeek("2026-10-13", "2026-10-19")).toBe(1);
     expect(currentTrainingWeek("2026-10-13", "2026-10-20")).toBe(2);
   });
-  it("locks past and future weeks", () => {
-    expect(canEditTrainingWeek(1, "2026-10-13", 8, "2026-10-20")).toBe(false);
-    expect(canEditTrainingWeek(2, "2026-10-13", 8, "2026-10-20")).toBe(true);
-    expect(canEditTrainingWeek(3, "2026-10-13", 8, "2026-10-20")).toBe(false);
+  it("lets the student edit any week of the plan", () => {
+    expect(canEditTrainingWeek(1, 8)).toBe(true);
+    expect(canEditTrainingWeek(2, 8)).toBe(true);
+    expect(canEditTrainingWeek(8, 8)).toBe(true);
   });
-  it("does not keep the last week editable once the cycle has ended", () => {
-    expect(canEditTrainingWeek(2, "2026-10-01", 2, "2026-10-20")).toBe(false);
+  it("still rejects weeks outside the plan", () => {
+    expect(canEditTrainingWeek(0, 8)).toBe(false);
+    expect(canEditTrainingWeek(9, 8)).toBe(false);
+    expect(canEditTrainingWeek(3, 2)).toBe(false);
   });
   it("uses the selected week's prescribed set count", () => {
     expect(prescribedSetCount("3")).toBe(3);
