@@ -9,8 +9,9 @@ export function currentTrainingWeek(startDate: string, today = todayInBrasilia()
   return Math.floor((now - start) / 604800000) + 1;
 }
 
-export function canEditTrainingWeek(week: number, startDate: string, totalWeeks: number, today = todayInBrasilia()) {
-  return week >= 1 && week <= totalWeeks && week === currentTrainingWeek(startDate, today);
+// Any week of the plan is editable; currentTrainingWeek only picks the default week.
+export function canEditTrainingWeek(week: number, totalWeeks: number) {
+  return week >= 1 && week <= totalWeeks;
 }
 
 export function prescribedSetCount(sets: string): number {

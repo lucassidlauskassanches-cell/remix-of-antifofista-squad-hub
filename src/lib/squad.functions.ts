@@ -1143,12 +1143,12 @@ export const saveLogbookEntry = createServerFn({ method: "POST" })
         throw new Error("Informe a semana e a série.");
       }
       const { data: training, error: planError } = await supabase
-        .from("structured_training_plans").select("plan,start_date")
+        .from("structured_training_plans").select("plan")
         .eq("student_id", userId).maybeSingle();
       if (planError) throw new Error(planError.message);
       const plan = training?.plan as { weeks?: string[] } | undefined;
-      if (!training?.start_date || !canEditTrainingWeek(data.week_number, training.start_date, plan?.weeks?.length ?? 0)) {
-        throw new Error("Somente a semana vigente pode ser alterada.");
+      if (!canEditTrainingWeek(data.week_number, plan?.weeks?.length ?? 0)) {
+        throw new Error("Semana inválida para este plano.");
       }
       const payload = weeklyLogPayload(userId, {
         exercise: data.exercise, load: data.load, reps: data.reps,
