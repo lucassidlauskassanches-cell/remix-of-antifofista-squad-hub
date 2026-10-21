@@ -1228,7 +1228,7 @@ export const deleteLogbookEntry = createServerFn({ method: "POST" })
       .eq("student_id", context.userId).maybeSingle();
     if (readError) throw new Error(readError.message);
     if (entry?.week_number != null) {
-      throw new Error("Registros por semana são preservados. Edite a carga na semana vigente.");
+      throw new Error("Registros por semana são preservados. Edite a carga na própria semana.");
     }
     const { error } = await context.supabase
       .from("logbook_entries")
