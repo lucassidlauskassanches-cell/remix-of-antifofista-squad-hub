@@ -574,6 +574,38 @@ export type Database = {
         }
         Relationships: []
       }
+      registro_neutral_days: {
+        Row: {
+          created_by: string
+          enabled: boolean
+          log_date: string
+          student_id: string
+          updated_at: string
+        }
+        Insert: {
+          created_by: string
+          enabled?: boolean
+          log_date: string
+          student_id: string
+          updated_at?: string
+        }
+        Update: {
+          created_by?: string
+          enabled?: boolean
+          log_date?: string
+          student_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "registro_neutral_days_student_id_fkey"
+            columns: ["student_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       reminders: {
         Row: {
           concluido: boolean
@@ -955,6 +987,10 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      add_registro_water: {
+        Args: { p_delta: number; p_log_id: string }
+        Returns: undefined
+      }
       get_leaderboard: {
         Args: { _caller: string; _period: string }
         Returns: {

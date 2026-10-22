@@ -22,6 +22,13 @@
       "when": 1792536805631,
       "tag": "0002_initialize_existing_training_calendar",
       "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "7",
+      "when": 1792708308388,
+      "tag": "0003_registro_neutral_days_and_atomic_water",
+      "breakpoints": true
     }
   ]
 }
