@@ -18,6 +18,7 @@ import { YouTubePlayer } from "@/lib/youtube";
 import { Play, Check, Table2, LayoutList, Plus, Minus, Timer, Pause, RotateCcw, GripVertical } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
+import { REST_TIMER_KEY, remainingRestSeconds, startRestTimer } from "@/lib/rest-timer";
 import { currentTrainingWeek, prescribedSetCount, sameWeekEntries, type WeekLogRow } from "@/lib/training-logbook";
 import {
   describeCell,
@@ -733,11 +734,7 @@ function LogEdit({
 }
 
 function RestTimer() {
-  const [defaultSec, setDefaultSec] = useState<number>(() => {
-    if (typeof window === "undefined") return 90;
-    const v = Number(localStorage.getItem("treino:restSec"));
-    return Number.isFinite(v) && v > 0 ? v : 90;
-  });
+  const [defaultSec, setDefaultSec] = useState(90);
   const [remaining, setRemaining] = useState<number>(defaultSec);
   const [running, setRunning] = useState(false);
   const endAtRef = useRef<number | null>(null);
@@ -811,64 +808,110 @@ function RestTimer() {
     if (pos) localStorage.setItem("treino:timerPos", JSON.stringify(pos));
   }
 
+  const restoredRef = useRef(false);
   useEffect(() => {
-    if (typeof window !== "undefined") {
-      localStorage.setItem("treino:restSec", String(defaultSec));
+    try {
+      const duration = Number(localStorage.getItem("treino:restSec")) || 90;
+      setDefaultSec(duration);
+      const saved = JSON.parse(localStorage.getItem(REST_TIMER_KEY) ?? "null");
+      if (saved && typeof saved.remaining === "number") {
+        endAtRef.current = typeof saved.endAt === "number" ? saved.endAt : null;
+        setRemaining(endAtRef.current === null ? saved.remaining : remainingRestSeconds(endAtRef.current));
+        setRunning(endAtRef.current !== null);
+      } else setRemaining(duration);
+    } catch {}
+    restoredRef.current = true;
+  }, []);
+
+  useEffect(() => {
+    if (restoredRef.current) {
+      try { localStorage.setItem("treino:restSec", String(defaultSec)); } catch {}
     }
   }, [defaultSec]);
 
-  useEffect(() => {
-    if (!running) return;
-    const id = window.setInterval(() => {
-      if (endAtRef.current == null) return;
-      const left = Math.max(0, Math.round((endAtRef.current - Date.now()) / 1000));
-      setRemaining(left);
-      if (left <= 0) {
-        setRunning(false);
-        endAtRef.current = null;
-        beep();
-      }
-    }, 200);
-    return () => window.clearInterval(id);
-  }, [running]);
-
-  function beep() {
-    try {
-      const Ctx =
-        (window as any).AudioContext || (window as any).webkitAudioContext;
-      if (!Ctx) return;
-      const ctx: AudioContext = audioRef.current ?? new Ctx();
-      audioRef.current = ctx;
-      const o = ctx.createOscillator();
-      const g = ctx.createGain();
-      o.type = "sine";
-      o.frequency.value = 880;
-      g.gain.value = 0.15;
-      o.connect(g);
-      g.connect(ctx.destination);
-      o.start();
-      o.stop(ctx.currentTime + 0.35);
-      if (navigator.vibrate) navigator.vibrate([200, 80, 200]);
-    } catch {}
+  function persist(endAt: number | null, seconds: number) {
+    try { localStorage.setItem(REST_TIMER_KEY, JSON.stringify({ endAt, remaining: seconds })); } catch {}
   }
 
+  useEffect(() => {
+    if (!running) return;
+    function tick() {
+      const end = endAtRef.current;
+      if (end === null) return;
+      const left = remainingRestSeconds(end);
+      setRemaining(left);
+      if (left === 0) {
+        // Clear the deadline first: visibility and interval may fire together.
+        endAtRef.current = null;
+        persist(null, 0);
+        setRunning(false);
+        beep();
+        toast.success("Descanso concluído");
+      }
+    }
+    tick();
+    const id = window.setInterval(tick, 200);
+    document.addEventListener("visibilitychange", tick);
+    window.addEventListener("pageshow", tick);
+    window.addEventListener("focus", tick);
+    return () => {
+      window.clearInterval(id);
+      document.removeEventListener("visibilitychange", tick);
+      window.removeEventListener("pageshow", tick);
+      window.removeEventListener("focus", tick);
+    };
+  }, [running]);
+
+  function unlockAudio() {
+    try {
+      const Ctx = window.AudioContext || (window as any).webkitAudioContext;
+      if (Ctx && !audioRef.current) audioRef.current = new Ctx();
+      if (audioRef.current?.state === "suspended") void audioRef.current.resume().catch(() => {});
+    } catch {}
+  }
+  function beep() {
+    try { navigator.vibrate?.([200, 80, 200]); } catch {}
+    try {
+      const ctx = audioRef.current;
+      if (!ctx) return;
+      if (ctx.state === "suspended") void ctx.resume().catch(() => {});
+      const oscillator = ctx.createOscillator();
+      const gain = ctx.createGain();
+      oscillator.type = "sine";
+      oscillator.frequency.value = 880;
+      gain.gain.value = 0.15;
+      oscillator.connect(gain);
+      gain.connect(ctx.destination);
+      oscillator.start();
+      oscillator.stop(ctx.currentTime + 0.5);
+    } catch {}
+  }
   function start() {
-    endAtRef.current = Date.now() + remaining * 1000;
+    unlockAudio();
+    const seconds = remaining > 0 ? remaining : defaultSec;
+    const state = startRestTimer(seconds);
+    endAtRef.current = state.endAt;
+    persist(state.endAt, seconds);
+    setRemaining(seconds);
     setRunning(true);
   }
   function pause() {
-    setRunning(false);
+    const seconds = endAtRef.current === null ? remaining : remainingRestSeconds(endAtRef.current);
     endAtRef.current = null;
+    persist(null, seconds);
+    setRemaining(seconds);
+    setRunning(false);
   }
   function reset() {
-    setRunning(false);
     endAtRef.current = null;
+    persist(null, defaultSec);
+    setRunning(false);
     setRemaining(defaultSec);
   }
   function bump(delta: number) {
     const next = Math.max(5, Math.min(900, defaultSec + delta));
     setDefaultSec(next);
-    if (!running) setRemaining(next);
+    if (!running) { setRemaining(next); persist(null, next); }
   }
 
   const mm = String(Math.floor(remaining / 60)).padStart(2, "0");
@@ -900,29 +943,29 @@ function RestTimer() {
         </div>
       </div>
       <div className="af-timer-body">
-        <button type="button" className="stp" onClick={() => bump(-15)} aria-label="-15s">
+        <Button variant="ghost" type="button" className="stp" onClick={() => bump(-15)} aria-label="-15s">
           <Minus className="w-3.5 h-3.5" />
-        </button>
+        </Button>
         <div className="big">
           {mm}:{ss}
         </div>
-        <button type="button" className="stp" onClick={() => bump(15)} aria-label="+15s">
+        <Button variant="ghost" type="button" className="stp" onClick={() => bump(15)} aria-label="+15s">
           <Plus className="w-3.5 h-3.5" />
-        </button>
+        </Button>
       </div>
       <div className="af-timer-foot">
         {running ? (
-          <button type="button" className="prm" onClick={pause} aria-label="Pausar">
+          <Button variant="ghost" type="button" className="prm" onClick={pause} aria-label="Pausar">
             <Pause className="w-4 h-4" />
-          </button>
+          </Button>
         ) : (
-          <button type="button" className="prm" onClick={start} aria-label="Iniciar">
+          <Button variant="ghost" type="button" className="prm" onClick={start} aria-label="Iniciar">
             <Play className="w-4 h-4" />
-          </button>
+          </Button>
         )}
-        <button type="button" className="sec" onClick={reset} aria-label="Resetar">
+        <Button variant="ghost" type="button" className="sec" onClick={reset} aria-label="Resetar">
           <RotateCcw className="w-3.5 h-3.5" />
-        </button>
+        </Button>
       </div>
     </div>
   );
