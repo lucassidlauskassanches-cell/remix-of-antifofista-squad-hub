@@ -1,6 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useRef, useState } from "react";
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient, useIsMutating } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import {
   getMyDayRegistro,
@@ -48,6 +48,9 @@ import { StreakMilestoneCard } from "@/components/StreakMilestoneCard";
 import { PushNotificationsCard } from "@/components/PushNotificationsCard";
 import { RotatingBannerStrip } from "@/components/RotatingBannerStrip";
 import { RankingCard } from "@/components/RankingCard";
+import { calcScore } from "@/lib/registro-rules";
+import { OptimisticDayQueue } from "@/lib/registro-optimistic";
+import { NeutralDaysControl } from "@/components/NeutralDaysControl";
 import html2canvas from "html2canvas-pro";
 
 
@@ -56,6 +59,10 @@ export const Route = createFileRoute("/_authenticated/app/registro")({
   head: () => ({
     meta: [
       { title: "Meu Registro — Antifofista Squad" },
+      { property: "og:title", content: "Meu Registro — Antifofista Squad" },
+      { property: "og:description", content: "Água, refeições, treino e sequência diária no Antifofista Squad." },
+      { property: "og:type", content: "website" },
+      { name: "twitter:card", content: "summary" },
       {
         name: "description",
         content:
@@ -84,28 +91,12 @@ function addDays(iso: string, delta: number): string {
 type DayData = any;
 
 function computeScoreLocal(day: DayData): number {
-  const goal = day.waterGoalMl;
-  const waterMl = (day.log as any)?.water_ml ?? 0;
-  const trained = !!(day.log as any)?.trained;
-  const rest = !!(day.log as any)?.rest_day;
-  const hasWaterGoal = goal > 0;
-  const waterPct = hasWaterGoal ? Math.min(waterMl / goal, 1) : 0;
-  const trainingPct = trained ? 1 : 0;
-  const ratings = (day.meals ?? [])
-    .filter((m: any) => m.done)
-    .map((m: any) => Number(m.rating) || 0);
-  const mealPct = ratings.length
-    ? ratings.reduce((a: number, b: number) => a + b, 0) / (ratings.length * 5)
-    : 0;
-  // Sem peso definido → água tem peso 0 e o restante é reescalonado para 100.
-  const wWater = hasWaterGoal ? (rest ? 40 : 30) : 0;
-  const wTraining = rest ? 0 : 25;
-  const wMeals = rest ? 60 : 45;
-  const totalW = wWater + wTraining + wMeals;
-  const raw = waterPct * wWater + trainingPct * wTraining + mealPct * wMeals;
-  const s = totalW > 0 ? (raw / totalW) * 100 : 0;
-  return Math.round(Math.max(0, Math.min(100, s)) * 10) / 10;
-
+  return calcScore({
+    waterMl: day.log?.water_ml ?? 0, waterGoalMl: day.waterGoalMl,
+    trained: !!day.log?.trained, restDay: !!day.log?.rest_day,
+    totalMeals: day.dietMealNames?.length ?? day.meals?.length ?? 0,
+    mealRatings: (day.meals ?? []).filter((m: any) => m.done).map((m: any) => Number(m.rating) || 0),
+  });
 }
 
 function RegistroPage() {
@@ -116,10 +107,16 @@ function RegistroPage() {
 
   const ctxQ = useQuery({ queryKey: ["my-context"], queryFn: () => fetchCtx() });
   const dayKey = ["registro", date] as const;
+  const pendingCount = useIsMutating({ mutationKey: ["registro-write"] });
+  const queues = useRef(new Map<string, OptimisticDayQueue<DayData>>());
+  const sequence = useRef(0);
   const dayQ = useQuery({
     queryKey: dayKey,
     queryFn: () => fetchDay({ data: { date } }),
     staleTime: 15_000,
+    refetchOnWindowFocus: false,
+    refetchOnReconnect: false,
+    enabled: pendingCount === 0,
   });
 
   const invalidateAll = () => {
@@ -127,40 +124,42 @@ function RegistroPage() {
     qc.invalidateQueries({ queryKey: ["weight-history"] });
   };
 
-  // Optimistic patch: mutate a clone of the cached day, recompute score
-  // locally so UI updates instantly without waiting for the server.
-  function optimisticPatch(mutator: (d: any) => void) {
-    const prev = qc.getQueryData<DayData>(dayKey);
-    if (!prev) return { prev: undefined as DayData | undefined };
-    const next: any = JSON.parse(JSON.stringify(prev));
-    if (!next.log) next.log = { water_ml: 0, trained: false, rest_day: false, daily_score: 0 };
-    mutator(next);
-    next.log.daily_score = computeScoreLocal(next);
-    qc.setQueryData(dayKey, next);
-    return { prev };
+  async function optimisticPatch(mutator: (d: any) => void) {
+    const key = [...dayKey];
+    await qc.cancelQueries({ queryKey: key });
+    let queue = queues.current.get(date);
+    if (!queue || queue.pending === 0) {
+      const current = qc.getQueryData<DayData>(key);
+      if (!current) return { key, date, id: ++sequence.current };
+      queue = new OptimisticDayQueue(current);
+      queues.current.set(date, queue);
+    }
+    const id = ++sequence.current;
+    const next = queue.add(id, d => {
+      if (!d.log) d.log = { water_ml: 0, trained: false, rest_day: false, daily_score: 0 };
+      mutator(d);
+      d.log.daily_score = computeScoreLocal(d);
+    });
+    qc.setQueryData(key, next);
+    return { key, date, id };
   }
-  function rollback(ctx: { prev?: DayData } | undefined) {
-    if (ctx?.prev) qc.setQueryData(dayKey, ctx.prev);
-  }
-  // Transient network hiccups (offline, backgrounded PWA, mobile handoff) surface
-  // as `TypeError: Failed to fetch`. Swallow the toast — the reconcile will retry.
-  function isTransientNetworkError(e: any): boolean {
-    const msg = String(e?.message ?? e ?? "");
-    if (typeof navigator !== "undefined" && navigator.onLine === false) return true;
-    return /failed to fetch|networkerror|load failed|network request failed/i.test(msg);
+  type PatchContext = Awaited<ReturnType<typeof optimisticPatch>>;
+  async function settlePatch(ctx: PatchContext | undefined, server?: DayData) {
+    if (!ctx) return;
+    await qc.cancelQueries({ queryKey: ctx.key });
+    const queue = queues.current.get(ctx.date);
+    if (queue) qc.setQueryData(ctx.key, queue.settle(ctx.id, server));
+    else if (server) qc.setQueryData(ctx.key, server);
   }
   function toastMutationError(e: any) {
-    if (isTransientNetworkError(e)) return;
-    toast.error(e?.message ?? "Erro");
+    toast.error(e?.message && !/failed to fetch|networkerror|load failed/i.test(e.message)
+      ? e.message : "Não foi possível salvar. Confira sua conexão e tente novamente.");
   }
-  // Debounced background reconcile so streak/score sync with server.
-  const reconcileRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  function scheduleReconcile() {
-    if (reconcileRef.current) clearTimeout(reconcileRef.current);
-    reconcileRef.current = setTimeout(() => {
-      qc.invalidateQueries({ queryKey: dayKey });
-    }, 800);
-  }
+  const writeOptions = {
+    mutationKey: ["registro-write"],
+    scope: { id: "registro-daily-writes" },
+    onSuccess: async (result: { day: DayData }, _v: unknown, ctx: PatchContext | undefined) => settlePatch(ctx, result.day),
+  };
 
   const addWaterFn = useServerFn(addWater);
   const setWaterFn = useServerFn(setWater);
@@ -170,21 +169,22 @@ function RegistroPage() {
   const ackFn = useServerFn(ackMilestone);
 
   const mAddWater = useMutation({
+    ...writeOptions,
     mutationFn: (deltaMl: number) => addWaterFn({ data: { deltaMl, date } }),
     onMutate: (deltaMl: number) =>
       optimisticPatch((d) => {
         const cur = d.log.water_ml ?? 0;
         d.log.water_ml = Math.max(0, Math.min(20000, cur + deltaMl));
       }),
-    retry: 2,
+    retry: 0,
     retryDelay: (attempt) => Math.min(1000 * 2 ** attempt, 4000),
-    onError: (e: any, _v, ctx) => {
-      rollback(ctx);
+    onError: async (e: any, _v, ctx) => {
+      await settlePatch(ctx);
       toastMutationError(e);
     },
-    onSettled: scheduleReconcile,
   });
   const mSetWater = useMutation({
+    ...writeOptions,
     mutationFn: (waterMl: number) => setWaterFn({ data: { waterMl, date } }),
     onMutate: (waterMl: number) =>
       optimisticPatch((d) => {
@@ -192,13 +192,13 @@ function RegistroPage() {
       }),
     retry: 2,
     retryDelay: (attempt) => Math.min(1000 * 2 ** attempt, 4000),
-    onError: (e: any, _v, ctx) => {
-      rollback(ctx);
+    onError: async (e: any, _v, ctx) => {
+      await settlePatch(ctx);
       toastMutationError(e);
     },
-    onSettled: scheduleReconcile,
   });
   const mTrained = useMutation({
+    ...writeOptions,
     mutationFn: (t: boolean) => setTrainedFn({ data: { trained: t, date } }),
     onMutate: (t: boolean) =>
       optimisticPatch((d) => {
@@ -206,13 +206,13 @@ function RegistroPage() {
       }),
     retry: 2,
     retryDelay: (attempt) => Math.min(1000 * 2 ** attempt, 4000),
-    onError: (e: any, _v, ctx) => {
-      rollback(ctx);
+    onError: async (e: any, _v, ctx) => {
+      await settlePatch(ctx);
       toastMutationError(e);
     },
-    onSettled: scheduleReconcile,
   });
   const mRest = useMutation({
+    ...writeOptions,
     mutationFn: (r: boolean) => setRestDayFn({ data: { restDay: r, date } }),
     onMutate: (r: boolean) =>
       optimisticPatch((d) => {
@@ -220,13 +220,13 @@ function RegistroPage() {
       }),
     retry: 2,
     retryDelay: (attempt) => Math.min(1000 * 2 ** attempt, 4000),
-    onError: (e: any, _v, ctx) => {
-      rollback(ctx);
+    onError: async (e: any, _v, ctx) => {
+      await settlePatch(ctx);
       toastMutationError(e);
     },
-    onSettled: scheduleReconcile,
   });
   const mMeal = useMutation({
+    ...writeOptions,
     mutationFn: (v: { mealCheckId: string; done?: boolean; rating?: number }) =>
       mealFn({ data: { ...v, date } }),
     onMutate: (v) =>
@@ -241,11 +241,10 @@ function RegistroPage() {
       }),
     retry: 2,
     retryDelay: (attempt) => Math.min(1000 * 2 ** attempt, 4000),
-    onError: (e: any, _v, ctx) => {
-      rollback(ctx);
+    onError: async (e: any, _v, ctx) => {
+      await settlePatch(ctx);
       toastMutationError(e);
     },
-    onSettled: scheduleReconcile,
   });
 
   if (!dayQ.data) return <p className="p-4">Carregando...</p>;
@@ -271,6 +270,7 @@ function RegistroPage() {
           variant="outline"
           size="icon"
           onClick={() => setDate((cur) => addDays(cur, -1))}
+          disabled={pendingCount > 0}
         >
           <ChevronLeft className="w-4 h-4" />
         </Button>
@@ -285,13 +285,14 @@ function RegistroPage() {
                     month: "long",
                   })}
           </div>
-          {d.isYesterday && (
+          {!d.isToday && d.isEditable && (
             <div className="text-[10px] tracking-widest text-primary">
               VOCÊ AINDA PODE PREENCHER
             </div>
           )}
           {!d.isToday && (
             <button
+              disabled={pendingCount > 0}
               onClick={() => setDate(todaySP())}
               className="text-xs text-primary underline"
             >
@@ -303,7 +304,7 @@ function RegistroPage() {
           variant="outline"
           size="icon"
           onClick={() => setDate((cur) => addDays(cur, 1))}
-          disabled={date >= todaySP()}
+          disabled={date >= todaySP() || pendingCount > 0}
         >
           <ChevronRight className="w-4 h-4" />
         </Button>
@@ -323,6 +324,9 @@ function RegistroPage() {
           studentName={studentName}
         />
       )}
+
+      <NeutralDaysControl today={todaySP()} />
+      {d.isNeutralDay && <p className="text-sm text-primary border-l-2 border-primary pl-3">VIAGEM / DESCANSO · Dia neutro na sequência</p>}
 
       {/* SCORE */}
       <ScoreBanner score={score} readOnly={readOnly} onShare={() => {}} />
@@ -446,7 +450,7 @@ function RegistroPage() {
       </Card>
 
       {/* PESO */}
-      <WeightCard currentKg={d.weightKg} onSaved={invalidateAll} />
+      <WeightCard currentKg={d.weightKg} date={date} readOnly={readOnly} onSaved={invalidateAll} />
 
       {/* SHARE */}
       <ShareSection score={score} date={date} studentName={studentName} />
@@ -597,11 +601,16 @@ function MealRow({
 // ---------- weight ----------
 function WeightCard({
   currentKg,
+  date,
+  readOnly,
   onSaved,
 }: {
   currentKg: number;
+  date: string;
+  readOnly: boolean;
   onSaved: () => void;
 }) {
+  const qc = useQueryClient();
   const fetchHist = useServerFn(getMyWeightHistory);
   const upsert = useServerFn(upsertWeightEntry);
   const [val, setVal] = useState<string>("");
@@ -610,8 +619,12 @@ function WeightCard({
     queryFn: () => fetchHist(),
   });
   const mSave = useMutation({
-    mutationFn: (kg: number) => upsert({ data: { weightKg: kg } }),
-    onSuccess: () => {
+    mutationKey: ["registro-write"],
+    scope: { id: "registro-daily-writes" },
+    mutationFn: (kg: number) => upsert({ data: { weightKg: kg, date } }),
+    onMutate: async () => { await qc.cancelQueries({ queryKey: ["registro", date] }); },
+    onSuccess: (result) => {
+      qc.setQueryData(["registro", date], result.day);
       toast.success("Peso registrado");
       setVal("");
       onSaved();
@@ -642,7 +655,8 @@ function WeightCard({
           step="0.1"
           min={20}
           max={400}
-          placeholder="Peso (kg) de hoje"
+          placeholder="Peso (kg) do dia"
+          disabled={readOnly}
           value={val}
           onChange={(e) => setVal(e.currentTarget.value)}
         />
@@ -652,7 +666,7 @@ function WeightCard({
             if (Number.isFinite(n) && n >= 20 && n <= 400) mSave.mutate(n);
             else toast.error("Peso inválido");
           }}
-          disabled={mSave.isPending || !val}
+          disabled={readOnly || mSave.isPending || !val}
         >
           REGISTRAR
         </Button>

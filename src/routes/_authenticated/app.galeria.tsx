@@ -21,6 +21,14 @@ import { YouTubePlayer, extractYouTubeId } from "@/lib/youtube";
 import { Play } from "lucide-react";
 
 export const Route = createFileRoute("/_authenticated/app/galeria")({
+  head: () => ({ meta: [
+    { title: "Galeria de Exercícios — Antifofista Squad" },
+    { name: "description", content: "Vídeos de execução dos exercícios do seu treino." },
+    { property: "og:title", content: "Galeria de Exercícios — Antifofista Squad" },
+    { property: "og:description", content: "Vídeos de execução dos exercícios do seu treino." },
+    { property: "og:type", content: "website" },
+    { name: "twitter:card", content: "summary" },
+  ] }),
   component: GaleriaPage,
 });
 

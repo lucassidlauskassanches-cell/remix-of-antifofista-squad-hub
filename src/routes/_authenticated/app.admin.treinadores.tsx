@@ -16,6 +16,14 @@ import { Trash2, Plus, ShieldCheck, KeyRound, Save } from "lucide-react";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/_authenticated/app/admin/treinadores")({
+  head: () => ({ meta: [
+    { title: "Equipe de Treinadores — Antifofista Squad" },
+    { name: "description", content: "Gestão dos treinadores do Antifofista Squad." },
+    { property: "og:title", content: "Equipe de Treinadores — Antifofista Squad" },
+    { property: "og:description", content: "Gestão dos treinadores do Antifofista Squad." },
+    { property: "og:type", content: "website" },
+    { name: "twitter:card", content: "summary" },
+  ] }),
   component: TrainersPage,
   errorComponent: ({ error }: { error: unknown }) => (
     <p className="text-destructive">{(error as Error).message}</p>

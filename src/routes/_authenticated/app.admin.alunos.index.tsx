@@ -9,6 +9,14 @@ import { Card } from "@/components/ui/card";
 import { Plus, Video, ChevronLeft, ChevronRight } from "lucide-react";
 
 export const Route = createFileRoute("/_authenticated/app/admin/alunos/")({
+  head: () => ({ meta: [
+    { title: "Alunos — Antifofista Squad" },
+    { name: "description", content: "Alunos e acompanhamento da equipe Antifofista Squad." },
+    { property: "og:title", content: "Alunos — Antifofista Squad" },
+    { property: "og:description", content: "Alunos e acompanhamento da equipe Antifofista Squad." },
+    { property: "og:type", content: "website" },
+    { name: "twitter:card", content: "summary" },
+  ] }),
   component: AlunosList,
 });
 

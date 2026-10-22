@@ -1,12 +1,14 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+import { calcScore, calculateStreak, canEditRegistroDate, prescribedMealNames, validRegistroDate, addRegistroDays, STREAK_THRESHOLD } from "@/lib/registro-rules";
+export { STREAK_THRESHOLD } from "@/lib/registro-rules";
 import { assertCanManageStudent } from "@/lib/squad.functions";
 
 // ---------- helpers ----------
 const dateSchema = z
   .string()
-  .regex(/^\d{4}-\d{2}-\d{2}$/, "invalid date")
+  .refine(validRegistroDate, "Data inválida")
   .default(() => todaySP());
 
 function todaySP(): string {
@@ -31,13 +33,10 @@ function yesterdaySP(): string {
   return addDaysIsoLocal(todaySP(), -1);
 }
 
-// Aluno pode preencher hoje ou o dia anterior (ex.: esqueceu de marcar ontem).
-function isEditableDate(logDate: string): boolean {
-  const today = todaySP();
-  return logDate === today || logDate === addDaysIsoLocal(today, -1);
+function isEditableDate(date: string): boolean { return canEditRegistroDate(date, todaySP()); }
+function assertEditableDate(date: string) {
+  if (!isEditableDate(date)) throw new Error("Você pode preencher hoje e os sete dias anteriores.");
 }
-
-export const STREAK_THRESHOLD = 80;
 
 export const PATENTES_GUERRA: Array<{ days: number; rank: string }> = [
   { days: 3, rank: "RECRUTA" },
@@ -52,57 +51,21 @@ export const PATENTES_GUERRA: Array<{ days: number; rank: string }> = [
 
 export const MILESTONES = [7, 30, 90, 180, 365];
 
-function calcScore(input: {
-  waterMl: number;
-  waterGoalMl: number;
-  trained: boolean;
-  mealRatings: number[]; // 0..5 for meals marked done
-  restDay?: boolean;
-}) {
-  const hasWaterGoal = input.waterGoalMl > 0;
-  const waterPct = hasWaterGoal
-    ? Math.min(input.waterMl / input.waterGoalMl, 1)
-    : 0;
-  const trainingPct = input.trained ? 1 : 0;
-  const mealPct = input.mealRatings.length
-    ? input.mealRatings.reduce((a, b) => a + b, 0) /
-      (input.mealRatings.length * 5)
-    : 0;
-  // Weights: água 30 / treino 25 / refeições 45 (dia normal)
-  //          água 40 / refeições 60 (descanso)
-  // Se o aluno ainda não tem peso definido, água tem peso 0 e o restante
-  // é reescalonado para 100 — não penaliza quem não preencheu o peso.
-  const wWater = hasWaterGoal ? (input.restDay ? 40 : 30) : 0;
-  const wTraining = input.restDay ? 0 : 25;
-  const wMeals = input.restDay ? 60 : 45;
-  const totalW = wWater + wTraining + wMeals;
-  const raw =
-    waterPct * wWater + trainingPct * wTraining + mealPct * wMeals;
-  const score = totalW > 0 ? (raw / totalW) * 100 : 0;
-  return Math.round(Math.max(0, Math.min(100, score)) * 10) / 10;
-
-}
-
-
 async function ensureDailyLog(
   supabase: any,
   studentId: string,
   logDate: string,
 ): Promise<string> {
-  const { data: existing } = await supabase
-    .from("daily_logs")
-    .select("id")
-    .eq("student_id", studentId)
-    .eq("log_date", logDate)
-    .maybeSingle();
-  if (existing?.id) return existing.id;
-  const { data: created, error } = await supabase
-    .from("daily_logs")
-    .insert({ student_id: studentId, log_date: logDate })
-    .select("id")
-    .single();
-  if (error) throw new Error(error.message);
-  return created.id;
+  assertEditableDate(logDate);
+  const { error: insertError } = await supabase.from("daily_logs").upsert(
+    { student_id: studentId, log_date: logDate },
+    { onConflict: "student_id,log_date", ignoreDuplicates: true },
+  );
+  if (insertError) throw new Error(insertError.message);
+  const { data: row, error } = await supabase.from("daily_logs").select("id")
+    .eq("student_id", studentId).eq("log_date", logDate).single();
+  if (error || !row) throw new Error(error?.message ?? "Registro não encontrado");
+  return row.id;
 }
 
 async function recomputeScore(
@@ -110,7 +73,7 @@ async function recomputeScore(
   studentId: string,
   logId: string,
 ) {
-  const [{ data: log }, { data: meals }, { data: latestWeight }, { data: profile }] =
+  const [logResult, mealsResult, weightResult, profileResult, dietResult] =
     await Promise.all([
       supabase
         .from("daily_logs")
@@ -119,7 +82,7 @@ async function recomputeScore(
         .single(),
       supabase
         .from("meal_checks")
-        .select("done, rating")
+        .select("done, rating, meal_name")
         .eq("daily_log_id", logId),
       supabase
         .from("weight_entries")
@@ -133,7 +96,13 @@ async function recomputeScore(
         .select("initial_weight_kg, water_ml_per_kg")
         .eq("id", studentId)
         .maybeSingle(),
+      supabase.from("diet_prescriptions").select("data").eq("student_id", studentId).maybeSingle(),
     ]);
+  for (const result of [logResult, mealsResult, weightResult, profileResult, dietResult]) {
+    if (result.error) throw new Error(result.error.message);
+  }
+  const log = logResult.data, meals = mealsResult.data, latestWeight = weightResult.data, profile = profileResult.data;
+  const names = prescribedMealNames(dietResult.data?.data);
 
   // Water goal is anchored to the anamnese weight (initial_weight_kg) so that
   // logging a new daily weight does NOT shift the goal and therefore does not
@@ -144,19 +113,20 @@ async function recomputeScore(
   const coef = Number(profile?.water_ml_per_kg ?? 50) || 50;
   const goal = Math.round(goalWeightKg * coef);
   const ratings = (meals ?? [])
-    .filter((m: any) => m.done)
+    .filter((m: any) => m.done && names.includes(m.meal_name))
     .map((m: any) => Number(m.rating) || 0);
   const score = calcScore({
     waterMl: log?.water_ml ?? 0,
     waterGoalMl: goal,
     trained: !!log?.trained,
     mealRatings: ratings,
+    totalMeals: names.length,
     restDay: !!log?.rest_day,
   });
-  await supabase.from("daily_logs").update({ daily_score: score }).eq("id", logId);
-  // Reconcile streak whenever a score changes.
-  await reconcileStreak(supabase, studentId);
-  return { score, goal, weightKg };
+  const { error } = await supabase.from("daily_logs").update({ daily_score: score }).eq("id", logId);
+  if (error) throw new Error(error.message);
+  const day = await readRegistroDay(supabase, studentId, log.log_date);
+  return { score, goal, weightKg, day };
 }
 
 // ---------- streak reconciliation ----------
@@ -172,14 +142,6 @@ type StreakState = {
   shield_consumed_today: boolean;
 };
 
-function daysBetween(a: string, b: string): number {
-  const [ay, am, ad] = a.split("-").map(Number);
-  const [by, bm, bd] = b.split("-").map(Number);
-  const t1 = Date.UTC(ay, am - 1, ad);
-  const t2 = Date.UTC(by, bm - 1, bd);
-  return Math.round((t2 - t1) / 86400000);
-}
-
 function addDaysIso(iso: string, delta: number): string {
   const [y, m, d] = iso.split("-").map(Number);
   const dt = new Date(Date.UTC(y, m - 1, d));
@@ -191,79 +153,25 @@ async function reconcileStreak(
   supabase: any,
   studentId: string,
 ): Promise<StreakState> {
-  // Pull last 400 daily logs, ascending. Walk day by day, applying rules.
-  const { data: logs } = await supabase
-    .from("daily_logs")
-    .select("log_date, daily_score, rest_day")
-    .eq("student_id", studentId)
-    .order("log_date", { ascending: true })
-    .limit(400);
-
-  const byDate = new Map<string, { score: number; rest: boolean }>();
-  (logs ?? []).forEach((l: any) =>
-    byDate.set(l.log_date, {
-      score: Number(l.daily_score) || 0,
-      rest: !!l.rest_day,
-    }),
-  );
-
-  // Load previous milestone from db so we can detect "just crossed"
-  const { data: prevStreak } = await supabase
-    .from("streaks")
-    .select("last_milestone")
-    .eq("student_id", studentId)
-    .maybeSingle();
-  const prevMilestone: number = prevStreak?.last_milestone ?? 0;
-
-  const today = todaySP();
-  const firstDate = logs?.[0]?.log_date ?? today;
-
-  let current = 0;
-  let longest = 0;
-  let lastCompleted: string | null = null;
-  let shields = 0;
-  let shieldProgress = 0;
-  let total = 0;
-
-  const start = firstDate;
-  const end = today;
-  const totalDays = daysBetween(start, end);
-  for (let i = 0; i <= totalDays; i++) {
-    const date = addDaysIso(start, i);
-    const entry = byDate.get(date);
-    const score = entry?.score ?? 0;
-    const isRest = !!entry?.rest;
-
-    if (score >= STREAK_THRESHOLD) {
-      current += 1;
-      total += 1;
-      lastCompleted = date;
-      if (score >= 100) {
-        shieldProgress += 1;
-        if (shieldProgress >= 7) {
-          shields = Math.min(2, shields + 1);
-          shieldProgress = 0;
-        }
-      } else {
-        shieldProgress = 0;
-      }
-    } else if (isRest) {
-      // Rest day is neutral: does not advance the streak, but never resets it.
-      // Preserves current streak, shields e progresso do scorecard.
-      continue;
-    } else {
-      // failed day
-      if (current > 0 && shields > 0) {
-        // consume shield, keep streak, no increment
-        shields -= 1;
-        shieldProgress = 0;
-      } else {
-        current = 0;
-        shieldProgress = 0;
-      }
-    }
-    if (current > longest) longest = current;
+  // Fetch every page: long streaks must not be truncated at 400/1000 rows.
+  const logs: any[] = [];
+  for (let offset = 0; ; offset += 1000) {
+    const { data, error } = await supabase.from("daily_logs")
+      .select("log_date,daily_score,rest_day").eq("student_id", studentId)
+      .lte("log_date", todaySP()).order("log_date").range(offset, offset + 999);
+    if (error) throw new Error(error.message);
+    logs.push(...(data ?? []));
+    if ((data?.length ?? 0) < 1000) break;
   }
+  const neutral = await readNeutralDays(supabase, studentId);
+  const { data: prevStreak, error: prevError } = await supabase.from("streaks")
+    .select("last_milestone,longest_streak").eq("student_id", studentId).maybeSingle();
+  if (prevError) throw new Error(prevError.message);
+  const prevMilestone = prevStreak?.last_milestone ?? 0;
+  const calculated = calculateStreak(logs, neutral.map(d => d.log_date), todaySP());
+  const { current_streak: current, shields, shield_progress: shieldProgress,
+    total_completed_days: total, last_completed_date: lastCompleted } = calculated;
+  const longest = Math.max(calculated.longest_streak, prevStreak?.longest_streak ?? 0);
 
   // Detect new milestone crossed since last save
   let newMilestone: number | null = null;
@@ -294,7 +202,7 @@ async function reconcileStreak(
     shield_consumed_today: false,
   };
 
-  await supabase.from("streaks").upsert(
+  const { error: streakError } = await supabase.from("streaks").upsert(
     {
       student_id: studentId,
       current_streak: current,
@@ -308,6 +216,7 @@ async function reconcileStreak(
     { onConflict: "student_id" },
   );
 
+  if (streakError) throw new Error(streakError.message);
   return state;
 }
 
@@ -343,16 +252,19 @@ export function getPatenteGuerra(streak: number): {
 }
 
 
-// ---------- reads ----------
-export const getMyDayRegistro = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
-  .inputValidator((d: unknown) =>
-    z.object({ date: dateSchema.optional() }).parse(d ?? {}),
-  )
-  .handler(async ({ data, context }) => {
-    const { supabase, userId } = context;
-    const logDate = data.date ?? todaySP();
+async function readNeutralDays(supabase: any, studentId: string): Promise<{ log_date: string }[]> {
+  const rows: { log_date: string }[] = [];
+  for (let offset = 0; ; offset += 1000) {
+    const { data, error } = await supabase.from("registro_neutral_days").select("log_date")
+      .eq("student_id", studentId).eq("enabled", true).order("log_date").range(offset, offset + 999);
+    if (error) throw new Error(error.message);
+    rows.push(...(data ?? []));
+    if ((data?.length ?? 0) < 1000) break;
+  }
+  return rows;
+}
 
+async function readRegistroDay(supabase: any, studentId: string, logDate: string) {
     // profile + latest weight
     const [{ data: profile }, { data: latestWeight }, { data: diet }, { data: crm }] =
       await Promise.all([
@@ -361,24 +273,24 @@ export const getMyDayRegistro = createServerFn({ method: "POST" })
           .select(
             "id,full_name,birth_date,height_cm,initial_weight_kg,water_ml_per_kg",
           )
-          .eq("id", userId)
+          .eq("id", studentId)
           .maybeSingle(),
         supabase
           .from("weight_entries")
           .select("weight_kg,entry_date")
-          .eq("student_id", userId)
+          .eq("student_id", studentId)
           .order("entry_date", { ascending: false })
           .limit(1)
           .maybeSingle(),
         supabase
           .from("diet_prescriptions")
           .select("data")
-          .eq("student_id", userId)
+          .eq("student_id", studentId)
           .maybeSingle(),
         supabase
           .from("student_crm")
           .select("proximo_checkin")
-          .eq("student_id", userId)
+          .eq("student_id", studentId)
           .maybeSingle(),
       ]);
 
@@ -389,29 +301,13 @@ export const getMyDayRegistro = createServerFn({ method: "POST" })
     // Meta de água ancorada no peso da anamnese — o peso diário não afeta o %.
     const waterGoalMl = Math.round(goalWeightKg * coef);
 
-    // meal names from active diet — dedupe because meal_checks has UNIQUE(daily_log_id, meal_name).
-    // Alguns alunos têm dietas com nomes repetidos (ex.: "Jantar" para ocasiões diferentes).
-    // Mantemos apenas a primeira ocorrência de cada nome para não duplicar no scorecard.
-    const rawMealNames: string[] = Array.isArray(
-      (diet?.data as any)?.refeicoes,
-    )
-      ? ((diet!.data as any).refeicoes as any[])
-          .map((m: any) => String(m?.nome ?? "").trim())
-          .filter((n) => n.length > 0)
-      : [];
-    const mealNames: string[] = [];
-    const seenNames = new Set<string>();
-    for (const raw of rawMealNames) {
-      if (seenNames.has(raw)) continue;
-      seenNames.add(raw);
-      mealNames.push(raw);
-    }
+    const mealNames = prescribedMealNames(diet?.data);
 
-    // ensure daily log exists for the date (only for editable dates: today or yesterday)
+    // Ensure daily log exists only within the retroactive edit window.
     let logId: string | null = null;
     let log: any = null;
     if (isEditableDate(logDate)) {
-      logId = await ensureDailyLog(supabase, userId, logDate);
+      logId = await ensureDailyLog(supabase, studentId, logDate);
       const { data: l } = await supabase
         .from("daily_logs")
         .select("*")
@@ -429,20 +325,22 @@ export const getMyDayRegistro = createServerFn({ method: "POST" })
         );
         const missing = mealNames
           .map((name, idx) => ({
-            daily_log_id: logId!,
+            daily_log_id: logId,
             meal_name: name,
             order_index: idx,
           }))
           .filter((r) => !have.has(r.meal_name));
         if (missing.length) {
-          await supabase.from("meal_checks").insert(missing);
+          const { error } = await supabase.from("meal_checks").upsert(missing,
+            { onConflict: "daily_log_id,meal_name", ignoreDuplicates: true });
+          if (error) throw new Error(error.message);
         }
       }
     } else {
       const { data: l } = await supabase
         .from("daily_logs")
         .select("*")
-        .eq("student_id", userId)
+        .eq("student_id", studentId)
         .eq("log_date", logDate)
         .maybeSingle();
       log = l;
@@ -457,8 +355,9 @@ export const getMyDayRegistro = createServerFn({ method: "POST" })
           .order("order_index")
       : { data: [] };
 
+    const neutralDays = await readNeutralDays(supabase, studentId);
     // Reconcile streak on every open. Reads the freshly written log.
-    const streak = await reconcileStreak(supabase, userId);
+    const streak = await reconcileStreak(supabase, studentId);
 
     return {
       logDate,
@@ -475,7 +374,7 @@ export const getMyDayRegistro = createServerFn({ method: "POST" })
         rest_day: false,
         daily_score: 0,
       },
-      meals: (meals ?? []) as Array<{
+      meals: (meals ?? []).filter((m: any) => mealNames.includes(m.meal_name)) as Array<{
         id: string;
         meal_name: string;
         done: boolean;
@@ -483,11 +382,26 @@ export const getMyDayRegistro = createServerFn({ method: "POST" })
         order_index: number;
       }>,
       dietMealNames: mealNames,
+      neutralDays,
+      isNeutralDay: neutralDays.some(d => d.log_date === logDate),
       streak,
       proximoCheckin: ((crm as any)?.proximo_checkin as string | null) ?? null,
       patente: getPatenteGuerra(streak.current_streak),
     };
 
+}
+
+// ---------- reads ----------
+export const getMyDayRegistro = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: unknown) =>
+    z.object({ date: dateSchema.optional() }).parse(d ?? {}),
+  )
+  .handler(async ({ data, context }) => {
+    const { supabase, userId } = context;
+    const logDate = data.date ?? todaySP();
+
+    return readRegistroDay(supabase, userId, logDate);
   });
 
 export const getMyWeightHistory = createServerFn({ method: "GET" })
@@ -529,15 +443,10 @@ export const addWater = createServerFn({ method: "POST" })
     const { supabase, userId } = context;
     const logDate = data.date ?? todaySP();
     const logId = await ensureDailyLog(supabase, userId, logDate);
-    const { data: cur } = await supabase
-      .from("daily_logs")
-      .select("water_ml")
-      .eq("id", logId)
-      .single();
-    const next = Math.max(0, Math.min(20000, (cur?.water_ml ?? 0) + data.deltaMl));
-    await supabase.from("daily_logs").update({ water_ml: next }).eq("id", logId);
+    const { error } = await supabase.rpc("add_registro_water", { p_log_id: logId, p_delta: data.deltaMl });
+    if (error) throw new Error(error.message);
     const s = await recomputeScore(supabase, userId, logId);
-    return { water_ml: next, ...s };
+    return { water_ml: s.day.log.water_ml, ...s };
   });
 
 export const setWater = createServerFn({ method: "POST" })
@@ -554,10 +463,11 @@ export const setWater = createServerFn({ method: "POST" })
     const { supabase, userId } = context;
     const logDate = data.date ?? todaySP();
     const logId = await ensureDailyLog(supabase, userId, logDate);
-    await supabase
+    const { error } = await supabase
       .from("daily_logs")
       .update({ water_ml: data.waterMl })
       .eq("id", logId);
+    if (error) throw new Error(error.message);
     const s = await recomputeScore(supabase, userId, logId);
     return { water_ml: data.waterMl, ...s };
   });
@@ -576,10 +486,11 @@ export const setTrained = createServerFn({ method: "POST" })
     const { supabase, userId } = context;
     const logDate = data.date ?? todaySP();
     const logId = await ensureDailyLog(supabase, userId, logDate);
-    await supabase
+    const { error } = await supabase
       .from("daily_logs")
       .update({ trained: data.trained })
       .eq("id", logId);
+    if (error) throw new Error(error.message);
     const s = await recomputeScore(supabase, userId, logId);
     return { trained: data.trained, ...s };
   });
@@ -598,10 +509,17 @@ export const upsertMealCheck = createServerFn({ method: "POST" })
   )
   .handler(async ({ data, context }) => {
     const { supabase, userId } = context;
+    const logDate = data.date ?? todaySP();
+    assertEditableDate(logDate);
+    const { data: owned, error: ownedError } = await supabase.from("meal_checks")
+      .select("daily_log_id").eq("id", data.mealCheckId).single();
+    if (ownedError || !owned) throw new Error("Refeição não encontrada");
+    const { data: log, error: logError } = await supabase.from("daily_logs")
+      .select("log_date,student_id").eq("id", owned.daily_log_id).single();
+    if (logError || log?.student_id !== userId || log?.log_date !== logDate) throw new Error("Refeição inválida para este dia");
     const patch: any = {};
     if (data.done !== undefined) patch.done = data.done;
     if (data.rating !== undefined) patch.rating = data.rating;
-    if (!Object.keys(patch).length) return { ok: true };
     const { data: mc, error } = await supabase
       .from("meal_checks")
       .update(patch)
@@ -626,6 +544,7 @@ export const upsertWeightEntry = createServerFn({ method: "POST" })
   .handler(async ({ data, context }) => {
     const { supabase, userId } = context;
     const entryDate = data.date ?? todaySP();
+    assertEditableDate(entryDate);
     const { error } = await supabase.from("weight_entries").upsert(
       {
         student_id: userId,
@@ -635,8 +554,8 @@ export const upsertWeightEntry = createServerFn({ method: "POST" })
       { onConflict: "student_id,entry_date" },
     );
     if (error) throw new Error(error.message);
-    // recompute today's score because goal depends on weight
-    const todayId = await ensureDailyLog(supabase, userId, todaySP());
+    // Recompute and return the edited date; water goal remains anchored to anamnese.
+    const todayId = await ensureDailyLog(supabase, userId, entryDate);
     const s = await recomputeScore(supabase, userId, todayId);
     return { ok: true, ...s };
   });
@@ -689,10 +608,11 @@ export const setRestDay = createServerFn({ method: "POST" })
     const { supabase, userId } = context;
     const logDate = data.date ?? todaySP();
     const logId = await ensureDailyLog(supabase, userId, logDate);
-    await supabase
+    const { error } = await supabase
       .from("daily_logs")
       .update({ rest_day: data.restDay })
       .eq("id", logId);
+    if (error) throw new Error(error.message);
     const s = await recomputeScore(supabase, userId, logId);
     return { rest_day: data.restDay, ...s };
   });
@@ -950,4 +870,41 @@ export const saveActionPlanInputs = createServerFn({ method: "POST" })
       .upsert(patch, { onConflict: "student_id" });
     if (error) throw new Error(error.message);
     return { ok: true };
+  });
+
+export const getNeutralDays = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: unknown) => z.object({ studentId: z.string().uuid().optional() }).parse(d ?? {}))
+  .handler(async ({ data, context }) => {
+    const studentId = data.studentId ?? context.userId;
+    if (studentId !== context.userId) await assertCanManageStudent(context, studentId);
+    return { days: await readNeutralDays(context.supabase, studentId) };
+  });
+
+export const setNeutralDays = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: unknown) => z.object({ studentId: z.string().uuid().optional(),
+    startDate: dateSchema, endDate: dateSchema, enabled: z.boolean() }).parse(d))
+  .handler(async ({ data, context }) => {
+    const studentId = data.studentId ?? context.userId;
+    if (studentId !== context.userId) await assertCanManageStudent(context, studentId);
+    if (data.endDate < data.startDate) throw new Error("A data final deve ser igual ou posterior à inicial.");
+    const rows = [];
+    for (let date = data.startDate; date <= data.endDate; date = addRegistroDays(date, 1)) {
+      rows.push({ student_id: studentId, log_date: date, enabled: data.enabled,
+        created_by: context.userId, updated_at: new Date().toISOString() });
+    }
+    // Chunk the payload, without limiting the dates a student can regularize as travel.
+    for (let offset = 0; offset < rows.length; offset += 500) {
+      const { error } = await context.supabase.from("registro_neutral_days")
+        .upsert(rows.slice(offset, offset + 500), { onConflict: "student_id,log_date" });
+      if (error) throw new Error(error.message);
+    }
+    // Assigned trainers can schedule neutral days but cannot write streak rows via RLS.
+    // The privileged recalculation is only reached after the ownership/role check above.
+    if (studentId !== context.userId) {
+      const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+      await reconcileStreak(supabaseAdmin, studentId);
+    } else await reconcileStreak(context.supabase, studentId);
+    return { days: await readNeutralDays(context.supabase, studentId) };
   });
