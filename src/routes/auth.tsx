@@ -28,6 +28,14 @@ function getPasswordResetClient() {
 }
 
 export const Route = createFileRoute("/auth")({
+  head: () => ({ meta: [
+    { title: "Entrar — Antifofista Squad" },
+    { name: "description", content: "Acesse sua conta Antifofista Squad." },
+    { property: "og:title", content: "Entrar — Antifofista Squad" },
+    { property: "og:description", content: "Acesse sua conta Antifofista Squad." },
+    { property: "og:type", content: "website" },
+    { name: "twitter:card", content: "summary" },
+  ] }),
   ssr: false,
   component: AuthPage,
 });

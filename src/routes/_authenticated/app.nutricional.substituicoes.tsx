@@ -17,6 +17,14 @@ import data from "@/lib/substitutions-data.json";
 import type { DietPlan } from "@/lib/diet-xlsx-parser";
 
 export const Route = createFileRoute("/_authenticated/app/nutricional/substituicoes")({
+  head: () => ({ meta: [
+    { title: "Substituições Alimentares — Antifofista Squad" },
+    { name: "description", content: "Equivalências alimentares do seu plano nutricional." },
+    { property: "og:title", content: "Substituições Alimentares — Antifofista Squad" },
+    { property: "og:description", content: "Equivalências alimentares do seu plano nutricional." },
+    { property: "og:type", content: "website" },
+    { name: "twitter:card", content: "summary" },
+  ] }),
   component: SubstPage,
 });
 

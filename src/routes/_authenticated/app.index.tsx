@@ -4,6 +4,14 @@ import { useServerFn } from "@tanstack/react-start";
 import { getMyContext } from "@/lib/access.functions";
 
 export const Route = createFileRoute("/_authenticated/app/")({
+  head: () => ({ meta: [
+    { title: "Minha Área — Antifofista Squad" },
+    { name: "description", content: "Seu acompanhamento no Antifofista Squad." },
+    { property: "og:title", content: "Minha Área — Antifofista Squad" },
+    { property: "og:description", content: "Seu acompanhamento no Antifofista Squad." },
+    { property: "og:type", content: "website" },
+    { name: "twitter:card", content: "summary" },
+  ] }),
   component: AppIndex,
 });
 

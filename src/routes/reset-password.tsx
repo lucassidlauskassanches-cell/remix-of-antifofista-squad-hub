@@ -136,6 +136,14 @@ async function updatePasswordWithAccessToken(accessToken: string, password: stri
 }
 
 export const Route = createFileRoute("/reset-password")({
+  head: () => ({ meta: [
+    { title: "Redefinir senha — Antifofista Squad" },
+    { name: "description", content: "Recupere o acesso à sua conta Antifofista Squad." },
+    { property: "og:title", content: "Redefinir senha — Antifofista Squad" },
+    { property: "og:description", content: "Recupere o acesso à sua conta Antifofista Squad." },
+    { property: "og:type", content: "website" },
+    { name: "twitter:card", content: "summary" },
+  ] }),
   ssr: false,
   component: ResetPage,
 });

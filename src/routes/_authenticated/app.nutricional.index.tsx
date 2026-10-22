@@ -8,6 +8,14 @@ import { Table2, LayoutList } from "lucide-react";
 import type { DietPlan } from "@/lib/diet-xlsx-parser";
 
 export const Route = createFileRoute("/_authenticated/app/nutricional/")({
+  head: () => ({ meta: [
+    { title: "Plano Nutricional — Antifofista Squad" },
+    { name: "description", content: "Suas refeições e suplementação prescritas." },
+    { property: "og:title", content: "Plano Nutricional — Antifofista Squad" },
+    { property: "og:description", content: "Suas refeições e suplementação prescritas." },
+    { property: "og:type", content: "website" },
+    { name: "twitter:card", content: "summary" },
+  ] }),
   component: DietaPage,
 });
 

@@ -8,6 +8,14 @@ import { FileText, ExternalLink } from "lucide-react";
 import { PdfViewer } from "@/components/PdfViewer";
 
 export const Route = createFileRoute("/_authenticated/app/acao")({
+  head: () => ({ meta: [
+    { title: "Plano de Ação — Antifofista Squad" },
+    { name: "description", content: "Seu plano de ação no Antifofista Squad." },
+    { property: "og:title", content: "Plano de Ação — Antifofista Squad" },
+    { property: "og:description", content: "Seu plano de ação no Antifofista Squad." },
+    { property: "og:type", content: "website" },
+    { name: "twitter:card", content: "summary" },
+  ] }),
   component: AcaoPage,
 });
 

@@ -6,6 +6,14 @@ import { Card } from "@/components/ui/card";
 import { Users, ShieldCheck } from "lucide-react";
 
 export const Route = createFileRoute("/_authenticated/app/admin/visao")({
+  head: () => ({ meta: [
+    { title: "Visão Geral — Antifofista Squad" },
+    { name: "description", content: "Visão geral de alunos e treinadores do Antifofista Squad." },
+    { property: "og:title", content: "Visão Geral — Antifofista Squad" },
+    { property: "og:description", content: "Visão geral de alunos e treinadores do Antifofista Squad." },
+    { property: "og:type", content: "website" },
+    { name: "twitter:card", content: "summary" },
+  ] }),
   component: VisaoGeral,
   errorComponent: ({ error }: { error: unknown }) => (
     <p className="text-destructive">{(error as Error).message}</p>

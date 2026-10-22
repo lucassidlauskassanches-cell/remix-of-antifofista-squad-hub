@@ -16,6 +16,14 @@ import { toast } from "sonner";
 import { ArrowLeft, Trash2, Pencil, X } from "lucide-react";
 
 export const Route = createFileRoute("/_authenticated/app/admin/galeria")({
+  head: () => ({ meta: [
+    { title: "Gerenciar Galeria — Antifofista Squad" },
+    { name: "description", content: "Gerenciamento de vídeos de exercícios da equipe." },
+    { property: "og:title", content: "Gerenciar Galeria — Antifofista Squad" },
+    { property: "og:description", content: "Gerenciamento de vídeos de exercícios da equipe." },
+    { property: "og:type", content: "website" },
+    { name: "twitter:card", content: "summary" },
+  ] }),
   component: GaleriaAdmin,
 });
 

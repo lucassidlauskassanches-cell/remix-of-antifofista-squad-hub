@@ -20,6 +20,14 @@ import {
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/_authenticated/app/admin/alunos/novo")({
+  head: () => ({ meta: [
+    { title: "Novo Aluno — Antifofista Squad" },
+    { name: "description", content: "Cadastro de aluno na equipe Antifofista Squad." },
+    { property: "og:title", content: "Novo Aluno — Antifofista Squad" },
+    { property: "og:description", content: "Cadastro de aluno na equipe Antifofista Squad." },
+    { property: "og:type", content: "website" },
+    { name: "twitter:card", content: "summary" },
+  ] }),
   component: NovoAluno,
 });
 

@@ -39,6 +39,14 @@ import { ArrowLeft } from "lucide-react";
 
 
 export const Route = createFileRoute("/_authenticated/app/admin/alunos/$id")({
+  head: () => ({ meta: [
+    { title: "Manual de Bordo do Aluno — Antifofista Squad" },
+    { name: "description", content: "Dados, planos e acompanhamento individual do aluno." },
+    { property: "og:title", content: "Manual de Bordo do Aluno — Antifofista Squad" },
+    { property: "og:description", content: "Dados, planos e acompanhamento individual do aluno." },
+    { property: "og:type", content: "website" },
+    { name: "twitter:card", content: "summary" },
+  ] }),
   component: AlunoEditor,
 });
 

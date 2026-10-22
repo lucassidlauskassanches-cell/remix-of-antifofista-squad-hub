@@ -13,7 +13,14 @@ type Period = "weekly" | "monthly" | "quarterly";
 
 export const Route = createFileRoute("/_authenticated/app/admin/ranking")({
   component: RankingPage,
-  head: () => ({ meta: [{ title: "Ranking — Antifofista Squad" }] }),
+  head: () => ({ meta: [
+    { title: "Ranking de Disciplina — Antifofista Squad" },
+    { name: "description", content: "Ranking semanal, mensal e trimestral de alunos e treinadores." },
+    { property: "og:title", content: "Ranking de Disciplina — Antifofista Squad" },
+    { property: "og:description", content: "Ranking semanal, mensal e trimestral de alunos e treinadores." },
+    { property: "og:type", content: "website" },
+    { name: "twitter:card", content: "summary" },
+  ] }),
 });
 
 function RankingPage() {
