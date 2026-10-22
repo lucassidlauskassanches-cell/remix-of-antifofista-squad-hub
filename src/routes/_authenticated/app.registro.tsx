@@ -178,8 +178,8 @@ function RegistroPage() {
       }),
     retry: 0,
     retryDelay: (attempt) => Math.min(1000 * 2 ** attempt, 4000),
-    onError: (e: any, _v, ctx) => {
-      void settlePatch(ctx);
+    onError: async (e: any, _v, ctx) => {
+      await settlePatch(ctx);
       toastMutationError(e);
     },
   });
@@ -192,8 +192,8 @@ function RegistroPage() {
       }),
     retry: 2,
     retryDelay: (attempt) => Math.min(1000 * 2 ** attempt, 4000),
-    onError: (e: any, _v, ctx) => {
-      void settlePatch(ctx);
+    onError: async (e: any, _v, ctx) => {
+      await settlePatch(ctx);
       toastMutationError(e);
     },
   });
@@ -206,8 +206,8 @@ function RegistroPage() {
       }),
     retry: 2,
     retryDelay: (attempt) => Math.min(1000 * 2 ** attempt, 4000),
-    onError: (e: any, _v, ctx) => {
-      void settlePatch(ctx);
+    onError: async (e: any, _v, ctx) => {
+      await settlePatch(ctx);
       toastMutationError(e);
     },
   });
@@ -220,8 +220,8 @@ function RegistroPage() {
       }),
     retry: 2,
     retryDelay: (attempt) => Math.min(1000 * 2 ** attempt, 4000),
-    onError: (e: any, _v, ctx) => {
-      void settlePatch(ctx);
+    onError: async (e: any, _v, ctx) => {
+      await settlePatch(ctx);
       toastMutationError(e);
     },
   });
@@ -241,8 +241,8 @@ function RegistroPage() {
       }),
     retry: 2,
     retryDelay: (attempt) => Math.min(1000 * 2 ** attempt, 4000),
-    onError: (e: any, _v, ctx) => {
-      void settlePatch(ctx);
+    onError: async (e: any, _v, ctx) => {
+      await settlePatch(ctx);
       toastMutationError(e);
     },
   });

@@ -142,14 +142,6 @@ type StreakState = {
   shield_consumed_today: boolean;
 };
 
-function daysBetween(a: string, b: string): number {
-  const [ay, am, ad] = a.split("-").map(Number);
-  const [by, bm, bd] = b.split("-").map(Number);
-  const t1 = Date.UTC(ay, am - 1, ad);
-  const t2 = Date.UTC(by, bm - 1, bd);
-  return Math.round((t2 - t1) / 86400000);
-}
-
 function addDaysIso(iso: string, delta: number): string {
   const [y, m, d] = iso.split("-").map(Number);
   const dt = new Date(Date.UTC(y, m - 1, d));
@@ -311,7 +303,7 @@ async function readRegistroDay(supabase: any, studentId: string, logDate: string
 
     const mealNames = prescribedMealNames(diet?.data);
 
-    // ensure daily log exists for the date (only for editable dates: today or yesterday)
+    // Ensure daily log exists only within the retroactive edit window.
     let logId: string | null = null;
     let log: any = null;
     if (isEditableDate(logDate)) {
@@ -908,5 +900,11 @@ export const setNeutralDays = createServerFn({ method: "POST" })
         .upsert(rows.slice(offset, offset + 500), { onConflict: "student_id,log_date" });
       if (error) throw new Error(error.message);
     }
+    // Assigned trainers can schedule neutral days but cannot write streak rows via RLS.
+    // The privileged recalculation is only reached after the ownership/role check above.
+    if (studentId !== context.userId) {
+      const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+      await reconcileStreak(supabaseAdmin, studentId);
+    } else await reconcileStreak(context.supabase, studentId);
     return { days: await readNeutralDays(context.supabase, studentId) };
   });
