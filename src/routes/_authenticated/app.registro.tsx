@@ -450,7 +450,7 @@ function RegistroPage() {
       </Card>
 
       {/* PESO */}
-      <WeightCard currentKg={d.weightKg} onSaved={invalidateAll} />
+      <WeightCard currentKg={d.weightKg} date={date} readOnly={readOnly} onSaved={invalidateAll} />
 
       {/* SHARE */}
       <ShareSection score={score} date={date} studentName={studentName} />
@@ -601,11 +601,16 @@ function MealRow({
 // ---------- weight ----------
 function WeightCard({
   currentKg,
+  date,
+  readOnly,
   onSaved,
 }: {
   currentKg: number;
+  date: string;
+  readOnly: boolean;
   onSaved: () => void;
 }) {
+  const qc = useQueryClient();
   const fetchHist = useServerFn(getMyWeightHistory);
   const upsert = useServerFn(upsertWeightEntry);
   const [val, setVal] = useState<string>("");
@@ -614,8 +619,12 @@ function WeightCard({
     queryFn: () => fetchHist(),
   });
   const mSave = useMutation({
-    mutationFn: (kg: number) => upsert({ data: { weightKg: kg } }),
-    onSuccess: () => {
+    mutationKey: ["registro-write"],
+    scope: { id: "registro-daily-writes" },
+    mutationFn: (kg: number) => upsert({ data: { weightKg: kg, date } }),
+    onMutate: async () => { await qc.cancelQueries({ queryKey: ["registro", date] }); },
+    onSuccess: (result) => {
+      qc.setQueryData(["registro", date], result.day);
       toast.success("Peso registrado");
       setVal("");
       onSaved();
@@ -646,7 +655,8 @@ function WeightCard({
           step="0.1"
           min={20}
           max={400}
-          placeholder="Peso (kg) de hoje"
+          placeholder="Peso (kg) do dia"
+          disabled={readOnly}
           value={val}
           onChange={(e) => setVal(e.currentTarget.value)}
         />
@@ -656,7 +666,7 @@ function WeightCard({
             if (Number.isFinite(n) && n >= 20 && n <= 400) mSave.mutate(n);
             else toast.error("Peso inválido");
           }}
-          disabled={mSave.isPending || !val}
+          disabled={readOnly || mSave.isPending || !val}
         >
           REGISTRAR
         </Button>

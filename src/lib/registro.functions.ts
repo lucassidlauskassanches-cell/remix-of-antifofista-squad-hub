@@ -554,8 +554,8 @@ export const upsertWeightEntry = createServerFn({ method: "POST" })
       { onConflict: "student_id,entry_date" },
     );
     if (error) throw new Error(error.message);
-    // recompute today's score because goal depends on weight
-    const todayId = await ensureDailyLog(supabase, userId, todaySP());
+    // Recompute and return the edited date; water goal remains anchored to anamnese.
+    const todayId = await ensureDailyLog(supabase, userId, entryDate);
     const s = await recomputeScore(supabase, userId, todayId);
     return { ok: true, ...s };
   });
