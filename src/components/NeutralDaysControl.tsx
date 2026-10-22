@@ -21,7 +21,7 @@ export function NeutralDaysControl({ studentId, today, onSaved }: { studentId?: 
     onSuccess: (result) => {
       qc.setQueryData(key, result);
       void qc.invalidateQueries({ queryKey: ['registro'] });
-      void qc.invalidateQueries({ queryKey: ['adherence'] });
+      void qc.invalidateQueries({ queryKey: ['student-adherence'] });
       onSaved?.();
       toast.success('Período atualizado');
     },
