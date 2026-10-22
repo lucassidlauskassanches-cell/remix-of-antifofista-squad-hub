@@ -1,3 +1,7 @@
 - [x] Separar cargas por semana/série sem apagar registros antigos.
-- [x] Semana pelo início do plano, edição apenas da vigente e séries conforme prescrição.
+- [x] Semana pelo início do plano, todas as semanas editáveis e séries conforme prescrição.
 - [x] Histórico independente do plano e validação com testes e tela autenticada.
+- [ ] Corrigir concorrência dos registros e confirmar persistência ao voltar ao app.
+- [ ] Descanso por horário-alvo com som e vibração.
+- [ ] Corrigir dieta por total prescrito, dias neutros aluno/treinador e sete dias retroativos.
+- [ ] Executar testes e verificar os fluxos autenticados.
