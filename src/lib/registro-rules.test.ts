@@ -50,7 +50,7 @@ describe('pending registration cache', () => {
     queue.add(2, d => { d.trained = true; });
     queue.add(3, d => { d.meals = true; });
     expect(queue.settle(1, { water: 250, trained: false, meals: false })).toEqual({ water: 250, trained: true, meals: true });
-    expect(queue.settle(2, { water: 250, trained: true, meals: false })).meals.toBe(true);
+    expect(queue.settle(2, { water: 250, trained: true, meals: false }).meals).toBe(true);
     expect(queue.settle(3, { water: 250, trained: true, meals: true })).toEqual({ water: 250, trained: true, meals: true });
     expect(queue.pending).toBe(0);
   });
