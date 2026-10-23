@@ -19,7 +19,7 @@ import { Play, Check, Table2, LayoutList, Plus, Minus, Timer, Pause, RotateCcw, 
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { REST_TIMER_KEY, remainingRestSeconds, startRestTimer } from "@/lib/rest-timer";
-import { currentTrainingWeek, prescribedSetCount, sameWeekEntries, type WeekLogRow } from "@/lib/training-logbook";
+import { prescribedSetCount, sameWeekEntries, type WeekLogRow } from "@/lib/training-logbook";
 import {
   describeCell,
   type StructuredPlan,
