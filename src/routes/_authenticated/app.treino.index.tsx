@@ -188,25 +188,17 @@ function EstruturadoPage() {
   useEffect(() => {
     const b = Number(localStorage.getItem("treino:blockIdx"));
     if (Number.isFinite(b) && b >= 0) setBlockIdx(b);
+    // Semana escolhida pelo aluno: restaura onde ele parou (padrão: Semana 1).
+    const w = Number(localStorage.getItem("treino:weekIdx"));
+    if (Number.isFinite(w) && w >= 0) setWeekIdx(w);
     setRestored(true);
   }, []);
 
   useEffect(() => {
     if (!restored) return;
     localStorage.setItem("treino:blockIdx", String(blockIdx));
+    localStorage.setItem("treino:weekIdx", String(weekIdx));
   }, [weekIdx, blockIdx, restored]);
-
-  const [calendarDate, setCalendarDate] = useState(todayStr);
-  useEffect(() => {
-    const tick = window.setInterval(() => setCalendarDate(todayStr()), 30000);
-    return () => window.clearInterval(tick);
-  }, []);
-  const currentWeek = currentTrainingWeek(data?.start_date ?? "", calendarDate);
-  useEffect(() => {
-    if (!plan) return;
-    setWeekIdx(Math.min(Math.max(currentWeek - 1, 0), plan.weeks.length - 1));
-    setBlockIdx((i) => Math.min(Math.max(i, 0), plan.blocks.length - 1));
-  }, [data?.start_date, currentWeek, plan?.weeks?.length, plan?.blocks?.length]);
 
   // Trocar bloco/semana fecha o exercício em edição pra não perder foco.
   useEffect(() => {
