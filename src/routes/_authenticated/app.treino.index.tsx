@@ -179,6 +179,8 @@ function EstruturadoPage() {
   }, [galleryData]);
 
   const plan = (data?.plan ?? null) as StructuredPlan | null;
+  // Apenas informativo (badge "Semana vigente") — nunca define a semana exibida.
+  const currentWeek = currentTrainingWeek(data?.start_date ?? "", todayStr());
   const [weekIdx, setWeekIdx] = useState(0);
   const [blockIdx, setBlockIdx] = useState(0);
   const [video, setVideo] = useState<{ url: string; title: string } | null>(null);
