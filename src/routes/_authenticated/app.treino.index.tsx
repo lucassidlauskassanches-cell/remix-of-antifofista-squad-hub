@@ -446,8 +446,25 @@ function ExerciseList({
         const parsed = describeCell(raw);
         const video = ex.name ? lookup(ex.name) : null;
         const key = normalize(ex.name || "");
+        const allRows = (logRows ?? []).filter((r) => normalize(r.exercise) === key);
         const weekRows = sameWeekEntries(logRows ?? [], weekIdx + 1)
           .filter((r) => normalize(r.exercise) === key && (!r.block_label || r.block_label === blockLabel));
+        // Referência "última" é global: o registro mais recente do exercício,
+        // em qualquer semana ou bloco — igual à aba Progressão.
+        const lastAny: LastEntry | null = (() => {
+          if (!allRows.length) return null;
+          const date = allRows.reduce((d, r) => (r.entry_date > d ? r.entry_date : d), "");
+          const rows = allRows
+            .filter((r) => r.entry_date === date)
+            .sort((a, b) => (a.set_index ?? 0) - (b.set_index ?? 0) || (a.id < b.id ? -1 : 1));
+          return {
+            load: rows.map((r) => r.load).join("/"),
+            reps: rows.map((r) => r.reps).join("/"),
+            date,
+            sets: [],
+          };
+        })();
+        // Pré-preenchimento do editor e selo do chip: só a semana/bloco em vista.
         const last: LastEntry | null = weekRows.length ? {
           load: weekRows.map((r) => r.load).join("/"),
           reps: weekRows.map((r) => r.reps).join("/"),
@@ -505,10 +522,10 @@ function ExerciseList({
               )}
             </div>
             {ex.note && <div className="af-note">{ex.note}</div>}
-            {!isActive && last?.date && (
+            {!isActive && lastAny?.date && (
               <div className="af-loghint">
-                ↳ última: {last.load || "—"}
-                {last.reps ? ` × ${last.reps}` : ""} · {formatBR(last.date)}
+                ↳ última: {lastAny.load || "—"}
+                {lastAny.reps ? ` × ${lastAny.reps}` : ""} · {formatBR(lastAny.date)}
               </div>
             )}
             {canRegister && isActive && (
