@@ -23,7 +23,7 @@ export type SubstitutionGroup = {
 export const SUBSTITUTIONS_AVISO: string = data.aviso;
 
 export const SUBSTITUTION_GROUPS: SubstitutionGroup[] = (
-  data.grupos as Omit<SubstitutionGroup, "itens"> & { itens?: SubstitutionItem[] }[]
+  data.grupos as unknown as (Omit<SubstitutionGroup, "itens"> & { itens?: SubstitutionItem[] })[]
 ).map((g) => ({ ...g, itens: g.itens ?? [] }));
 
 export const COUNTABLE_UNITS = new Set([
