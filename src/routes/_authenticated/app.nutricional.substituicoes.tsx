@@ -12,86 +12,30 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { ArrowRight } from "lucide-react";
-import data from "@/lib/substitutions-data.json";
+import { ArrowRight, Info } from "lucide-react";
+import {
+  SUBSTITUTIONS_AVISO,
+  SUBSTITUTION_GROUPS,
+  calcSubstitution,
+  formatQty,
+  matchDietFood,
+  roundingHint,
+  type SubstitutionGroup,
+  type SubstitutionItem,
+} from "@/lib/substitutions";
 import type { DietPlan } from "@/lib/diet-xlsx-parser";
 
 export const Route = createFileRoute("/_authenticated/app/nutricional/substituicoes")({
   head: () => ({ meta: [
     { title: "Substituições Alimentares — Antifofista Squad" },
-    { name: "description", content: "Equivalências alimentares do seu plano nutricional." },
+    { name: "description", content: "Trocas equivalentes do seu plano nutricional, com pesos de alimentos já prontos." },
     { property: "og:title", content: "Substituições Alimentares — Antifofista Squad" },
-    { property: "og:description", content: "Equivalências alimentares do seu plano nutricional." },
+    { property: "og:description", content: "Trocas equivalentes do seu plano nutricional, com pesos de alimentos já prontos." },
     { property: "og:type", content: "website" },
     { name: "twitter:card", content: "summary" },
   ] }),
   component: SubstPage,
 });
-
-type GroupKey = keyof typeof data;
-
-type Item = {
-  name: string;
-  qtdBase: number;
-  unidBase: string;
-  qtdAlim: number;
-  unidAlim: string;
-};
-
-const GROUPS: { key: GroupKey; label: string }[] = [
-  { key: "proteinas", label: "PROTEÍNAS" },
-  { key: "carboidratos", label: "CARBOIDRATOS" },
-  { key: "frutas", label: "FRUTAS" },
-  { key: "gorduras", label: "GORDURAS" },
-  { key: "lowfat", label: "LOW FAT" },
-];
-
-function normalize(s: string) {
-  return (s || "")
-    .toLowerCase()
-    .normalize("NFD")
-    .replace(/[̀-ͯ]/g, "")
-    .replace(/[^a-z0-9]+/g, " ")
-    .trim();
-}
-
-const QUALIFIERS = new Set([
-  "cru", "crua", "crus", "cruas", "cozido", "cozida", "cozidos", "cozidas",
-  "grelhado", "grelhada", "assado", "assada", "frito", "frita", "fresco",
-  "fresca", "em", "de", "da", "do", "com", "sem", "s", "light", "integral",
-  "lata", "enlatado", "enlatada", "branco", "branca", "g", "ml", "und", "kg",
-  "porcao", "porcoes", "colher", "colheres", "fatia", "fatias", "unidade", "unidades",
-]);
-
-function tokens(s: string) {
-  return normalize(s).split(" ").filter((t) => t && !QUALIFIERS.has(t));
-}
-
-const ALL_ITEMS: { item: Item; group: GroupKey }[] = GROUPS.flatMap((g) =>
-  (data[g.key] as Item[]).map((item) => ({ item, group: g.key })),
-);
-
-// Tenta achar o alimento da dieta na tabela de equivalência. Conservador: só
-// retorna match quando há boa sobreposição de palavras, pra não sugerir troca
-// entre grupos errados.
-function matchDietFood(food: string): { item: Item; group: GroupKey } | null {
-  const ft = tokens(food);
-  if (!ft.length) return null;
-  let best: { item: Item; group: GroupKey } | null = null;
-  let bestScore = 0;
-  for (const entry of ALL_ITEMS) {
-    const it = tokens(entry.item.name);
-    if (!it.length) continue;
-    const overlap = ft.filter((t) => it.includes(t)).length;
-    if (overlap === 0) continue;
-    const score = overlap / Math.max(it.length, ft.length);
-    if (score > bestScore) {
-      bestScore = score;
-      best = entry;
-    }
-  }
-  return bestScore >= 0.5 ? best : null;
-}
 
 function parseQty(quantidade?: string) {
   if (!quantidade) return "";
@@ -115,8 +59,8 @@ function useDietFoods(): DietFood[] {
       (m.itens ?? []).forEach((it) => {
         const alimento = it.alimento?.trim();
         if (!alimento) return;
-        const key = normalize(alimento);
-        if (!key || seen.has(key)) return;
+        const key = alimento.toLowerCase();
+        if (seen.has(key)) return;
         seen.add(key);
         out.push({ alimento, quantidade: it.quantidade, medida: it.medida });
       }),
@@ -127,26 +71,44 @@ function useDietFoods(): DietFood[] {
 
 function SubstPage() {
   const dietFoods = useDietFoods();
-  const [group, setGroup] = useState<GroupKey>("proteinas");
+  const [groupId, setGroupId] = useState("proteina");
   const [fromName, setFromName] = useState("");
   const [toName, setToName] = useState("");
-  const [weight, setWeight] = useState("");
+  const [toName2, setToName2] = useState("");
+  const [halfMode, setHalfMode] = useState(false);
+  const [qty, setQty] = useState("");
+
+  const group = useMemo(
+    () => SUBSTITUTION_GROUPS.find((g) => g.id === groupId) ?? SUBSTITUTION_GROUPS[0],
+    [groupId],
+  );
 
   const items = useMemo(
-    () =>
-      (data[group] as Item[])
-        .slice()
-        .sort((a, b) => a.name.localeCompare(b.name, "pt-BR")),
+    () => group.itens.slice().sort((a, b) => a.nome.localeCompare(b.nome, "pt-BR")),
     [group],
   );
+
+  function reset(group2: SubstitutionGroup) {
+    setGroupId(group2.id);
+    setFromName("");
+    setToName("");
+    setToName2("");
+    setHalfMode(false);
+  }
 
   function pickDietFood(food: DietFood) {
     const match = matchDietFood(food.alimento);
     if (!match) return;
-    setGroup(match.group);
-    setFromName(match.item.name);
+    if (match.kind === "free") {
+      reset(match.group);
+      return;
+    }
+    setGroupId(match.group.id);
+    setFromName(match.item.nome);
     setToName("");
-    setWeight(parseQty(food.quantidade) || "");
+    setToName2("");
+    setHalfMode(false);
+    setQty(parseQty(food.quantidade) || "");
   }
 
   const matchedFoods = useMemo(
@@ -158,8 +120,13 @@ function SubstPage() {
     <div className="space-y-4">
       <div>
         <p className="tactical-heading text-xs text-primary tracking-widest">CALCULADORA</p>
-        <h1 className="tactical-heading text-2xl">SUBSTITUIÇÃO ALIMENTAR</h1>
+        <h1 className="tactical-heading text-2xl">TROCAS EQUIVALENTES</h1>
         <div className="tactical-divider mt-2" />
+      </div>
+
+      <div className="flex items-start gap-2 rounded-md border border-primary/40 bg-primary/5 p-3">
+        <Info className="w-4 h-4 text-primary shrink-0 mt-0.5" />
+        <p className="text-xs text-foreground font-medium">{SUBSTITUTIONS_AVISO}</p>
       </div>
 
       {matchedFoods.length > 0 && (
@@ -172,7 +139,9 @@ function SubstPage() {
           </p>
           <div className="flex flex-wrap gap-2">
             {matchedFoods.map((f, i) => {
-              const active = matchDietFood(f.alimento)?.item.name === fromName;
+              const m = matchDietFood(f.alimento);
+              const active =
+                m?.kind === "item" && m.item.nome === fromName && m.group.id === groupId;
               return (
                 <button
                   key={i}
@@ -199,68 +168,124 @@ function SubstPage() {
       )}
 
       <div className="grid grid-cols-5 gap-1 p-1 bg-card rounded-md border border-border">
-        {GROUPS.map((g) => (
+        {SUBSTITUTION_GROUPS.map((g) => (
           <button
-            key={g.key}
-            onClick={() => {
-              setGroup(g.key);
-              setFromName("");
-              setToName("");
-            }}
-            className={`tactical-heading text-[10px] py-2 rounded tracking-wider ${
-              group === g.key
+            key={g.id}
+            onClick={() => reset(g)}
+            className={`tactical-heading text-[9px] py-2 rounded tracking-wider ${
+              groupId === g.id
                 ? "bg-primary text-primary-foreground"
                 : "text-muted-foreground"
             }`}
           >
-            {g.label}
+            {g.nome.toUpperCase()}
           </button>
         ))}
       </div>
 
-      <Calculator
-        items={items}
-        fromName={fromName}
-        toName={toName}
-        weight={weight}
-        onFrom={setFromName}
-        onTo={setToName}
-        onWeight={setWeight}
-      />
+      {group.livre ? (
+        <Card className="p-4 space-y-2 text-center">
+          <p className="tactical-heading text-xs text-primary tracking-widest">
+            {group.nome.toUpperCase()} — LIVRE
+          </p>
+          <p className="text-sm text-foreground">{group.observacao}</p>
+          <p className="text-[11px] text-muted-foreground">
+            Este grupo não precisa de conta: a porção é livre dentro da orientação acima.
+          </p>
+        </Card>
+      ) : (
+        <Calculator
+          group={group}
+          items={items}
+          fromName={fromName}
+          toName={toName}
+          toName2={toName2}
+          halfMode={halfMode}
+          qty={qty}
+          onFrom={setFromName}
+          onTo={setToName}
+          onTo2={setToName2}
+          onHalfMode={setHalfMode}
+          onQty={setQty}
+        />
+      )}
+    </div>
+  );
+}
+
+function ResultLine({
+  item,
+  value,
+}: {
+  item: SubstitutionItem;
+  value: number;
+}) {
+  const hint = roundingHint(value, item.unidade);
+  return (
+    <div className="rounded-md border border-primary/40 bg-primary/5 p-4 text-center space-y-1">
+      <p className="tactical-heading text-2xl text-primary">
+        {formatQty(value)} {item.unidade}
+      </p>
+      <p className="text-xs text-foreground font-medium">{item.nome}</p>
+      {hint && <p className="text-[11px] text-muted-foreground">≈ {hint}</p>}
+      {item.obs && (
+        <p className="text-[11px] text-primary">Obs.: {item.obs}</p>
+      )}
     </div>
   );
 }
 
 function Calculator({
+  group,
   items,
   fromName,
   toName,
-  weight,
+  toName2,
+  halfMode,
+  qty,
   onFrom,
   onTo,
-  onWeight,
+  onTo2,
+  onHalfMode,
+  onQty,
 }: {
-  items: Item[];
+  group: SubstitutionGroup;
+  items: SubstitutionItem[];
   fromName: string;
   toName: string;
-  weight: string;
+  toName2: string;
+  halfMode: boolean;
+  qty: string;
   onFrom: (v: string) => void;
   onTo: (v: string) => void;
-  onWeight: (v: string) => void;
+  onTo2: (v: string) => void;
+  onHalfMode: (v: boolean) => void;
+  onQty: (v: string) => void;
 }) {
-  const from = useMemo(() => items.find((i) => i.name === fromName), [items, fromName]);
-  const to = useMemo(() => items.find((i) => i.name === toName), [items, toName]);
+  const from = useMemo(() => items.find((i) => i.nome === fromName), [items, fromName]);
+  const to = useMemo(() => items.find((i) => i.nome === toName), [items, toName]);
+  const to2 = useMemo(() => items.find((i) => i.nome === toName2), [items, toName2]);
 
-  const w = parseFloat(weight.replace(",", "."));
-  const result =
-    from && to && !isNaN(w) && w > 0
-      ? Math.round((w / from.qtdBase) * to.qtdAlim * 10) / 10
-      : null;
+  const q = parseFloat(qty.replace(",", "."));
+  const valid = from && !isNaN(q) && q > 0;
+
+  const result = valid && to ? calcSubstitution(q, from, to) : null;
+  const resultHalf1 =
+    valid && halfMode && to ? calcSubstitution(q, from, to, 0.5) : null;
+  const resultHalf2 =
+    valid && halfMode && to2 ? calcSubstitution(q, from, to2, 0.5) : null;
 
   return (
     <div className="space-y-4">
       <Card className="p-4 space-y-3">
-        <p className="tactical-heading text-xs text-primary tracking-widest">TENHO / COMO</p>
+        <p className="tactical-heading text-xs text-primary tracking-widest">
+          TENHO NA DIETA · {group.nome.toUpperCase()}
+        </p>
+        {group.referencia && (
+          <p className="text-[11px] text-muted-foreground">
+            Referência do grupo: {group.referencia}
+          </p>
+        )}
         <div className="space-y-2">
           <label className="text-xs text-muted-foreground">Alimento atual</label>
           <Select value={fromName} onValueChange={onFrom}>
@@ -269,8 +294,8 @@ function Calculator({
             </SelectTrigger>
             <SelectContent className="max-h-[50vh]">
               {items.map((i) => (
-                <SelectItem key={i.name} value={i.name}>
-                  {i.name}
+                <SelectItem key={i.nome} value={i.nome}>
+                  {i.nome}
                 </SelectItem>
               ))}
             </SelectContent>
@@ -278,14 +303,14 @@ function Calculator({
         </div>
         <div className="space-y-2">
           <label className="text-xs text-muted-foreground">
-            Peso do alimento atual {from ? `(${from.unidBase})` : ""}
+            Quantidade na dieta {from ? `(${from.unidade})` : ""}
           </label>
           <Input
             type="number"
             inputMode="decimal"
             placeholder="0"
-            value={weight}
-            onChange={(e) => onWeight(e.target.value)}
+            value={qty}
+            onChange={(e) => onQty(e.target.value)}
           />
         </div>
       </Card>
@@ -306,26 +331,87 @@ function Calculator({
             </SelectTrigger>
             <SelectContent className="max-h-[50vh]">
               {items.map((i) => (
-                <SelectItem key={i.name} value={i.name}>
-                  {i.name}
+                <SelectItem key={i.nome} value={i.nome}>
+                  {i.nome}
                 </SelectItem>
               ))}
             </SelectContent>
           </Select>
         </div>
 
-        <div className="rounded-md border border-primary/40 bg-primary/5 p-4 text-center">
-          <p className="tactical-heading text-xs text-muted-foreground tracking-widest">
-            PESO A CONSUMIR
-          </p>
-          <p className="tactical-heading text-3xl text-primary mt-1">
-            {result !== null ? `${result} ${to?.unidAlim ?? ""}` : "—"}
-          </p>
-        </div>
+        <label className="flex items-center gap-2 text-xs text-foreground">
+          <input
+            type="checkbox"
+            checked={halfMode}
+            onChange={(e) => onHalfMode(e.target.checked)}
+            className="accent-[var(--primary)]"
+          />
+          Metade de duas: combinar dois substitutos (50% de cada)
+        </label>
+
+        {halfMode && (
+          <div className="space-y-2">
+            <label className="text-xs text-muted-foreground">Segundo substituto</label>
+            <Select value={toName2} onValueChange={onTo2}>
+              <SelectTrigger>
+                <SelectValue placeholder="Selecione o segundo substituto" />
+              </SelectTrigger>
+              <SelectContent className="max-h-[50vh]">
+                {items
+                  .filter((i) => i.nome !== toName)
+                  .map((i) => (
+                    <SelectItem key={i.nome} value={i.nome}>
+                      {i.nome}
+                    </SelectItem>
+                  ))}
+              </SelectContent>
+            </Select>
+          </div>
+        )}
+
+        {!halfMode && (
+          <div className="space-y-2">
+            <p className="tactical-heading text-xs text-muted-foreground tracking-widest text-center">
+              PESO A CONSUMIR
+            </p>
+            {result !== null && to ? (
+              <ResultLine item={to} value={result} />
+            ) : (
+              <div className="rounded-md border border-border p-4 text-center">
+                <p className="tactical-heading text-3xl text-muted-foreground">—</p>
+              </div>
+            )}
+          </div>
+        )}
+
+        {halfMode && (
+          <div className="space-y-2">
+            <p className="tactical-heading text-xs text-muted-foreground tracking-widest text-center">
+              METADE DE CADA
+            </p>
+            <div className="grid grid-cols-2 gap-2">
+              {resultHalf1 !== null && to ? (
+                <ResultLine item={to} value={resultHalf1} />
+              ) : (
+                <div className="rounded-md border border-border p-4 text-center">
+                  <p className="tactical-heading text-xl text-muted-foreground">—</p>
+                </div>
+              )}
+              {resultHalf2 !== null && to2 ? (
+                <ResultLine item={to2} value={resultHalf2} />
+              ) : (
+                <div className="rounded-md border border-border p-4 text-center">
+                  <p className="tactical-heading text-xl text-muted-foreground">—</p>
+                </div>
+              )}
+            </div>
+          </div>
+        )}
       </Card>
 
       <p className="text-[11px] text-muted-foreground text-center">
-        Todas as trocas são equivalentes dentro do mesmo grupo.
+        Trocas somente dentro do mesmo grupo. Todos os itens de um grupo são
+        equivalentes entre si.
       </p>
     </div>
   );
