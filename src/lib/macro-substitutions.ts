@@ -70,8 +70,7 @@ export function roundDown(value: number, medida: string): number {
     if (value < 1) return Math.floor(value * 10) / 10;
     return Math.floor(value + 1e-9);
   }
-  if (value >= 100) return Math.floor(value / 10 + 1e-9) * 10;
-  return Math.floor(value + 1e-9);
+  return Math.floor(value / 10 + 1e-9) * 10;
 }
 
 export function calcMacroSubstitution(origin: MacroFood, sub: MacroFood, qty: number) {
