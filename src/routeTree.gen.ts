@@ -28,6 +28,7 @@ import { Route as AuthenticatedAppAdminRankingRouteImport } from './routes/_auth
 import { Route as AuthenticatedAppAdminTreinadoresRouteImport } from './routes/_authenticated/app.admin.treinadores'
 import { Route as AuthenticatedAppAdminVisaoRouteImport } from './routes/_authenticated/app.admin.visao'
 import { Route as AuthenticatedAppNutricionalIndexRouteImport } from './routes/_authenticated/app.nutricional.index'
+import { Route as AuthenticatedAppNutricionalMacrosRouteImport } from './routes/_authenticated/app.nutricional.macros'
 import { Route as AuthenticatedAppNutricionalSubstituicoesRouteImport } from './routes/_authenticated/app.nutricional.substituicoes'
 import { Route as AuthenticatedAppTreinoIndexRouteImport } from './routes/_authenticated/app.treino.index'
 import { Route as ApiPublicCronMorningWaterRouteImport } from './routes/api/public/cron/morning-water'
@@ -140,6 +141,12 @@ const AuthenticatedAppNutricionalIndexRoute =
     path: '/',
     getParentRoute: () => AuthenticatedAppNutricionalRoute,
   } as any)
+const AuthenticatedAppNutricionalMacrosRoute =
+  AuthenticatedAppNutricionalMacrosRouteImport.update({
+    id: '/macros',
+    path: '/macros',
+    getParentRoute: () => AuthenticatedAppNutricionalRoute,
+  } as any)
 const AuthenticatedAppNutricionalSubstituicoesRoute =
   AuthenticatedAppNutricionalSubstituicoesRouteImport.update({
     id: '/substituicoes',
@@ -206,6 +213,7 @@ export interface FileRoutesByFullPath {
   '/app/admin/ranking': typeof AuthenticatedAppAdminRankingRoute
   '/app/admin/treinadores': typeof AuthenticatedAppAdminTreinadoresRoute
   '/app/admin/visao': typeof AuthenticatedAppAdminVisaoRoute
+  '/app/nutricional/macros': typeof AuthenticatedAppNutricionalMacrosRoute
   '/app/nutricional/substituicoes': typeof AuthenticatedAppNutricionalSubstituicoesRoute
   '/api/public/cron/morning-water': typeof ApiPublicCronMorningWaterRoute
   '/api/public/cron/reengagement': typeof ApiPublicCronReengagementRoute
@@ -230,6 +238,7 @@ export interface FileRoutesByTo {
   '/app/admin/ranking': typeof AuthenticatedAppAdminRankingRoute
   '/app/admin/treinadores': typeof AuthenticatedAppAdminTreinadoresRoute
   '/app/admin/visao': typeof AuthenticatedAppAdminVisaoRoute
+  '/app/nutricional/macros': typeof AuthenticatedAppNutricionalMacrosRoute
   '/app/nutricional/substituicoes': typeof AuthenticatedAppNutricionalSubstituicoesRoute
   '/api/public/cron/morning-water': typeof ApiPublicCronMorningWaterRoute
   '/api/public/cron/reengagement': typeof ApiPublicCronReengagementRoute
@@ -260,6 +269,7 @@ export interface FileRoutesById {
   '/_authenticated/app/admin/ranking': typeof AuthenticatedAppAdminRankingRoute
   '/_authenticated/app/admin/treinadores': typeof AuthenticatedAppAdminTreinadoresRoute
   '/_authenticated/app/admin/visao': typeof AuthenticatedAppAdminVisaoRoute
+  '/_authenticated/app/nutricional/macros': typeof AuthenticatedAppNutricionalMacrosRoute
   '/_authenticated/app/nutricional/substituicoes': typeof AuthenticatedAppNutricionalSubstituicoesRoute
   '/api/public/cron/morning-water': typeof ApiPublicCronMorningWaterRoute
   '/api/public/cron/reengagement': typeof ApiPublicCronReengagementRoute
@@ -290,6 +300,7 @@ export interface FileRouteTypes {
     | '/app/admin/ranking'
     | '/app/admin/treinadores'
     | '/app/admin/visao'
+    | '/app/nutricional/macros'
     | '/app/nutricional/substituicoes'
     | '/api/public/cron/morning-water'
     | '/api/public/cron/reengagement'
@@ -314,6 +325,7 @@ export interface FileRouteTypes {
     | '/app/admin/ranking'
     | '/app/admin/treinadores'
     | '/app/admin/visao'
+    | '/app/nutricional/macros'
     | '/app/nutricional/substituicoes'
     | '/api/public/cron/morning-water'
     | '/api/public/cron/reengagement'
@@ -343,6 +355,7 @@ export interface FileRouteTypes {
     | '/_authenticated/app/admin/ranking'
     | '/_authenticated/app/admin/treinadores'
     | '/_authenticated/app/admin/visao'
+    | '/_authenticated/app/nutricional/macros'
     | '/_authenticated/app/nutricional/substituicoes'
     | '/api/public/cron/morning-water'
     | '/api/public/cron/reengagement'
@@ -499,6 +512,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedAppNutricionalIndexRouteImport
       parentRoute: typeof AuthenticatedAppNutricionalRoute
     }
+    '/_authenticated/app/nutricional/macros': {
+      id: '/_authenticated/app/nutricional/macros'
+      path: '/macros'
+      fullPath: '/app/nutricional/macros'
+      preLoaderRoute: typeof AuthenticatedAppNutricionalMacrosRouteImport
+      parentRoute: typeof AuthenticatedAppNutricionalRoute
+    }
     '/_authenticated/app/nutricional/substituicoes': {
       id: '/_authenticated/app/nutricional/substituicoes'
       path: '/substituicoes'
@@ -559,12 +579,15 @@ declare module '@tanstack/react-router' {
 }
 
 interface AuthenticatedAppNutricionalRouteChildren {
+  AuthenticatedAppNutricionalMacrosRoute: typeof AuthenticatedAppNutricionalMacrosRoute
   AuthenticatedAppNutricionalSubstituicoesRoute: typeof AuthenticatedAppNutricionalSubstituicoesRoute
   AuthenticatedAppNutricionalIndexRoute: typeof AuthenticatedAppNutricionalIndexRoute
 }
 
 const AuthenticatedAppNutricionalRouteChildren: AuthenticatedAppNutricionalRouteChildren =
   {
+    AuthenticatedAppNutricionalMacrosRoute:
+      AuthenticatedAppNutricionalMacrosRoute,
     AuthenticatedAppNutricionalSubstituicoesRoute:
       AuthenticatedAppNutricionalSubstituicoesRoute,
     AuthenticatedAppNutricionalIndexRoute:
