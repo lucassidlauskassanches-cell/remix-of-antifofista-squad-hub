@@ -7,6 +7,7 @@ export const Route = createFileRoute("/_authenticated/app/nutricional")({
 function NutriLayout() {
   const loc = useLocation();
   const isSub = loc.pathname.includes("/nutricional/substituicoes");
+  const isMac = loc.pathname.includes("/nutricional/macros");
   const linkCls = (active: boolean) =>
     `tactical-heading text-[11px] tracking-widest pb-1 border-b-2 ${
       active
@@ -16,11 +17,14 @@ function NutriLayout() {
   return (
     <div className="space-y-4">
       <div className="flex items-center gap-5 border-b border-border">
-        <Link to="/app/nutricional" className={linkCls(!isSub)}>
+        <Link to="/app/nutricional" className={linkCls(!isSub && !isMac)}>
           DIETA
         </Link>
         <Link to="/app/nutricional/substituicoes" className={linkCls(isSub)}>
           SUBSTITUIÇÕES
+        </Link>
+        <Link to="/app/nutricional/macros" className={linkCls(isMac)}>
+          POR MACROS
         </Link>
       </div>
       <Outlet />
