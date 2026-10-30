@@ -34,7 +34,7 @@ describe("calculadora por macros", () => {
   it("arredondamento para baixo", () => {
     expect(roundDown(263, "g")).toBe(260);
     expect(roundDown(258, "g")).toBe(250);
-    expect(roundDown(17.8, "g")).toBe(17);
+    expect(roundDown(17.8, "g")).toBe(10);
     expect(roundDown(12.4, "Un.")).toBe(12);
     expect(roundDown(0.66, "colher")).toBe(0.6);
   });
