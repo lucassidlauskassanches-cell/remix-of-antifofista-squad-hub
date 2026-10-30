@@ -7,8 +7,8 @@ describe("calculadora por macros", () => {
   it("100g arroz branco → 150g batata doce", () => {
     expect(calcMacroSubstitution(f("Arroz branco"), f("Batata doce coz"), 100).quantidade).toBe(150);
   });
-  it("100g frango peito coz → whey (39,3g arredonda para baixo: 39g)", () => {
-    expect(calcMacroSubstitution(f("Frango peito coz"), f("Whey"), 100).quantidade).toBe(39);
+  it("100g frango peito coz → whey (39,3g arredonda de 10 em 10 para baixo: 30g)", () => {
+    expect(calcMacroSubstitution(f("Frango peito coz"), f("Whey"), 100).quantidade).toBe(30);
   });
   it("2 ovos → 4 claras", () => {
     expect(calcMacroSubstitution(f("Ovo"), f("Clara"), 2).quantidade).toBe(4);
