@@ -72,7 +72,7 @@ function EvolucaoPage() {
     const byKey = new Map<string, Group>();
     rawRows.forEach((r) => {
       if (!normalize(r.exercise)) return;
-      const key = `${normalize(r.exercise)}:${r.week_number ?? "legacy"}:${r.block_label ?? ""}`;
+      const key = normalize(r.exercise);
       let g = byKey.get(key);
       if (!g) {
         g = { exercise: r.exercise, week: r.week_number, block: r.block_label, entries: [], numeric: [], lastDate: "" };
@@ -84,9 +84,16 @@ function EvolucaoPage() {
       const entries = [...g.entries].sort((a, b) =>
         (a.entry_date || "").localeCompare(b.entry_date || ""),
       );
-      const numeric = entries
-        .map((e) => ({ value: parseLoad(e.load), date: e.entry_date }))
-        .filter((p): p is { value: number; date: string } => p.value !== null);
+      // Evolução: maior carga por data, somando todas as semanas e séries.
+      const byDate = new Map<string, number>();
+      entries.forEach((e) => {
+        const v = parseLoad(e.load);
+        if (v === null || !e.entry_date) return;
+        byDate.set(e.entry_date, Math.max(byDate.get(e.entry_date) ?? -Infinity, v));
+      });
+      const numeric = [...byDate.entries()]
+        .sort((a, b) => a[0].localeCompare(b[0]))
+        .map(([date, value]) => ({ value, date }));
       return {
         ...g,
         entries,
@@ -144,7 +151,7 @@ function EvolucaoPage() {
       ) : (
         <div>
           {groups.map((g) => (
-            <ExerciseProgress key={`${g.exercise}:${g.week}:${g.block}`} group={g} onDelete={handleDelete} />
+            <ExerciseProgress key={normalize(g.exercise)} group={g} onDelete={handleDelete} />
           ))}
         </div>
       )}
@@ -172,15 +179,14 @@ function ExerciseProgress({
       <div className="eh">
         <div className="e">{group.exercise}
           <div className="text-xs text-muted-foreground mt-1">
-            {group.week === null ? "Histórico anterior · sem semana" : `Semana ${group.week}`}
-            {group.block ? ` · ${group.block}` : ""}
+            {numeric.length} {numeric.length === 1 ? "dia registrado" : "dias registrados"}
           </div>
         </div>
         {latest !== null && (
           <div className="big">
             <span className="v">{latest}</span>
             <span className="u"> kg</span>
-             {group.week === null && delta !== null && delta !== 0 && (
+             {delta !== null && delta !== 0 && (
               <div className="up" style={delta < 0 ? { color: "var(--color-muted-foreground)" } : undefined}>
                 {delta > 0 ? "▲ +" : "▼ "}
                 {delta}kg
@@ -190,7 +196,7 @@ function ExerciseProgress({
         )}
       </div>
 
-      {group.week === null && numeric.length >= 2 && (
+      {numeric.length >= 2 && (
         <div className="af-spark">
           <Sparkline points={numeric.map((n) => n.value)} />
         </div>
@@ -204,6 +210,7 @@ function ExerciseProgress({
           >
             <span className="text-xs text-muted-foreground w-12">{formatDate(e.entry_date)}</span>
             <span className="truncate">
+              {e.week_number !== null && <span className="text-muted-foreground">S{e.week_number}{e.block_label ? ` ${e.block_label}` : ""} · </span>}
               {e.set_index !== null && <span className="text-muted-foreground">Série {e.set_index} · </span>}
               {e.load || "—"}
               {e.reps ? <span className="text-muted-foreground"> · {e.reps} reps</span> : null}
