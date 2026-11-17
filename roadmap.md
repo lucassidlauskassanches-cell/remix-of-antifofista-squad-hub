@@ -5,3 +5,5 @@
 - [x] Descanso por horário-alvo com som e vibração.
 - [x] Corrigir dieta por total prescrito, dias neutros aluno/treinador e sete dias retroativos.
 - [x] Executar testes e verificar os fluxos autenticados.
+- [x] Exibir total acumulado de dias com meta, separado da sequência, também ao consultar dias anteriores.
+- [x] Validar contagem preservada com testes e tela autenticada.

@@ -41,6 +41,22 @@ describe('daily registration rules', () => {
     const logs = Array.from({ length: 21 }, (_, i) => ({ log_date: addRegistroDays('2026-08-01', i), daily_score: 100 }));
     expect(calculateStreak(logs, [], '2026-08-21').shields).toBe(2);
   });
+  it('keeps completed days when a missed day resets only the consecutive streak', () => {
+    const result = calculateStreak(completed, [], '2026-09-14');
+    expect(result.current_streak).toBe(0);
+    expect(result.total_completed_days).toBe(43);
+    expect(result.longest_streak).toBe(43);
+  });
+  it('counts scores of at least 80 and excludes neutral days from the completed total', () => {
+    const result = calculateStreak([
+      { log_date: '2026-11-13', daily_score: 79.9 },
+      { log_date: '2026-11-14', daily_score: 80 },
+      { log_date: '2026-11-15', daily_score: 100 },
+      { log_date: '2026-11-16', daily_score: 100 },
+    ], ['2026-11-15'], '2026-11-17');
+    expect(result.total_completed_days).toBe(2);
+    expect(result.current_streak).toBe(2);
+  });
 });
 
 describe('pending registration cache', () => {

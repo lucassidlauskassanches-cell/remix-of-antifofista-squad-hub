@@ -314,16 +314,14 @@ function RegistroPage() {
       <CheckinAviso date={d.proximoCheckin} today={todaySP()} />
 
       {/* STREAK */}
-      {d.isToday && (
-        <StreakBanner
+      <StreakBanner
           streak={streak}
           patente={patente}
           onAck={(m) => {
             ackFn({ data: { milestone: m } }).finally(() => invalidateAll());
           }}
           studentName={studentName}
-        />
-      )}
+      />
 
       <NeutralDaysControl today={todaySP()} />
       {d.isNeutralDay && <p className="text-sm text-primary border-l-2 border-primary pl-3">VIAGEM / DESCANSO · Dia neutro na sequência</p>}
@@ -874,6 +872,17 @@ function StreakBanner({
   return (
     <>
       <Card className="p-4 space-y-3 border-primary/40">
+        <div className="flex items-center gap-3 border-b border-border pb-3">
+          <CalendarCheck className="w-8 h-8 text-primary" />
+          <div>
+            <div className="tactical-heading text-3xl leading-none text-primary">
+              {streak.total_completed_days} DIAS
+            </div>
+            <div className="text-[10px] tracking-widest text-muted-foreground mt-1">
+              TOTAL DE DIAS COM META CUMPRIDA
+            </div>
+          </div>
+        </div>
         <div className="flex items-center gap-3">
           <Flame className="w-8 h-8" style={{ color: accent }} />
           <div className="flex-1">
