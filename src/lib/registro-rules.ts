@@ -47,9 +47,10 @@ export function calculateStreak(logs: { log_date: string; daily_score: number; r
   let consumedToday = false;
   for (let date = first; date <= today; date = addRegistroDays(date, 1)) {
     const log = byDate.get(date);
-    // Travel is always neutral, even if the student also entered a high score.
-    if (neutral.has(date)) continue;
     const score = Number(log?.daily_score) || 0;
+    // Travel/neutral days never break the streak, but a day where the student
+    // still reached the goal must count as a completed day.
+    if (neutral.has(date) && score < STREAK_THRESHOLD) continue;
     if (score >= STREAK_THRESHOLD) {
       current++; total++; last = date;
       if (score >= 100) {

@@ -30,8 +30,8 @@ describe('daily registration rules', () => {
     expect(calculateStreak(completed, travel, '2026-09-14').current_streak).toBe(43);
     expect(calculateStreak([...completed, { log_date: '2026-09-15', daily_score: 80 }], travel, '2026-09-15').current_streak).toBe(44);
   });
-  it('does not inflate streak on a neutral day even with 100 points', () => {
-    expect(calculateStreak([...completed, { log_date: '2026-09-13', daily_score: 100 }], ['2026-09-13'], '2026-09-13').current_streak).toBe(43);
+  it('counts a neutral day when the student still reached the goal', () => {
+    expect(calculateStreak([...completed, { log_date: '2026-09-13', daily_score: 100 }], ['2026-09-13'], '2026-09-13').current_streak).toBe(44);
   });
   it('does not reset streak before today has ended', () => {
     expect(calculateStreak(completed, [], '2026-09-13').current_streak).toBe(43);
@@ -47,15 +47,15 @@ describe('daily registration rules', () => {
     expect(result.total_completed_days).toBe(43);
     expect(result.longest_streak).toBe(43);
   });
-  it('counts scores of at least 80 and excludes neutral days from the completed total', () => {
+  it('counts scores of at least 80 and counts goal-met neutral days in the completed total', () => {
     const result = calculateStreak([
       { log_date: '2026-11-13', daily_score: 79.9 },
       { log_date: '2026-11-14', daily_score: 80 },
       { log_date: '2026-11-15', daily_score: 100 },
       { log_date: '2026-11-16', daily_score: 100 },
     ], ['2026-11-15'], '2026-11-17');
-    expect(result.total_completed_days).toBe(2);
-    expect(result.current_streak).toBe(2);
+    expect(result.total_completed_days).toBe(3);
+    expect(result.current_streak).toBe(3);
   });
 });
 
